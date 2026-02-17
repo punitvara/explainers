@@ -554,7 +554,7 @@
         <h2>What is a Cellular Automaton?</h2>
       </div>
 
-      <p>Let's start with the absolute simplest case: a <strong>one-dimensional</strong> cellular automaton. <a class="sidenote-toggle" onclick="this.nextElementSibling.classList.toggle('open')">1</a></p>
+      <p>Let's start with the absolute simplest case: a <strong>one-dimensional</strong> cellular automaton. <a class="sidenote-toggle" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">1</a></p>
       <div class="sidenote">
         <div class="sidenote-title">A note on terminology</div>
         <p>Strictly speaking, a "cellular automaton" (plural: "cellular automata") is the <em>system</em> &ndash; the grid, the rules, and the update procedure taken together. Individual cells aren't automata; the whole grid is one automaton. But common usage is loose, and I'll follow convention. Also: "CA" is the standard abbreviation. You'll see it everywhere.</p>
@@ -860,7 +860,6 @@
         <canvas id="gateCanvas" height="280"></canvas>
         <div class="widget-controls">
           <button class="gate-btn active" data-gate="annihilate">Annihilation</button>
-          <button class="gate-btn" data-gate="kickback">Kickback</button>
           <button class="gate-btn" data-gate="block">Block (NOT)</button>
           <button id="gateResetBtn">Reset</button>
         </div>
@@ -1008,7 +1007,7 @@
 
       <h3>The Proof</h3>
 
-      <p>In 2000, Paul Rendell built a <strong>working Turing machine entirely within the Game of Life</strong>. It was enormous &ndash; tens of thousands of cells &ndash; but it <em>worked</em>. It had a tape, a finite state controller, and it could execute arbitrary computations. <a class="sidenote-toggle" onclick="this.nextElementSibling.classList.toggle('open')">2</a></p>
+      <p>In 2000, Paul Rendell built a <strong>working Turing machine entirely within the Game of Life</strong>. It was enormous &ndash; tens of thousands of cells &ndash; but it <em>worked</em>. It had a tape, a finite state controller, and it could execute arbitrary computations. <a class="sidenote-toggle" onclick="this.parentElement.nextElementSibling.classList.toggle('open')">2</a></p>
       <div class="sidenote">
         <div class="sidenote-title">The actual construction</div>
         <p>Rendell's Turing machine used stacks of gliders as tape memory, with "finite state machine" logic implemented via a complex network of stable reflectors and glider guns. The entire construction spans about 1,700 x 1,600 cells. Later, Adam Goucher and others built even more elaborate constructions, including a universal constructor &ndash; a pattern that can build <em>any other pattern</em>, including copies of itself. This was Conway's original dream when he designed the rules of Life.</p>
@@ -1585,26 +1584,19 @@
         annihilate: {
           desc: 'Two gliders collide head-on and annihilate each other. Both signals destroyed.',
           gliders: [
-            // Glider 1: moving SE (standard orientation)
-            { cells: [[1,0],[2,1],[0,2],[1,2],[2,2]], ox: 10, oy: 10 },
-            // Glider 2: moving NW
-            { cells: [[0,0],[1,0],[2,0],[2,1],[1,2]], ox: 30, oy: 30 }
-          ]
-        },
-        kickback: {
-          desc: 'Gliders collide and produce debris. In some configurations, a glider escapes at a new angle.',
-          gliders: [
-            { cells: [[1,0],[2,1],[0,2],[1,2],[2,2]], ox: 15, oy: 8 },
-            { cells: [[1,0],[0,1],[0,2],[1,2],[2,2]], ox: 30, oy: 15 }
+            // Glider 1: moving SE (down-right)
+            { cells: [[1,0],[2,1],[0,2],[1,2],[2,2]], ox: 5, oy: 5 },
+            // Glider 2: moving NW (up-left) — 20 cells apart on diagonal
+            { cells: [[0,0],[1,0],[2,0],[0,1],[1,2]], ox: 25, oy: 25 }
           ]
         },
         block: {
-          desc: 'A glider collides with a block (still life). The block is destroyed - simulating a NOT/erase operation.',
+          desc: 'A glider collides with a block (still life). The block is destroyed — simulating a NOT/erase operation.',
           gliders: [
-            { cells: [[1,0],[2,1],[0,2],[1,2],[2,2]], ox: 10, oy: 10 },
+            { cells: [[1,0],[2,1],[0,2],[1,2],[2,2]], ox: 5, oy: 5 },
           ],
           blocks: [
-            { cells: [[0,0],[1,0],[0,1],[1,1]], ox: 20, oy: 20 }
+            { cells: [[0,0],[1,0],[0,1],[1,1]], ox: 15, oy: 15 }
           ]
         }
       };
