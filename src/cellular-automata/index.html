@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergent Complexity in 2D Cellular Automata</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,700;1,6..72,400;1,6..72,700&family=Figtree:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --text-color: #2d2d2d;
+      --bg-color: #FAF9F7;
+      --brand-color: #2D6A4F;
+      --brand-light: #B7E4C7;
+      --brand-dark: #1B4332;
+      --link-color: #40916C;
+      --accent-color: #E76F51;
+      --widget-bg: #F5F5F5;
+      --border-color: #D3D3D3;
+      --cell-alive: #2D6A4F;
+      --cell-dead: #FFFFFF;
+      --cell-trace: #B7E4C7;
+      --serif: "Newsreader", Georgia, serif;
+      --sans: "Figtree", system-ui, -apple-system, sans-serif;
+      --mono: "JetBrains Mono", monospace;
+      --content-max-width: 790px;
+      --content-padding: 16px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--serif);
+      font-size: 21px;
+      line-height: 1.4;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+    }
+
+    /* ===== HEADER ===== */
+    .site-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      position: relative;
+      z-index: 100;
+    }
+
+    .site-logo {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--brand-color);
+      text-decoration: none;
+      line-height: 1.2;
+    }
+
+    .site-logo span {
+      font-style: italic;
+      color: var(--brand-dark);
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      position: relative;
+      width: 100%;
+      min-height: 340px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 60px 32px 50px;
+      overflow: hidden;
+      background: var(--brand-dark);
+    }
+
+    .hero-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.3;
+    }
+
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(36px, 5vw, 70px);
+      font-weight: 700;
+      color: #fff;
+      position: relative;
+      z-index: 2;
+      margin-bottom: 4px;
+      max-width: 900px;
+    }
+
+    .hero h2 {
+      font-family: var(--sans);
+      font-size: clamp(18px, 2.5vw, 30px);
+      font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      position: relative;
+      z-index: 2;
+      margin-bottom: 24px;
+      max-width: 700px;
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .page-wrapper {
+      display: flex;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 var(--content-padding);
+    }
+
+    /* ===== TOC SIDEBAR ===== */
+    .toc-sidebar {
+      position: sticky;
+      top: 40px;
+      align-self: flex-start;
+      width: 280px;
+      flex-shrink: 0;
+      padding: 24px 24px 24px 0;
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+      display: none;
+    }
+
+    @media (min-width: 1060px) {
+      .toc-sidebar {
+        display: block;
+      }
+    }
+
+    .toc-sidebar h4 {
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      color: var(--text-color);
+    }
+
+    .toc-sidebar ol {
+      list-style: none;
+      counter-reset: toc-counter;
+    }
+
+    .toc-sidebar li {
+      counter-increment: toc-counter;
+      margin-bottom: 6px;
+    }
+
+    .toc-sidebar li::before {
+      content: counter(toc-counter, upper-roman) ".";
+      display: inline-block;
+      width: 36px;
+      font-weight: 700;
+      color: var(--text-color);
+      font-size: 12px;
+    }
+
+    .toc-sidebar a {
+      color: var(--text-color);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .toc-sidebar a:hover,
+    .toc-sidebar a.active {
+      color: var(--brand-color);
+    }
+
+    /* ===== CONTENT ===== */
+    .content {
+      flex: 1;
+      max-width: var(--content-max-width);
+      padding: 0 0 80px 0;
+    }
+
+    .intro-text {
+      font-style: italic;
+      font-size: 21px;
+      line-height: 1.55;
+      padding: 40px 0 20px;
+      max-width: var(--content-max-width);
+    }
+
+    .content p {
+      margin-bottom: 20px;
+      line-height: 1.55;
+    }
+
+    .content a {
+      color: var(--link-color);
+      text-decoration: underline;
+      text-decoration-color: rgba(64, 145, 108, 0.3);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 0.2s;
+    }
+
+    .content a:hover {
+      text-decoration-color: var(--link-color);
+    }
+
+    /* Section headings */
+    .section-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-top: 120px;
+      margin-bottom: 50px;
+    }
+
+    .section-number {
+      font-family: var(--serif);
+      font-size: clamp(28px, 3vw, 42px);
+      font-weight: 700;
+      color: var(--border-color);
+      flex-shrink: 0;
+      font-style: italic;
+    }
+
+    .section-heading h2 {
+      font-family: var(--sans);
+      font-size: clamp(30px, 4vw, 50px);
+      font-weight: 700;
+      color: var(--text-color);
+      line-height: 1.15;
+    }
+
+    .content h3 {
+      font-family: var(--sans);
+      font-size: clamp(22px, 2.5vw, 30px);
+      font-weight: 700;
+      color: var(--text-color);
+      margin-top: 60px;
+      margin-bottom: 30px;
+    }
+
+    /* Captions */
+    .caption {
+      font-style: italic;
+      text-align: center;
+      font-size: 18px;
+      color: #666;
+      margin: -8px 0 30px;
+      line-height: 1.45;
+    }
+
+    /* Interactive widget containers */
+    .widget {
+      background: var(--widget-bg);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 30px 0;
+      border: 1px solid var(--border-color);
+    }
+
+    .widget-label {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .widget canvas {
+      display: block;
+      width: 100%;
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .widget-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .widget-controls button {
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--text-color);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .widget-controls button:hover {
+      border-color: var(--brand-color);
+      color: var(--brand-color);
+    }
+
+    .widget-controls button.active {
+      background: var(--brand-color);
+      color: #fff;
+      border-color: var(--brand-color);
+    }
+
+    .widget-controls input[type="range"] {
+      flex: 1;
+      min-width: 100px;
+      accent-color: var(--brand-color);
+    }
+
+    .widget-controls label {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    /* Section divider */
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border-color);
+      margin: 60px 0 0;
+    }
+
+    /* Bold/emphasis */
+    .content strong {
+      font-weight: 700;
+    }
+
+    .content em {
+      font-style: italic;
+    }
+
+    /* Callout boxes */
+    .callout {
+      background: #FFF3E0;
+      border-left: 4px solid var(--accent-color);
+      padding: 20px 24px;
+      margin: 24px 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 19px;
+    }
+
+    .callout-title {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 8px;
+      color: var(--accent-color);
+    }
+
+    /* Quiz boxes */
+    .quiz-box {
+      background: linear-gradient(135deg, #E8F5E9, #F1F8E9);
+      border: 2px solid var(--brand-light);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+
+    .quiz-box p {
+      margin-bottom: 8px;
+    }
+
+    /* Further Resources */
+    .further-resources ul {
+      list-style: disc;
+      padding-left: 24px;
+    }
+
+    .further-resources li {
+      margin-bottom: 12px;
+    }
+
+    /* Footer */
+    .site-footer {
+      background: var(--brand-dark);
+      color: rgba(255,255,255,0.7);
+      padding: 60px 32px;
+      text-align: center;
+      font-family: var(--sans);
+      font-size: 14px;
+    }
+
+    .site-footer a {
+      color: var(--brand-light);
+    }
+
+    /* Sidenotes */
+    .sidenote-toggle {
+      cursor: pointer;
+      color: var(--brand-color);
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 700;
+      background: var(--brand-light);
+      border-radius: 4px;
+      padding: 1px 6px;
+      text-decoration: none;
+      position: relative;
+      top: -2px;
+    }
+
+    .sidenote-toggle:hover {
+      background: var(--brand-color);
+      color: #fff;
+    }
+
+    .sidenote {
+      display: none;
+      background: #FFFDF5;
+      border: 1px solid #E8E4D9;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 12px 0 20px;
+      font-size: 17px;
+      line-height: 1.5;
+      color: #555;
+    }
+
+    .sidenote.open {
+      display: block;
+    }
+
+    .sidenote-title {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--brand-color);
+      margin-bottom: 6px;
+    }
+
+    /* Highlight text */
+    .highlight {
+      background: linear-gradient(120deg, var(--brand-light) 0%, var(--brand-light) 100%);
+      background-repeat: no-repeat;
+      background-size: 100% 30%;
+      background-position: 0 88%;
+      padding: 0 2px;
+    }
+
+    /* Summary table */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+      font-size: 16px;
+      font-family: var(--sans);
+    }
+
+    .summary-table th {
+      background: var(--brand-color);
+      color: #fff;
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .summary-table td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: top;
+    }
+
+    .summary-table tr:nth-child(even) td {
+      background: #f9f9f7;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero {
+        min-height: 260px;
+        padding: 40px 20px 36px;
+      }
+
+      .content {
+        padding: 0 4px 60px;
+      }
+
+      .section-heading {
+        margin-top: 80px;
+        margin-bottom: 32px;
+      }
+
+      .widget {
+        padding: 16px;
+        margin: 20px -8px;
+        border-radius: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="#" class="site-logo">cellular<br><span>.automata</span></a>
+  </header>
+
+  <section class="hero" id="hero">
+    <canvas class="hero-canvas" id="heroCanvas"></canvas>
+    <h1>Emergent Complexity in 2D Cellular Automata</h1>
+    <h2>And why a grid of black and white squares can compute anything</h2>
+  </section>
+
+  <div class="page-wrapper">
+    <nav class="toc-sidebar" id="tocSidebar">
+      <h4>Contents</h4>
+      <ol>
+        <li><a href="#introduction">Introduction</a></li>
+        <li><a href="#what-is-ca">What is a Cellular Automaton?</a></li>
+        <li><a href="#enter-grid">Enter the Grid: 2D</a></li>
+        <li><a href="#zoo">The Zoo of Patterns</a></li>
+        <li><a href="#why-complexity">Why Does Complexity Emerge?</a></li>
+        <li><a href="#signals">Signals and Wires</a></li>
+        <li><a href="#logic-gates">Logic Gates from Collisions</a></li>
+        <li><a href="#turing">Turing Completeness</a></li>
+        <li><a href="#beyond">Beyond Life</a></li>
+        <li><a href="#bigger-picture">The Bigger Picture</a></li>
+      </ol>
+    </nav>
+
+    <main class="content" id="mainContent">
+      <!-- ===== INTRODUCTION ===== -->
+      <div id="introduction">
+        <p class="intro-text">
+          The internet's default answer to "what are cellular automata?" is "Conway's Game of Life." And that's not wrong, but it barely scratches the surface. A cellular automaton is arguably the simplest possible "computer" &ndash; just a grid of cells following rules. Each cell looks at its neighbors, does some trivially simple math, and decides whether it's alive or dead next turn. That's it. No CPU, no memory bus, no instruction set.
+        </p>
+        <p class="intro-text">
+          And yet, from these absurdly simple rules, structures emerge that can compute <em>literally anything</em> a laptop can. Not in theory. Not as a metaphor. <strong>Actually compute it</strong> &ndash; add numbers, sort lists, run programs. In this article, we'll start from scratch, build up an intuition for <em>why</em> complexity emerges from simplicity, and end with the mind-bending result that a grid of squares following four short rules is as powerful as any computer ever built.
+        </p>
+      </div>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION I: What is a Cellular Automaton? ===== -->
+      <div class="section-heading" id="what-is-ca">
+        <span class="section-number">I.</span>
+        <h2>What is a Cellular Automaton?</h2>
+      </div>
+
+      <p>Let's start with the absolute simplest case: a <strong>one-dimensional</strong> cellular automaton. <a class="sidenote-toggle" onclick="this.nextElementSibling.classList.toggle('open')">1</a></p>
+      <div class="sidenote">
+        <div class="sidenote-title">A note on terminology</div>
+        <p>Strictly speaking, a "cellular automaton" (plural: "cellular automata") is the <em>system</em> &ndash; the grid, the rules, and the update procedure taken together. Individual cells aren't automata; the whole grid is one automaton. But common usage is loose, and I'll follow convention. Also: "CA" is the standard abbreviation. You'll see it everywhere.</p>
+      </div>
+
+      <p>Imagine a row of squares. Each square is either <strong>on</strong> (black) or <strong>off</strong> (white). That's your universe. One dimension. Binary. Dead simple.</p>
+
+      <p>Now here's the rule: each cell looks at itself and its two neighbors &ndash; three cells total &ndash; and uses that to decide what it becomes in the next step. Three cells, each with two possible states, means there are 2<sup>3</sup> = 8 possible neighborhood patterns. For each of those 8 patterns, the rule specifies whether the output is ON or OFF.</p>
+
+      <p>Since there are 8 patterns and each can map to either ON or OFF, there are 2<sup>8</sup> = <strong>256 possible rules</strong>. Stephen Wolfram numbered them 0 through 255 (because he could, and because he's Wolfram). Try a few below.</p>
+
+      <!-- 1D CA Demo Widget -->
+      <div class="widget" id="widget1dCA">
+        <div class="widget-label">1D Cellular Automaton Explorer</div>
+        <canvas id="ca1dCanvas" height="300"></canvas>
+        <div class="widget-controls">
+          <label>Rule:</label>
+          <input type="range" id="ca1dRule" min="0" max="255" value="30">
+          <span id="ca1dRuleLabel" style="font-family: var(--mono); font-size: 14px; font-weight: 700; min-width: 60px;">Rule 30</span>
+          <button id="ca1dReset">Reset</button>
+        </div>
+        <div id="ca1dRuleDisplay" style="display: flex; gap: 4px; margin-top: 16px; justify-content: center; flex-wrap: wrap;"></div>
+      </div>
+
+      <p class="caption">Drag the slider to explore different rules. Each triangle is one rule's evolution from a single black cell at the top.</p>
+
+      <p>Most rules are boring. Rule 0 kills everything. Rule 255 turns everything on. Rule 4 produces a single lonely column. Yawn.</p>
+
+      <p>But then you hit <strong>Rule 30</strong>. From a single black cell, it produces what looks like <em>complete chaos</em>. The pattern is so random-looking that it was actually used to generate random numbers in Wolfram's <em>Mathematica</em> software. From one cell and one rule &ndash; chaos.</p>
+
+      <p>And then there's <strong>Rule 110</strong>. It's not chaotic like Rule 30, and it's not boring like Rule 4. It produces intricate, self-similar structures that seem to interact with each other. Triangles collide, merge, spawn new triangles. It feels <em>alive</em>.</p>
+
+      <p>Wolfram classified all 256 rules into four types:</p>
+
+      <div class="callout">
+        <div class="callout-title">Wolfram's Four Classes</div>
+        <p><strong>Class 1</strong>: Everything dies or becomes uniform. Boring.<br>
+        <strong>Class 2</strong>: Settles into simple periodic patterns. Predictable.<br>
+        <strong>Class 3</strong>: Produces chaotic, random-looking behavior. Wild.<br>
+        <strong>Class 4</strong>: Complex structures that interact with each other. <em>Magic.</em></p>
+      </div>
+
+      <p>Class 4 is where things get interesting. The structures in a Class 4 automaton don't just sit there &ndash; they <em>do things</em>. They collide, produce new structures, carry information. Keep that in mind. We'll come back to it.</p>
+
+      <p>But first, let's add a dimension.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION II: Enter the Grid ===== -->
+      <div class="section-heading" id="enter-grid">
+        <span class="section-number">II.</span>
+        <h2>Enter the Grid: 2D</h2>
+      </div>
+
+      <p>Everything we just saw was one-dimensional &ndash; a single row of cells. Let's go to two dimensions: a <strong>grid</strong>.</p>
+
+      <p>Now each cell has <strong>8 neighbors</strong> instead of 2 (the four cardinal directions plus the four diagonals). This is called the <em>Moore neighborhood</em>, and it's the standard setup for 2D cellular automata.</p>
+
+      <p>The most famous 2D cellular automaton, by a wide margin, is John Conway's <strong>Game of Life</strong>. Invented in 1970, it has four rules so simple you can explain them to a child:</p>
+
+      <div class="callout">
+        <div class="callout-title">Conway's Game of Life &ndash; The Rules</div>
+        <p><strong>Birth</strong>: A dead cell with exactly <strong>3</strong> live neighbors becomes alive.<br>
+        <strong>Survival</strong>: A live cell with <strong>2 or 3</strong> live neighbors stays alive.<br>
+        <strong>Death by isolation</strong>: A live cell with fewer than 2 neighbors dies.<br>
+        <strong>Death by overcrowding</strong>: A live cell with more than 3 neighbors dies.</p>
+      </div>
+
+      <p>That's it. Four rules. No exceptions. No special cases. Every cell follows the same rules simultaneously. Researchers use a shorthand notation: <strong>B3/S23</strong> &ndash; meaning "born with 3 neighbors, survives with 2 or 3."</p>
+
+      <p>These four words contain multitudes. Try it yourself &ndash; click on the grid below to draw cells, then hit Play.</p>
+
+      <!-- 2D CA Interactive Sandbox -->
+      <div class="widget" id="widget2dCA">
+        <div class="widget-label">Game of Life Sandbox</div>
+        <canvas id="ca2dCanvas" height="400"></canvas>
+        <div class="widget-controls">
+          <button id="ca2dPlay" class="active">Play</button>
+          <button id="ca2dStep">Step</button>
+          <button id="ca2dClear">Clear</button>
+          <button id="ca2dRandom">Random</button>
+          <label>Speed:</label>
+          <input type="range" id="ca2dSpeed" min="1" max="30" value="10">
+          <span id="ca2dGenLabel" style="font-family: var(--mono); font-size: 12px; color: #999;">Gen: 0</span>
+        </div>
+      </div>
+
+      <p class="caption">Click or drag on the grid to toggle cells. Watch patterns emerge, interact, and evolve.</p>
+
+      <p>If you scatter some random cells and press Play, you'll notice something remarkable. Within a few generations, the chaos self-organizes. Blobs stabilize. Oscillating structures appear. Occasionally, something <em>moves</em> across the grid.</p>
+
+      <p>This isn't because the rules are clever. The rules are <em>stupid</em>. Count neighbors, apply threshold. That's all. And yet the behavior that emerges is strikingly rich.</p>
+
+      <p>Let's catalog what we see.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION III: The Zoo of Patterns ===== -->
+      <div class="section-heading" id="zoo">
+        <span class="section-number">III.</span>
+        <h2>The Zoo of Patterns</h2>
+      </div>
+
+      <p>If you play with the sandbox above long enough, you'll notice that the random soup eventually settles into a collection of recognizable structures. These aren't accidents. They're the <em>natural vocabulary</em> of the Game of Life.</p>
+
+      <h3>Still Lifes</h3>
+
+      <p>The simplest structures are <strong>still lifes</strong> &ndash; patterns that don't change at all. Every cell has exactly the right number of neighbors to stay as it is.</p>
+
+      <p>The most common still life is the <strong>Block</strong>: just a 2x2 square. Each cell has 3 neighbors, so it survives. No dead cell around it has exactly 3 live neighbors, so nothing is born. It just sits there. Forever.</p>
+
+      <h3>Oscillators</h3>
+
+      <p>Next up: <strong>oscillators</strong>. These are patterns that cycle through a sequence of states and return to their starting configuration. The simplest is the <strong>Blinker</strong> &ndash; three cells in a row that flip between horizontal and vertical every generation. It has period 2.</p>
+
+      <p>But oscillators can get <em>wild</em>. The <strong>Pulsar</strong> has period 3 and looks like a beating heart. The <strong>Pentadecathlon</strong> has period 15 and does an elaborate dance.</p>
+
+      <h3>Spaceships</h3>
+
+      <p>And then there are the patterns that <em>move</em>.</p>
+
+      <p>Wait &ndash; <em>move?</em> How can anything "move" when every cell is fixed in place and just follows the same rules?</p>
+
+      <p>Think of a wave in water. No water molecule actually travels across the ocean. The <em>pattern</em> of displacement propagates. In the same way, a <strong>spaceship</strong> in the Game of Life isn't a thing that moves &ndash; it's a pattern of alive-and-dead that shifts across the grid.</p>
+
+      <p>The most famous spaceship is the <strong>Glider</strong>: a tiny 5-cell pattern that walks diagonally across the grid, repeating its shape every 4 generations but shifted one cell down and one cell right. It's so iconic that it's become the <a href="#">unofficial symbol</a> of the hacker community.</p>
+
+      <p>Load different patterns below to see them in action.</p>
+
+      <!-- Pattern Explorer Widget -->
+      <div class="widget" id="widgetPatterns">
+        <div class="widget-label">Pattern Explorer</div>
+        <canvas id="patternCanvas" height="300"></canvas>
+        <div class="widget-controls" style="flex-wrap: wrap;">
+          <button class="pattern-btn active" data-pattern="glider">Glider</button>
+          <button class="pattern-btn" data-pattern="blinker">Blinker</button>
+          <button class="pattern-btn" data-pattern="pulsar">Pulsar</button>
+          <button class="pattern-btn" data-pattern="lwss">LWSS</button>
+          <button class="pattern-btn" data-pattern="pentadecathlon">Pentadecathlon</button>
+          <button class="pattern-btn" data-pattern="glider-gun">Gosper Gun</button>
+        </div>
+        <div id="patternInfo" style="font-family: var(--mono); font-size: 12px; color: #999; margin-top: 8px;"></div>
+      </div>
+
+      <p class="caption">Each pattern demonstrates a different behavior class. The glider moves; the blinker oscillates; the Gosper Gun creates an infinite stream.</p>
+
+      <p>Notice something about these patterns: they're <em>robust</em>. A glider isn't fragile &ndash; it reconstructs itself automatically each generation. It's not held together by glue; it's held together by the rules. The rules make the glider a <strong>stable attractor</strong> in the space of all possible configurations.</p>
+
+      <p>This is the first hint of something profound. Simple rules don't just create random noise. They create a <strong>parts list</strong>. Still lifes are <em>building blocks</em>. Oscillators are <em>clocks</em>. Spaceships are <em>messengers</em>.</p>
+
+      <p>And if you have building blocks, clocks, and messengers... well. You might just have enough to build a computer.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION IV: Why Does Complexity Emerge? ===== -->
+      <div class="section-heading" id="why-complexity">
+        <span class="section-number">IV.</span>
+        <h2>Why Does Complexity Emerge?</h2>
+      </div>
+
+      <p>This is the deep question. Why do <em>simple</em> rules produce <em>complex</em> behavior? There's nothing in B3/S23 that says "create gliders." There's no "form a Gosper Gun" instruction. The complexity isn't in the rules &ndash; it's <em>emergent</em>.</p>
+
+      <p>Here's the key insight, due to Christopher Langton (1990): complexity lives at the <strong>edge of chaos</strong>.</p>
+
+      <p>Imagine a dial that controls how "active" a rule set is. On one end, the rules are too restrictive &ndash; everything dies. On the other end, the rules are too permissive &ndash; everything fills up and stays filled. Both extremes are boring.</p>
+
+      <p>But <em>between</em> order and chaos, something interesting happens. Structures form, interact, and process information. The system is stable enough to maintain structures, but dynamic enough for those structures to <em>do things</em>.</p>
+
+      <div class="callout">
+        <div class="callout-title">The Phase Analogy</div>
+        <p><strong>Ice</strong> (too ordered): All structure, no dynamics. Nothing happens.<br>
+        <strong>Steam</strong> (too chaotic): All dynamics, no structure. Random noise.<br>
+        <strong>Liquid water</strong> (the edge): Structure <em>and</em> dynamics. Currents, waves, eddies. <em>Interesting</em> things happen.</p>
+      </div>
+
+      <p>Langton quantified this with what he called the <em>lambda parameter</em> (&lambda;): roughly, the fraction of rule entries that produce a "live" output. At &lambda; = 0, everything dies (Class 1). At &lambda; = 1, everything explodes (trivially chaotic). The most complex behaviors &ndash; Wolfram's Class 4 &ndash; cluster around a critical value of &lambda; between these extremes.</p>
+
+      <p>The Game of Life sits right at this sweet spot. B3/S23 is not too deadly, not too generous. It's <em>just right</em>. That's not a coincidence &ndash; Conway specifically searched for rules that produced interesting behavior.</p>
+
+      <p>Try tweaking the rules below to see this for yourself. Change what counts of neighbors cause birth and survival, and watch the behavior shift between dead, chaotic, and complex.</p>
+
+      <!-- Edge of Chaos Explorer -->
+      <div class="widget" id="widgetEdge">
+        <div class="widget-label">Edge of Chaos Explorer</div>
+        <canvas id="edgeCanvas" height="300"></canvas>
+        <div class="widget-controls" style="flex-direction: column; align-items: stretch;">
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <label style="min-width: 50px;">Birth:</label>
+            <span id="birthToggles" style="display: flex; gap: 4px;"></span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <label style="min-width: 50px;">Survive:</label>
+            <span id="surviveToggles" style="display: flex; gap: 4px;"></span>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button id="edgeReset">Reset Grid</button>
+            <button id="edgePresetLife">B3/S23 (Life)</button>
+            <button id="edgePresetSeeds">B2/S (Seeds)</button>
+            <button id="edgePresetHighlife">B36/S23 (HighLife)</button>
+            <span id="edgeLambda" style="font-family: var(--mono); font-size: 12px; color: #999; margin-left: auto;">&lambda; = 0.22</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="caption">Toggle which neighbor counts cause birth (B) and survival (S). Notice how the behavior changes: too few = death, too many = explosion, just right = complexity.</p>
+
+      <p>Play with it. Set Birth to just [2] and Survival to nothing &ndash; you get <strong>Seeds</strong>, where everything explodes chaotically. Set Birth to [3,6] and Survival to [2,3] &ndash; you get <strong>HighLife</strong>, which is very similar to Life but has a self-replicating pattern called the <em>Replicator</em>.</p>
+
+      <p>The critical thing to notice: <strong>complexity isn't random</strong>. It requires the rules to be tuned to a narrow band between order and chaos. Too far in either direction and you get nothing useful. But right at the boundary &ndash; that's where information processing can happen.</p>
+
+      <p>"Life exists at the edge of chaos." Literally.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION V: Signals and Wires ===== -->
+      <div class="section-heading" id="signals">
+        <span class="section-number">V.</span>
+        <h2>Signals and Wires</h2>
+      </div>
+
+      <p>OK, so the Game of Life produces complex, interacting structures. Cool, but so does a lava lamp. What makes Life <em>special</em>?</p>
+
+      <p>To understand that, we need to think about what a <strong>computer</strong> actually needs. Strip away the case, the screen, the keyboard, and you're left with three essential ingredients:</p>
+
+      <div class="callout">
+        <div class="callout-title">What a Computer Needs</div>
+        <p><strong>1. Signals</strong> &ndash; data that moves from place to place<br>
+        <strong>2. Wires</strong> &ndash; paths for signals to travel along<br>
+        <strong>3. Logic gates</strong> &ndash; components that combine signals to make decisions</p>
+      </div>
+
+      <p>Let's start with signals and wires. Can the Game of Life produce them?</p>
+
+      <p><em>Yes.</em> And you've already seen the answer: <strong>gliders</strong>.</p>
+
+      <p>A glider is a pattern that moves across the grid. It's a packet of information traveling through space. If I shoot a glider across an empty grid, that's a signal. If I send a <em>stream</em> of gliders, that's a wire carrying data.</p>
+
+      <p>But how do you create a steady stream of gliders? You need a <strong>gun</strong> &ndash; a pattern that periodically emits new gliders. The first gun ever discovered was the <strong>Gosper Glider Gun</strong>, found by Bill Gosper in 1970. It emits a new glider every 30 generations, like clockwork.</p>
+
+      <p>Watch it below. Each glider that flies off the edge is a bit of data &ndash; a "1" traveling down a wire. The gaps between gliders? Those are "0"s.</p>
+
+      <!-- Glider Gun Signal Demo -->
+      <div class="widget" id="widgetSignal">
+        <div class="widget-label">Signal Wire &ndash; Gosper Glider Gun</div>
+        <canvas id="signalCanvas" height="260"></canvas>
+        <div class="widget-controls">
+          <button id="signalPlayBtn" class="active">Playing</button>
+          <button id="signalResetBtn">Reset</button>
+          <span id="signalGenLabel" style="font-family: var(--mono); font-size: 12px; color: #999;">Gen: 0</span>
+        </div>
+        <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; background: #2D6A4F; border-radius: 2px;"></div>
+            <span style="font-family: var(--mono); font-size: 11px; color: #666;">LIVE CELL</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; background: #E76F51; border-radius: 2px;"></div>
+            <span style="font-family: var(--mono); font-size: 11px; color: #666;">GLIDER (SIGNAL)</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="caption">The Gosper Glider Gun emits a new glider every 30 generations. Each glider is a bit of data traveling diagonally.</p>
+
+      <p>Here's the beautiful thing: we didn't <em>design</em> gliders or guns. We didn't program them. They <em>exist</em> within the rules of Life like diamonds exist within carbon atoms &ndash; natural consequences of the underlying physics.</p>
+
+      <p>So we have signals (gliders) and we have wires (the empty space they travel through). Two ingredients down, one to go.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION VI: Logic Gates from Collisions ===== -->
+      <div class="section-heading" id="logic-gates">
+        <span class="section-number">VI.</span>
+        <h2>Logic Gates from Collisions</h2>
+      </div>
+
+      <p>Here's where it gets wild.</p>
+
+      <p>When two gliders collide, they don't just vanish. Depending on the exact angle and timing, a collision can produce different outcomes:</p>
+
+      <p><strong>Annihilation</strong>: Both gliders die, leaving nothing (or a small still life).<br>
+      <strong>Reflection</strong>: One or both gliders change direction.<br>
+      <strong>Creation</strong>: The collision produces new gliders traveling in different directions.</p>
+
+      <p>These different outcomes can be harnessed to implement <strong>logic gates</strong>.</p>
+
+      <p>Think about it. If you have two streams of gliders (two "wires") converging at a point, the collision outcomes depend on whether <em>both</em> signals are present, <em>one</em> is present, or <em>neither</em>. That's exactly what a logic gate does!</p>
+
+      <h3>NOT Gate</h3>
+      <p>A NOT gate inverts a signal: input 1 becomes output 0, and vice versa. In Life, you can build this using a <strong>constant stream</strong> (from a glider gun) and a second stream that <em>blocks</em> it. When the blocking signal is present (1), it annihilates the constant stream (output 0). When the blocking signal is absent (0), the constant stream passes through (output 1). Signal inverted!</p>
+
+      <h3>AND Gate</h3>
+      <p>An AND gate outputs 1 only when <em>both</em> inputs are 1. You can construct this by arranging two glider streams so that they only produce an output glider (in a specific direction) when both collide at the right time.</p>
+
+      <h3>OR Gate</h3>
+      <p>An OR gate outputs 1 when <em>either</em> input is 1. This is simpler &ndash; just merge two glider streams into a single output path.</p>
+
+      <p>Watch the demo below to see glider collisions in action. Different configurations produce different outcomes &ndash; the building blocks of digital logic.</p>
+
+      <!-- Logic Gate Demo -->
+      <div class="widget" id="widgetGates">
+        <div class="widget-label">Glider Collision Explorer</div>
+        <canvas id="gateCanvas" height="280"></canvas>
+        <div class="widget-controls">
+          <button class="gate-btn active" data-gate="annihilate">Annihilation</button>
+          <button class="gate-btn" data-gate="kickback">Kickback</button>
+          <button class="gate-btn" data-gate="block">Block (NOT)</button>
+          <button id="gateResetBtn">Reset</button>
+        </div>
+        <div id="gateInfo" style="font-family: var(--mono); font-size: 12px; color: #999; margin-top: 8px;"></div>
+      </div>
+
+      <p class="caption">Different collision geometries produce different results. These are the raw materials for computation.</p>
+
+      <p>Now here's the punchline of this section. In 1970, it was known that you can build <em>any</em> digital circuit from just <strong>NAND gates</strong> (a NOT-AND combination). And since we can build NOT gates and AND gates from glider collisions, we can build NAND gates. And from NAND gates, we can build... <em>anything</em>.</p>
+
+      <div class="quiz-box">
+        <p><strong>Quick check:</strong> We now have signals (gliders), wires (empty space), and logic gates (collisions). What's still missing before we can call this a full computer?</p>
+        <p><em>Think about it before scrolling...</em></p>
+      </div>
+
+      <p>The answer: <strong>memory</strong>. A computer needs to store information, not just process it. Can the Game of Life do that?</p>
+
+      <p>Absolutely. A still life (like a block) can serve as a 1-bit memory cell. Send a glider at it to "flip" it &ndash; the collision destroys the block (writing a 0) or creates one (writing a 1). Send another glider to "read" it &ndash; if the block is there, the glider bounces differently than if it's not.</p>
+
+      <p>Signals. Wires. Logic gates. Memory. We have everything we need.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION VII: Turing Completeness ===== -->
+      <div class="section-heading" id="turing">
+        <span class="section-number">VII.</span>
+        <h2>Turing Completeness: The Punchline</h2>
+      </div>
+
+      <p>In 1936, Alan Turing described the simplest possible computer &ndash; now called a <strong>Turing machine</strong>. It has:</p>
+
+      <div class="callout">
+        <div class="callout-title">A Turing Machine</div>
+        <p><strong>A tape</strong>: an infinite strip of cells, each containing a symbol (say, 0 or 1).<br>
+        <strong>A head</strong>: reads the current cell, writes a new value, then moves left or right.<br>
+        <strong>A state table</strong>: a finite set of rules that say "if you're in state X and reading symbol Y, write symbol Z, move direction D, and switch to state W."<br>
+        <strong>A halt state</strong>: when reached, the machine stops.</p>
+      </div>
+
+      <p>That's it. Turing proved that this absurdly simple machine can compute <em>anything computable</em>. Your laptop? It's just a fast Turing machine with a very long tape. Python? A fancy language for writing Turing machine state tables.</p>
+
+      <p>A system is called <strong>Turing complete</strong> if it can simulate a Turing machine. And here's the claim: <em>Conway's Game of Life is Turing complete.</em></p>
+
+      <p>Let's see why.</p>
+
+      <h3>The Tape</h3>
+      <p>A Turing machine tape is just a sequence of bits. In Life, we can represent this as a row of <strong>blocks</strong> (still lifes). Block present = 1. Block absent = 0. The "tape" is a line of positions where blocks may or may not exist.</p>
+
+      <h3>The Read/Write Head</h3>
+      <p>To read a cell, send a <strong>glider</strong> toward the tape position. If a block is there, the collision produces a specific outcome (detectable by other structures). If there's no block, the glider passes through.</p>
+
+      <p>To write a cell, send a glider that either <strong>creates</strong> a block (through a carefully arranged collision with other structures) or <strong>destroys</strong> one.</p>
+
+      <h3>The State Table</h3>
+      <p>This is the complex part. The state table is a network of <strong>logic gates</strong> (built from glider collisions) that takes the current state and the read value as inputs, and produces the write value, move direction, and next state as outputs.</p>
+
+      <p>It's a massive, intricate web of glider guns, reflectors, and collision points. But it's <em>possible</em>. Every logic gate we need can be built from glider collisions. Every wire can be a glider stream. Every memory cell can be a block.</p>
+
+      <!-- Turing Machine Conceptual Visualization -->
+      <div class="widget" id="widgetTuring">
+        <div class="widget-label">Turing Machine &harr; Game of Life Mapping</div>
+        <div id="turingViz" style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; padding: 20px 0;">
+          <div style="flex: 1; min-width: 280px;">
+            <div style="font-family: var(--mono); font-size: 11px; font-weight: 700; color: #666; margin-bottom: 12px; text-transform: uppercase;">Abstract Turing Machine</div>
+            <svg id="tmSvg" width="100%" height="160" viewBox="0 0 320 160">
+              <!-- Tape -->
+              <g id="tmTape">
+                <rect x="10" y="40" width="40" height="40" fill="#fff" stroke="#ddd" rx="2"/>
+                <rect x="50" y="40" width="40" height="40" fill="#fff" stroke="#ddd" rx="2"/>
+                <rect x="90" y="40" width="40" height="40" fill="#E8F5E9" stroke="#2D6A4F" stroke-width="2" rx="2"/>
+                <rect x="130" y="40" width="40" height="40" fill="#fff" stroke="#ddd" rx="2"/>
+                <rect x="170" y="40" width="40" height="40" fill="#fff" stroke="#ddd" rx="2"/>
+                <rect x="210" y="40" width="40" height="40" fill="#fff" stroke="#ddd" rx="2"/>
+                <rect x="250" y="40" width="40" height="40" fill="#fff" stroke="#ddd" rx="2"/>
+                <!-- Values -->
+                <text x="30" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="16" fill="#999">0</text>
+                <text x="70" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="16" fill="#999">1</text>
+                <text x="110" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="16" font-weight="700" fill="#2D6A4F">1</text>
+                <text x="150" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="16" fill="#999">0</text>
+                <text x="190" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="16" fill="#999">0</text>
+                <text x="230" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="16" fill="#999">1</text>
+                <text x="270" y="65" text-anchor="middle" font-family="JetBrains Mono" font-size="16" fill="#999">0</text>
+              </g>
+              <!-- Head -->
+              <polygon points="110,95 100,115 120,115" fill="#E76F51"/>
+              <text x="110" y="135" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#E76F51" font-weight="700">HEAD (State A)</text>
+              <!-- Labels -->
+              <text x="160" y="25" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#999">T A P E</text>
+              <text x="10" y="65" text-anchor="middle" font-size="14" fill="#ccc">...</text>
+              <text x="300" y="65" text-anchor="middle" font-size="14" fill="#ccc">...</text>
+            </svg>
+          </div>
+          <div style="flex: 1; min-width: 280px;">
+            <div style="font-family: var(--mono); font-size: 11px; font-weight: 700; color: #666; margin-bottom: 12px; text-transform: uppercase;">Game of Life Equivalent</div>
+            <svg width="100%" height="160" viewBox="0 0 320 160">
+              <!-- Tape as blocks -->
+              <text x="160" y="18" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#999">BLOCKS = TAPE CELLS</text>
+              <rect x="50" y="35" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="58" y="35" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="50" y="43" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="58" y="43" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <!-- Empty space (0) -->
+              <rect x="90" y="35" width="16" height="16" fill="none" stroke="#ddd" stroke-dasharray="2,2" rx="2"/>
+              <!-- Block (1) -->
+              <rect x="130" y="35" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="138" y="35" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="130" y="43" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="138" y="43" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <!-- Empty -->
+              <rect x="170" y="35" width="16" height="16" fill="none" stroke="#ddd" stroke-dasharray="2,2" rx="2"/>
+              <rect x="210" y="35" width="16" height="16" fill="none" stroke="#ddd" stroke-dasharray="2,2" rx="2"/>
+              <!-- Block -->
+              <rect x="250" y="35" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="258" y="35" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="250" y="43" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <rect x="258" y="43" width="8" height="8" fill="#2D6A4F" rx="1"/>
+              <!-- Labels -->
+              <text x="58" y="70" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#2D6A4F">1</text>
+              <text x="98" y="70" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#999">0</text>
+              <text x="138" y="70" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#2D6A4F">1</text>
+              <text x="178" y="70" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#999">0</text>
+              <text x="218" y="70" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#999">0</text>
+              <text x="258" y="70" text-anchor="middle" font-family="JetBrains Mono" font-size="8" fill="#2D6A4F">1</text>
+              <!-- Glider as head -->
+              <text x="160" y="100" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="#999">GLIDER = READ/WRITE HEAD</text>
+              <rect x="134" y="110" width="5" height="5" fill="#E76F51" rx="1"/>
+              <rect x="140" y="116" width="5" height="5" fill="#E76F51" rx="1"/>
+              <rect x="128" y="122" width="5" height="5" fill="#E76F51" rx="1"/>
+              <rect x="134" y="122" width="5" height="5" fill="#E76F51" rx="1"/>
+              <rect x="140" y="122" width="5" height="5" fill="#E76F51" rx="1"/>
+              <!-- Arrow -->
+              <line x1="150" y1="125" x2="165" y2="140" stroke="#E76F51" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+              <defs>
+                <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+                  <polygon points="0 0, 6 2, 0 4" fill="#E76F51"/>
+                </marker>
+              </defs>
+              <text x="160" y="155" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#E76F51" font-weight="700">LOGIC GATES = STATE TABLE</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <p class="caption">Left: an abstract Turing machine with tape, head, and state. Right: the Game of Life equivalent using blocks for memory and gliders for the read/write head.</p>
+
+      <h3>The Proof</h3>
+
+      <p>In 2000, Paul Rendell built a <strong>working Turing machine entirely within the Game of Life</strong>. It was enormous &ndash; tens of thousands of cells &ndash; but it <em>worked</em>. It had a tape, a finite state controller, and it could execute arbitrary computations. <a class="sidenote-toggle" onclick="this.nextElementSibling.classList.toggle('open')">2</a></p>
+      <div class="sidenote">
+        <div class="sidenote-title">The actual construction</div>
+        <p>Rendell's Turing machine used stacks of gliders as tape memory, with "finite state machine" logic implemented via a complex network of stable reflectors and glider guns. The entire construction spans about 1,700 x 1,600 cells. Later, Adam Goucher and others built even more elaborate constructions, including a universal constructor &ndash; a pattern that can build <em>any other pattern</em>, including copies of itself. This was Conway's original dream when he designed the rules of Life.</p>
+      </div>
+
+      <p>Let that sink in. <strong>A grid of squares, following 4 simple rules, can compute anything your laptop can.</strong></p>
+
+      <p>Of course, it would be <em>astronomically</em> slow. Rendell's Turing machine takes millions of generations to perform a single tape operation. You wouldn't want to run Python on it.</p>
+
+      <p>But speed isn't the point. <strong>Capability</strong> is. The fact that it <em>can</em> is what makes it Turing complete. And Turing completeness means that in principle, the Game of Life can:</p>
+
+      <p>&bull; Add and multiply numbers<br>
+      &bull; Sort a list<br>
+      &bull; Run any algorithm ever written<br>
+      &bull; Simulate <em>itself</em> (a Game of Life within the Game of Life)<br>
+      &bull; Even run a web browser, given enough cells and enough patience</p>
+
+      <p>All from four rules about counting neighbors.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION VIII: Beyond Life ===== -->
+      <div class="section-heading" id="beyond">
+        <span class="section-number">VIII.</span>
+        <h2>Beyond Life: Other Rules, Other Universes</h2>
+      </div>
+
+      <p>The Game of Life is the most famous cellular automaton, but it's far from the only one. Remember &ndash; B3/S23 is just one of millions of possible 2D rule sets. Each rule set creates a different "universe" with its own physics.</p>
+
+      <p>Some of these alternative universes are just as interesting as Life. A few are even Turing complete themselves.</p>
+
+      <h3>HighLife (B36/S23)</h3>
+      <p>Almost identical to Life, but with an extra birth condition: cells are also born with 6 neighbors. This tiny change has a dramatic consequence &ndash; HighLife contains a <strong>self-replicating pattern</strong> called the <em>Replicator</em>. A small pattern that creates copies of itself. In standard Life, no self-replicator was known for decades.</p>
+
+      <h3>Seeds (B2/S)</h3>
+      <p>Cells are born with exactly 2 neighbors, and <em>nothing</em> survives. Every live cell dies next generation. Despite this seemingly destructive rule, Seeds produces beautiful, explosive, fractal-like growth patterns. It's purely chaotic &ndash; but chaotic in a gorgeous way.</p>
+
+      <h3>Day & Night (B3678/S34678)</h3>
+      <p>A rule set where the behavior is <em>symmetric</em>: live and dead cells play interchangeable roles. The patterns look like strange, organic blobs that breathe and pulsate.</p>
+
+      <h3>Rule 110 (1D!)</h3>
+      <p>Here's a mind-blower: Matthew Cook proved in 2004 that <strong>Rule 110</strong> &ndash; a one-dimensional cellular automaton with just 8 rules &ndash; is Turing complete. You don't even need two dimensions. A single row of cells, updating by one of the 256 elementary rules, can compute anything.</p>
+
+      <p>Try the comparison below. Same random starting pattern, four different rule sets.</p>
+
+      <!-- Multi-Rule Comparison Widget -->
+      <div class="widget" id="widgetCompare">
+        <div class="widget-label">Rule Comparison &ndash; Same Seed, Different Universes</div>
+        <div id="compareGrids" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <div style="font-family: var(--mono); font-size: 11px; color: #666; margin-bottom: 4px; text-align: center;">B3/S23 (LIFE)</div>
+            <canvas class="compare-canvas" data-birth="3" data-survive="2,3" height="180"></canvas>
+          </div>
+          <div>
+            <div style="font-family: var(--mono); font-size: 11px; color: #666; margin-bottom: 4px; text-align: center;">B36/S23 (HIGHLIFE)</div>
+            <canvas class="compare-canvas" data-birth="3,6" data-survive="2,3" height="180"></canvas>
+          </div>
+          <div>
+            <div style="font-family: var(--mono); font-size: 11px; color: #666; margin-bottom: 4px; text-align: center;">B2/S (SEEDS)</div>
+            <canvas class="compare-canvas" data-birth="2" data-survive="" height="180"></canvas>
+          </div>
+          <div>
+            <div style="font-family: var(--mono); font-size: 11px; color: #666; margin-bottom: 4px; text-align: center;">B3678/S34678 (DAY &amp; NIGHT)</div>
+            <canvas class="compare-canvas" data-birth="3,6,7,8" data-survive="3,4,6,7,8" height="180"></canvas>
+          </div>
+        </div>
+        <div class="widget-controls" style="margin-top: 12px;">
+          <button id="compareReset">Reset (Same Seed)</button>
+        </div>
+      </div>
+
+      <p class="caption">All four grids start with the identical random seed. Different rules produce radically different behaviors &ndash; from structured (Life) to explosive (Seeds) to organic (Day &amp; Night).</p>
+
+      <p>The space of all possible cellular automata is itself a kind of zoo. Some rule sets produce nothing. Some produce chaos. And some &ndash; a special, narrow band &ndash; produce the kind of complex, structured behavior that enables computation.</p>
+
+      <p>Here's a handy comparison of the CAs we've covered:</p>
+
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>CA Rule</th>
+            <th>Type</th>
+            <th>Behavior</th>
+            <th>Turing Complete?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>B3/S23</strong> (Life)</td>
+            <td>2D, Class 4</td>
+            <td>Complex structures, spaceships, guns</td>
+            <td>Yes (proven)</td>
+          </tr>
+          <tr>
+            <td><strong>B36/S23</strong> (HighLife)</td>
+            <td>2D, Class 4</td>
+            <td>Like Life + self-replicator</td>
+            <td>Yes</td>
+          </tr>
+          <tr>
+            <td><strong>B2/S</strong> (Seeds)</td>
+            <td>2D, Class 3</td>
+            <td>Explosive, chaotic growth</td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td><strong>B3678/S34678</strong> (Day &amp; Night)</td>
+            <td>2D, Class 4</td>
+            <td>Symmetric, organic blobs</td>
+            <td>Unknown</td>
+          </tr>
+          <tr>
+            <td><strong>Rule 110</strong></td>
+            <td>1D, Class 4</td>
+            <td>Complex interacting triangles</td>
+            <td>Yes (proven 2004)</td>
+          </tr>
+          <tr>
+            <td><strong>Rule 30</strong></td>
+            <td>1D, Class 3</td>
+            <td>Pseudorandom chaos</td>
+            <td>Unlikely</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The universe of CAs is itself an emergent zoo.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== SECTION IX: The Bigger Picture ===== -->
+      <div class="section-heading" id="bigger-picture">
+        <span class="section-number">IX.</span>
+        <h2>The Bigger Picture: Emergence All the Way Down</h2>
+      </div>
+
+      <p>Step back for a moment. What have we actually shown?</p>
+
+      <p>We started with a grid. Black and white squares. The simplest possible rule: count your neighbors and decide if you're alive or dead. And from this, we got:</p>
+
+      <p>&bull; Self-sustaining structures (still lifes)<br>
+      &bull; Periodic behavior (oscillators)<br>
+      &bull; Motion (spaceships)<br>
+      &bull; Signal transmission (glider streams)<br>
+      &bull; Information processing (logic gates)<br>
+      &bull; Universal computation (Turing completeness)</p>
+
+      <p><strong>None of this was programmed.</strong> It all <em>emerged</em>.</p>
+
+      <!-- Emergence Hierarchy Diagram -->
+      <div class="widget" style="background: #fff; text-align: center; padding: 30px 20px;">
+        <div class="widget-label">Levels of Emergence</div>
+        <svg width="100%" height="320" viewBox="0 0 700 320" style="max-width: 700px;">
+          <!-- Level bars -->
+          <defs>
+            <linearGradient id="emergeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#B7E4C7;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#2D6A4F;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+
+          <!-- Arrows between levels -->
+          <g fill="none" stroke="#D3D3D3" stroke-width="1.5">
+            <path d="M350,50 L350,70" marker-end="url(#emergeArrow)"/>
+            <path d="M350,100 L350,120" marker-end="url(#emergeArrow)"/>
+            <path d="M350,150 L350,170" marker-end="url(#emergeArrow)"/>
+            <path d="M350,200 L350,220" marker-end="url(#emergeArrow)"/>
+            <path d="M350,250 L350,270" marker-end="url(#emergeArrow)"/>
+          </g>
+          <defs>
+            <marker id="emergeArrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#D3D3D3"/>
+            </marker>
+          </defs>
+
+          <!-- Level 1: Simple rules -->
+          <rect x="175" y="24" width="350" height="32" rx="6" fill="#E8F5E9" stroke="#B7E4C7"/>
+          <text x="350" y="45" text-anchor="middle" font-family="Figtree, sans-serif" font-size="14" font-weight="600" fill="#2D6A4F">Simple Rules (B3/S23)</text>
+
+          <!-- Level 2: Patterns -->
+          <rect x="150" y="74" width="400" height="32" rx="6" fill="#D4EDDA" stroke="#95D5B2"/>
+          <text x="350" y="95" text-anchor="middle" font-family="Figtree, sans-serif" font-size="14" font-weight="600" fill="#1B4332">Stable Patterns (blocks, blinkers, gliders)</text>
+
+          <!-- Level 3: Interactions -->
+          <rect x="125" y="124" width="450" height="32" rx="6" fill="#B7E4C7" stroke="#74C69D"/>
+          <text x="350" y="145" text-anchor="middle" font-family="Figtree, sans-serif" font-size="14" font-weight="600" fill="#1B4332">Pattern Interactions (collisions, guns)</text>
+
+          <!-- Level 4: Signals -->
+          <rect x="100" y="174" width="500" height="32" rx="6" fill="#95D5B2" stroke="#52B788"/>
+          <text x="350" y="195" text-anchor="middle" font-family="Figtree, sans-serif" font-size="14" font-weight="600" fill="#1B4332">Signals &amp; Logic (wires, gates, memory)</text>
+
+          <!-- Level 5: Circuits -->
+          <rect x="75" y="224" width="550" height="32" rx="6" fill="#74C69D" stroke="#40916C"/>
+          <text x="350" y="245" text-anchor="middle" font-family="Figtree, sans-serif" font-size="14" font-weight="700" fill="#fff">Circuits &amp; Programs (Turing machines)</text>
+
+          <!-- Level 6: Universal computation -->
+          <rect x="50" y="274" width="600" height="36" rx="8" fill="#2D6A4F" stroke="#1B4332"/>
+          <text x="350" y="298" text-anchor="middle" font-family="Figtree, sans-serif" font-size="16" font-weight="700" fill="#fff">Universal Computation</text>
+
+          <!-- Side labels -->
+          <text x="30" y="45" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#999">SIMPLE</text>
+          <text x="30" y="298" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#999">COMPLEX</text>
+          <line x1="35" y1="55" x2="35" y2="272" stroke="#ddd" stroke-width="1" stroke-dasharray="3,3"/>
+          <polygon points="35,278 31,268 39,268" fill="#ddd"/>
+        </svg>
+      </div>
+
+      <p class="caption">Each level emerges from the one below it. No level was "designed" &ndash; each is a natural consequence of the interactions at the previous level.</p>
+
+      <p>This is the concept of <strong>emergence</strong>: complex, higher-level phenomena arising from simple, lower-level rules. And it's not just a feature of cellular automata. It's arguably the defining feature of <em>reality</em>.</p>
+
+      <div class="callout">
+        <div class="callout-title">Emergence in the Wild</div>
+        <p><strong>Atoms</strong> follow quantum mechanics &rarr; <strong>chemistry</strong> emerges<br>
+        <strong>Molecules</strong> interact &rarr; <strong>life</strong> emerges<br>
+        <strong>Neurons</strong> fire &rarr; <strong>consciousness</strong> emerges<br>
+        <strong>Agents</strong> trade &rarr; <strong>markets</strong> emerge<br>
+        <strong>Cells</strong> follow rules &rarr; <strong>computation</strong> emerges</p>
+      </div>
+
+      <p>Stephen Wolfram took this idea to its logical extreme in his 2002 book <em>A New Kind of Science</em>. His thesis: maybe the physical universe <em>itself</em> is a cellular automaton. Maybe the laws of physics are just the "rule set" of a cosmic CA, and everything we see &ndash; quarks, galaxies, consciousness &ndash; is emergent behavior.</p>
+
+      <p>That's a controversial claim, and most physicists are skeptical. But the core insight is hard to deny: <strong>simple rules can produce arbitrarily complex behavior</strong>. You don't need complex rules for a complex world. You just need the <em>right</em> simple rules.</p>
+
+      <p>And that's the deep lesson of cellular automata. The complexity isn't in the rules. It's not in the cells. It's not in the grid. It's in the <em>interactions</em> &ndash; the emergent web of cause and effect that arises when simple things operate on simple things, over and over, at scale.</p>
+
+      <p>A grid of squares can compute anything. What does that tell us about the nature of computation? Maybe it tells us that computation isn't a thing we <em>build</em>. It's a thing that <em>happens</em> &ndash; naturally, inevitably &ndash; whenever the conditions are right.</p>
+
+      <p>And the conditions, it turns out, are surprisingly easy to meet.</p>
+
+      <hr class="section-divider">
+
+      <!-- ===== FURTHER RESOURCES ===== -->
+      <div class="section-heading" id="further-resources">
+        <span class="section-number">X.</span>
+        <h2>Further Resources</h2>
+      </div>
+
+      <div class="further-resources">
+        <ul>
+          <li><strong>Golly</strong> &ndash; The best open-source cellular automaton simulator. Supports Life, other 2D CAs, and even Rendell's Turing machine. Available at sourceforge.net/projects/golly.</li>
+          <li><strong><em>A New Kind of Science</em></strong> by Stephen Wolfram &ndash; The 1,200-page magnum opus on cellular automata and computation. Controversial, but foundational. Free to read online at wolframscience.com.</li>
+          <li><strong>Paul Rendell's Turing Machine in Life</strong> &ndash; The original construction proving Life's Turing completeness. Technical but fascinating. Search for "Rendell Turing Machine Game of Life."</li>
+          <li><strong>LifeWiki</strong> (conwaylife.com/wiki) &ndash; The definitive encyclopedia of Game of Life patterns, including comprehensive catalogs of spaceships, oscillators, and guns.</li>
+          <li><strong>Numberphile</strong> &ndash; Several excellent videos on the Game of Life featuring John Conway himself (who passed in 2020). Search "Numberphile Game of Life."</li>
+        </ul>
+      </div>
+
+      <p style="font-style: italic; color: #999; margin-top: 40px; font-size: 18px;">This article was written to build intuition, not to be mathematically rigorous. For formal proofs of Turing completeness, see the academic literature. For everything else, fire up Golly and explore.</p>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <p>An interactive explainer on emergent complexity.</p>
+    <p style="margin-top: 8px;">Built with curiosity and Canvas.</p>
+  </footer>
+
+  <script>
+    // ===== HERO ANIMATION: Game of Life background =====
+    (function() {
+      const canvas = document.getElementById('heroCanvas');
+      const ctx = canvas.getContext('2d');
+      const CELL_SIZE = 8;
+      let cols, rows, grid, nextGrid;
+
+      function resize() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        cols = Math.floor(canvas.width / CELL_SIZE);
+        rows = Math.floor(canvas.height / CELL_SIZE);
+        initGrid();
+      }
+
+      function initGrid() {
+        grid = [];
+        nextGrid = [];
+        for (let i = 0; i < rows; i++) {
+          grid[i] = [];
+          nextGrid[i] = [];
+          for (let j = 0; j < cols; j++) {
+            grid[i][j] = Math.random() < 0.3 ? 1 : 0;
+            nextGrid[i][j] = 0;
+          }
+        }
+      }
+
+      function countNeighbors(g, x, y) {
+        let count = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const ny = (y + dy + rows) % rows;
+            const nx = (x + dx + cols) % cols;
+            count += g[ny][nx];
+          }
+        }
+        return count;
+      }
+
+      function step() {
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            const n = countNeighbors(grid, x, y);
+            if (grid[y][x] === 1) {
+              nextGrid[y][x] = (n === 2 || n === 3) ? 1 : 0;
+            } else {
+              nextGrid[y][x] = (n === 3) ? 1 : 0;
+            }
+          }
+        }
+        [grid, nextGrid] = [nextGrid, grid];
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#52B788';
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (grid[y][x] === 1) {
+              ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+          }
+        }
+      }
+
+      let frameCount = 0;
+      function animate() {
+        frameCount++;
+        if (frameCount % 6 === 0) {
+          step();
+        }
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      animate();
+    })();
+
+    // ===== 1D CELLULAR AUTOMATON DEMO =====
+    (function() {
+      const canvas = document.getElementById('ca1dCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const slider = document.getElementById('ca1dRule');
+      const label = document.getElementById('ca1dRuleLabel');
+      const resetBtn = document.getElementById('ca1dReset');
+      const ruleDisplay = document.getElementById('ca1dRuleDisplay');
+
+      const CELL_SIZE = 4;
+      let currentRule = 30;
+
+      function getRuleBits(ruleNum) {
+        const bits = [];
+        for (let i = 0; i < 8; i++) {
+          bits[i] = (ruleNum >> i) & 1;
+        }
+        return bits;
+      }
+
+      function drawRuleDisplay(ruleNum) {
+        const bits = getRuleBits(ruleNum);
+        ruleDisplay.innerHTML = '';
+        for (let i = 7; i >= 0; i--) {
+          const pattern = i.toString(2).padStart(3, '0');
+          const result = bits[i];
+
+          const box = document.createElement('div');
+          box.style.cssText = 'display:flex;flex-direction:column;align-items:center;padding:4px 6px;background:#fff;border-radius:6px;border:1px solid #ddd;font-family:var(--mono);font-size:10px;min-width:44px;';
+
+          const top = document.createElement('div');
+          top.style.cssText = 'display:flex;gap:1px;margin-bottom:3px;';
+          for (const c of pattern) {
+            const cell = document.createElement('div');
+            cell.style.cssText = `width:10px;height:10px;border-radius:2px;background:${c === '1' ? 'var(--cell-alive)' : '#eee'};border:1px solid #ccc;`;
+            top.appendChild(cell);
+          }
+          box.appendChild(top);
+
+          const arrow = document.createElement('div');
+          arrow.textContent = '\u2193';
+          arrow.style.cssText = 'font-size:8px;color:#999;';
+          box.appendChild(arrow);
+
+          const bottom = document.createElement('div');
+          bottom.style.cssText = `width:10px;height:10px;border-radius:2px;background:${result ? 'var(--cell-alive)' : '#eee'};border:1px solid #ccc;`;
+          box.appendChild(bottom);
+
+          ruleDisplay.appendChild(box);
+        }
+      }
+
+      function generate(ruleNum) {
+        canvas.width = canvas.offsetWidth;
+        const w = canvas.width;
+        const h = canvas.height;
+        const cols = Math.floor(w / CELL_SIZE);
+        const rows = Math.floor(h / CELL_SIZE);
+        const bits = getRuleBits(ruleNum);
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = 'var(--cell-alive)';
+
+        let row = new Uint8Array(cols);
+        row[Math.floor(cols / 2)] = 1;
+
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (row[x]) {
+              ctx.fillStyle = '#2D6A4F';
+              ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+          }
+          const newRow = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            const left = row[(x - 1 + cols) % cols];
+            const center = row[x];
+            const right = row[(x + 1) % cols];
+            const index = (left << 2) | (center << 1) | right;
+            newRow[x] = bits[index];
+          }
+          row = newRow;
+        }
+      }
+
+      slider.addEventListener('input', () => {
+        currentRule = parseInt(slider.value);
+        label.textContent = 'Rule ' + currentRule;
+        generate(currentRule);
+        drawRuleDisplay(currentRule);
+      });
+
+      resetBtn.addEventListener('click', () => {
+        slider.value = 30;
+        currentRule = 30;
+        label.textContent = 'Rule 30';
+        generate(30);
+        drawRuleDisplay(30);
+      });
+
+      // Initial render
+      setTimeout(() => {
+        generate(currentRule);
+        drawRuleDisplay(currentRule);
+      }, 100);
+      window.addEventListener('resize', () => generate(currentRule));
+    })();
+
+    // ===== MULTI-RULE COMPARISON =====
+    (function() {
+      const canvases = document.querySelectorAll('.compare-canvas');
+      if (canvases.length === 0) return;
+      const resetBtn = document.getElementById('compareReset');
+
+      const CELL_SIZE = 4;
+      const sims = [];
+
+      // Generate a shared random seed
+      let sharedSeed;
+
+      function generateSeed(cols, rows) {
+        sharedSeed = [];
+        for (let y = 0; y < rows; y++) {
+          sharedSeed[y] = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            sharedSeed[y][x] = Math.random() < 0.25 ? 1 : 0;
+          }
+        }
+      }
+
+      function initSims() {
+        sims.length = 0;
+        let firstCols, firstRows;
+        canvases.forEach((canvas, idx) => {
+          canvas.width = canvas.offsetWidth;
+          const cols = Math.floor(canvas.width / CELL_SIZE);
+          const rows = Math.floor(canvas.height / CELL_SIZE);
+
+          if (idx === 0) {
+            firstCols = cols;
+            firstRows = rows;
+            generateSeed(cols, rows);
+          }
+
+          const birthStr = canvas.dataset.birth || '';
+          const surviveStr = canvas.dataset.survive || '';
+          const birth = new Set(birthStr.split(',').filter(s=>s).map(Number));
+          const survive = new Set(surviveStr.split(',').filter(s=>s).map(Number));
+
+          const grid = [];
+          for (let y = 0; y < rows; y++) {
+            grid[y] = new Uint8Array(cols);
+            for (let x = 0; x < cols; x++) {
+              if (y < sharedSeed.length && x < sharedSeed[0].length) {
+                grid[y][x] = sharedSeed[y][x];
+              }
+            }
+          }
+
+          sims.push({ canvas, ctx: canvas.getContext('2d'), cols, rows, grid, birth, survive });
+        });
+      }
+
+      function stepSim(sim) {
+        const { cols, rows, grid, birth, survive } = sim;
+        const next = [];
+        for (let y = 0; y < rows; y++) {
+          next[y] = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            let c = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                c += grid[(y + dy + rows) % rows][(x + dx + cols) % cols];
+              }
+            }
+            if (grid[y][x]) {
+              next[y][x] = survive.has(c) ? 1 : 0;
+            } else {
+              next[y][x] = birth.has(c) ? 1 : 0;
+            }
+          }
+        }
+        sim.grid = next;
+      }
+
+      function drawSim(sim) {
+        const { ctx, canvas, cols, rows, grid } = sim;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#2D6A4F';
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (grid[y] && grid[y][x]) {
+              ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+          }
+        }
+      }
+
+      let fc = 0;
+      function animate() {
+        fc++;
+        if (fc % 5 === 0) {
+          sims.forEach(sim => {
+            stepSim(sim);
+          });
+        }
+        sims.forEach(drawSim);
+        requestAnimationFrame(animate);
+      }
+
+      resetBtn.addEventListener('click', () => { initSims(); });
+
+      initSims();
+      requestAnimationFrame(animate);
+    })();
+
+    // ===== LOGIC GATE COLLISION DEMO =====
+    (function() {
+      const canvas = document.getElementById('gateCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const buttons = document.querySelectorAll('.gate-btn');
+      const resetBtn = document.getElementById('gateResetBtn');
+      const infoEl = document.getElementById('gateInfo');
+
+      const CELL_SIZE = 5;
+      let cols, rows, grid, generation = 0;
+
+      // Collision scenarios: two gliders on different trajectories
+      const GATE_CONFIGS = {
+        annihilate: {
+          desc: 'Two gliders collide head-on and annihilate each other. Both signals destroyed.',
+          gliders: [
+            // Glider 1: moving SE (standard orientation)
+            { cells: [[1,0],[2,1],[0,2],[1,2],[2,2]], ox: 10, oy: 10 },
+            // Glider 2: moving NW
+            { cells: [[0,0],[1,0],[2,0],[2,1],[1,2]], ox: 30, oy: 30 }
+          ]
+        },
+        kickback: {
+          desc: 'Gliders collide and produce debris. In some configurations, a glider escapes at a new angle.',
+          gliders: [
+            { cells: [[1,0],[2,1],[0,2],[1,2],[2,2]], ox: 15, oy: 8 },
+            { cells: [[1,0],[0,1],[0,2],[1,2],[2,2]], ox: 30, oy: 15 }
+          ]
+        },
+        block: {
+          desc: 'A glider collides with a block (still life). The block is destroyed - simulating a NOT/erase operation.',
+          gliders: [
+            { cells: [[1,0],[2,1],[0,2],[1,2],[2,2]], ox: 10, oy: 10 },
+          ],
+          blocks: [
+            { cells: [[0,0],[1,0],[0,1],[1,1]], ox: 20, oy: 20 }
+          ]
+        }
+      };
+
+      function resize() {
+        canvas.width = canvas.offsetWidth;
+        cols = Math.floor(canvas.width / CELL_SIZE);
+        rows = Math.floor(canvas.height / CELL_SIZE);
+      }
+
+      function loadConfig(name) {
+        grid = [];
+        for (let y = 0; y < rows; y++) grid[y] = new Uint8Array(cols);
+        generation = 0;
+
+        const config = GATE_CONFIGS[name];
+        if (!config) return;
+        infoEl.textContent = config.desc;
+
+        const centerX = Math.floor(cols / 2) - 20;
+        const centerY = Math.floor(rows / 2) - 15;
+
+        for (const g of config.gliders) {
+          for (const [x, y] of g.cells) {
+            const gx = x + g.ox + centerX;
+            const gy = y + g.oy + centerY;
+            if (gy >= 0 && gy < rows && gx >= 0 && gx < cols) grid[gy][gx] = 1;
+          }
+        }
+        if (config.blocks) {
+          for (const b of config.blocks) {
+            for (const [x, y] of b.cells) {
+              const gx = x + b.ox + centerX;
+              const gy = y + b.oy + centerY;
+              if (gy >= 0 && gy < rows && gx >= 0 && gx < cols) grid[gy][gx] = 1;
+            }
+          }
+        }
+      }
+
+      function step() {
+        const next = [];
+        for (let y = 0; y < rows; y++) {
+          next[y] = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            let c = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                c += grid[(y + dy + rows) % rows][(x + dx + cols) % cols];
+              }
+            }
+            if (grid[y][x]) {
+              next[y][x] = (c === 2 || c === 3) ? 1 : 0;
+            } else {
+              next[y][x] = (c === 3) ? 1 : 0;
+            }
+          }
+        }
+        grid = next;
+        generation++;
+      }
+
+      function draw() {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Subtle grid
+        ctx.strokeStyle = '#f5f5f5';
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x <= cols; x++) {
+          ctx.beginPath(); ctx.moveTo(x * CELL_SIZE, 0); ctx.lineTo(x * CELL_SIZE, rows * CELL_SIZE); ctx.stroke();
+        }
+        for (let y = 0; y <= rows; y++) {
+          ctx.beginPath(); ctx.moveTo(0, y * CELL_SIZE); ctx.lineTo(cols * CELL_SIZE, y * CELL_SIZE); ctx.stroke();
+        }
+        ctx.fillStyle = '#2D6A4F';
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (grid[y] && grid[y][x]) {
+              ctx.fillRect(x * CELL_SIZE + 0.5, y * CELL_SIZE + 0.5, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+          }
+        }
+        // Generation label
+        ctx.fillStyle = '#999';
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.fillText('Gen: ' + generation, 8, canvas.height - 8);
+      }
+
+      let fc = 0;
+      function animate() {
+        fc++;
+        if (fc % 5 === 0) step();
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      let currentGate = 'annihilate';
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentGate = btn.dataset.gate;
+          loadConfig(currentGate);
+        });
+      });
+
+      resetBtn.addEventListener('click', () => loadConfig(currentGate));
+
+      resize();
+      loadConfig('annihilate');
+      requestAnimationFrame(animate);
+    })();
+
+    // ===== SIGNAL WIRE DEMO (Glider Gun) =====
+    (function() {
+      const canvas = document.getElementById('signalCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const playBtn = document.getElementById('signalPlayBtn');
+      const resetBtn = document.getElementById('signalResetBtn');
+      const genLabel = document.getElementById('signalGenLabel');
+
+      const CELL_SIZE = 4;
+      let cols, rows, grid, generation = 0, running = true;
+
+      // Gosper Glider Gun pattern
+      const GUN_CELLS = [
+        [24,0],
+        [22,1],[24,1],
+        [12,2],[13,2],[20,2],[21,2],[34,2],[35,2],
+        [11,3],[15,3],[20,3],[21,3],[34,3],[35,3],
+        [0,4],[1,4],[10,4],[16,4],[20,4],[21,4],
+        [0,5],[1,5],[10,5],[14,5],[16,5],[17,5],[22,5],[24,5],
+        [10,6],[16,6],[24,6],
+        [11,7],[15,7],
+        [12,8],[13,8]
+      ];
+
+      function resize() {
+        canvas.width = canvas.offsetWidth;
+        cols = Math.floor(canvas.width / CELL_SIZE);
+        rows = Math.floor(canvas.height / CELL_SIZE);
+      }
+
+      function initGun() {
+        grid = [];
+        for (let y = 0; y < rows; y++) grid[y] = new Uint8Array(cols);
+        generation = 0;
+        const oy = 10, ox = 5;
+        for (const [x, y] of GUN_CELLS) {
+          if (y + oy < rows && x + ox < cols) grid[y + oy][x + ox] = 1;
+        }
+      }
+
+      function step() {
+        const next = [];
+        for (let y = 0; y < rows; y++) {
+          next[y] = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            let c = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                c += grid[(y + dy + rows) % rows][(x + dx + cols) % cols];
+              }
+            }
+            if (grid[y][x]) {
+              next[y][x] = (c === 2 || c === 3) ? 1 : 0;
+            } else {
+              next[y][x] = (c === 3) ? 1 : 0;
+            }
+          }
+        }
+        grid = next;
+        generation++;
+        genLabel.textContent = 'Gen: ' + generation;
+      }
+
+      function isPartOfGun(x, y) {
+        // The gun occupies roughly x:5-40, y:10-19
+        return x >= 5 && x <= 40 && y >= 10 && y <= 19;
+      }
+
+      function draw() {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (grid[y] && grid[y][x]) {
+              ctx.fillStyle = isPartOfGun(x, y) ? '#2D6A4F' : '#E76F51';
+              ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+          }
+        }
+      }
+
+      let fc = 0;
+      function animate() {
+        fc++;
+        if (running && fc % 3 === 0) step();
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      playBtn.addEventListener('click', () => {
+        running = !running;
+        playBtn.textContent = running ? 'Playing' : 'Paused';
+        playBtn.classList.toggle('active', running);
+      });
+
+      resetBtn.addEventListener('click', () => { initGun(); draw(); });
+
+      resize();
+      initGun();
+      requestAnimationFrame(animate);
+    })();
+
+    // ===== EDGE OF CHAOS EXPLORER =====
+    (function() {
+      const canvas = document.getElementById('edgeCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const birthContainer = document.getElementById('birthToggles');
+      const surviveContainer = document.getElementById('surviveToggles');
+      const resetBtn = document.getElementById('edgeReset');
+      const presetLife = document.getElementById('edgePresetLife');
+      const presetSeeds = document.getElementById('edgePresetSeeds');
+      const presetHighlife = document.getElementById('edgePresetHighlife');
+      const lambdaLabel = document.getElementById('edgeLambda');
+
+      const CELL_SIZE = 5;
+      let cols, rows, grid;
+      let birthRules = new Set([3]);
+      let surviveRules = new Set([2, 3]);
+
+      function createToggles() {
+        birthContainer.innerHTML = '';
+        surviveContainer.innerHTML = '';
+        for (let i = 0; i <= 8; i++) {
+          const bBtn = document.createElement('button');
+          bBtn.textContent = i;
+          bBtn.style.cssText = 'width:28px;height:28px;font-family:var(--mono);font-size:12px;border:1px solid #ddd;border-radius:4px;cursor:pointer;padding:0;';
+          bBtn.classList.toggle('active', birthRules.has(i));
+          if (birthRules.has(i)) bBtn.style.background = '#2D6A4F'; bBtn.style.color = birthRules.has(i) ? '#fff' : '#333';
+          bBtn.addEventListener('click', () => {
+            if (birthRules.has(i)) birthRules.delete(i); else birthRules.add(i);
+            updateToggles();
+            resetGrid();
+          });
+          birthContainer.appendChild(bBtn);
+
+          const sBtn = document.createElement('button');
+          sBtn.textContent = i;
+          sBtn.style.cssText = 'width:28px;height:28px;font-family:var(--mono);font-size:12px;border:1px solid #ddd;border-radius:4px;cursor:pointer;padding:0;';
+          if (surviveRules.has(i)) { sBtn.style.background = '#40916C'; sBtn.style.color = '#fff'; }
+          sBtn.addEventListener('click', () => {
+            if (surviveRules.has(i)) surviveRules.delete(i); else surviveRules.add(i);
+            updateToggles();
+            resetGrid();
+          });
+          surviveContainer.appendChild(sBtn);
+        }
+      }
+
+      function updateToggles() {
+        const bBtns = birthContainer.querySelectorAll('button');
+        const sBtns = surviveContainer.querySelectorAll('button');
+        bBtns.forEach((btn, i) => {
+          const active = birthRules.has(i);
+          btn.style.background = active ? '#2D6A4F' : '#fff';
+          btn.style.color = active ? '#fff' : '#333';
+        });
+        sBtns.forEach((btn, i) => {
+          const active = surviveRules.has(i);
+          btn.style.background = active ? '#40916C' : '#fff';
+          btn.style.color = active ? '#fff' : '#333';
+        });
+        // Update lambda
+        const lambda = (birthRules.size + surviveRules.size) / 18;
+        lambdaLabel.textContent = '\u03BB = ' + lambda.toFixed(2);
+      }
+
+      function resize() {
+        canvas.width = canvas.offsetWidth;
+        cols = Math.floor(canvas.width / CELL_SIZE);
+        rows = Math.floor(canvas.height / CELL_SIZE);
+      }
+
+      function resetGrid() {
+        grid = [];
+        for (let y = 0; y < rows; y++) {
+          grid[y] = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            grid[y][x] = Math.random() < 0.3 ? 1 : 0;
+          }
+        }
+      }
+
+      function step() {
+        const next = [];
+        for (let y = 0; y < rows; y++) {
+          next[y] = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            let c = 0;
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                if (dx === 0 && dy === 0) continue;
+                c += grid[(y + dy + rows) % rows][(x + dx + cols) % cols];
+              }
+            }
+            if (grid[y][x]) {
+              next[y][x] = surviveRules.has(c) ? 1 : 0;
+            } else {
+              next[y][x] = birthRules.has(c) ? 1 : 0;
+            }
+          }
+        }
+        grid = next;
+      }
+
+      function draw() {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#2D6A4F';
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (grid[y] && grid[y][x]) {
+              ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+          }
+        }
+      }
+
+      let fc = 0;
+      function animate() {
+        fc++;
+        if (fc % 4 === 0) step();
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      function setPreset(birth, survive) {
+        birthRules = new Set(birth);
+        surviveRules = new Set(survive);
+        updateToggles();
+        resetGrid();
+      }
+
+      presetLife.addEventListener('click', () => setPreset([3], [2, 3]));
+      presetSeeds.addEventListener('click', () => setPreset([2], []));
+      presetHighlife.addEventListener('click', () => setPreset([3, 6], [2, 3]));
+      resetBtn.addEventListener('click', resetGrid);
+
+      resize();
+      createToggles();
+      updateToggles();
+      resetGrid();
+      requestAnimationFrame(animate);
+    })();
+
+    // ===== PATTERN EXPLORER =====
+    (function() {
+      const canvas = document.getElementById('patternCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const infoEl = document.getElementById('patternInfo');
+      const buttons = document.querySelectorAll('.pattern-btn');
+
+      const CELL_SIZE = 6;
+      let cols, rows, grid, running = true, generation = 0;
+
+      const PATTERNS = {
+        glider: {
+          name: 'Glider',
+          desc: 'Period 4 spaceship. Moves diagonally. 5 cells.',
+          cells: [[1,0],[2,1],[0,2],[1,2],[2,2]]
+        },
+        blinker: {
+          name: 'Blinker',
+          desc: 'Period 2 oscillator. The simplest oscillator.',
+          cells: [[0,0],[1,0],[2,0]]
+        },
+        pulsar: {
+          name: 'Pulsar',
+          desc: 'Period 3 oscillator. 48 cells. Looks like a heartbeat.',
+          cells: [
+            [2,0],[3,0],[4,0],[8,0],[9,0],[10,0],
+            [0,2],[5,2],[7,2],[12,2],
+            [0,3],[5,3],[7,3],[12,3],
+            [0,4],[5,4],[7,4],[12,4],
+            [2,5],[3,5],[4,5],[8,5],[9,5],[10,5],
+            [2,7],[3,7],[4,7],[8,7],[9,7],[10,7],
+            [0,8],[5,8],[7,8],[12,8],
+            [0,9],[5,9],[7,9],[12,9],
+            [0,10],[5,10],[7,10],[12,10],
+            [2,12],[3,12],[4,12],[8,12],[9,12],[10,12]
+          ]
+        },
+        lwss: {
+          name: 'LWSS',
+          desc: 'Lightweight Spaceship. Period 4. Moves horizontally.',
+          cells: [[0,0],[3,0],[4,1],[0,2],[4,2],[1,3],[2,3],[3,3],[4,3]]
+        },
+        pentadecathlon: {
+          name: 'Pentadecathlon',
+          desc: 'Period 15 oscillator. One of the most famous.',
+          cells: [[1,0],[2,0],[3,0],[1,1],[3,1],[1,2],[2,2],[3,2],
+                  [1,5],[2,5],[3,5],[1,6],[2,6],[3,6],[1,7],[3,7],[1,8],[2,8],[3,8]]
+        },
+        'glider-gun': {
+          name: 'Gosper Glider Gun',
+          desc: 'Creates a new glider every 30 generations. First known "gun" pattern.',
+          cells: [
+            [24,0],
+            [22,1],[24,1],
+            [12,2],[13,2],[20,2],[21,2],[34,2],[35,2],
+            [11,3],[15,3],[20,3],[21,3],[34,3],[35,3],
+            [0,4],[1,4],[10,4],[16,4],[20,4],[21,4],
+            [0,5],[1,5],[10,5],[14,5],[16,5],[17,5],[22,5],[24,5],
+            [10,6],[16,6],[24,6],
+            [11,7],[15,7],
+            [12,8],[13,8]
+          ]
+        }
+      };
+
+      function resize() {
+        canvas.width = canvas.offsetWidth;
+        cols = Math.floor(canvas.width / CELL_SIZE);
+        rows = Math.floor(canvas.height / CELL_SIZE);
+      }
+
+      function initEmpty() {
+        grid = [];
+        for (let y = 0; y < rows; y++) {
+          grid[y] = new Uint8Array(cols);
+        }
+        generation = 0;
+      }
+
+      function loadPattern(name) {
+        initEmpty();
+        const pattern = PATTERNS[name];
+        if (!pattern) return;
+
+        // Center the pattern
+        let maxX = 0, maxY = 0;
+        for (const [x, y] of pattern.cells) {
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        }
+        const offsetX = Math.floor((cols - maxX) / 2);
+        const offsetY = Math.floor((rows - maxY) / 2);
+
+        for (const [x, y] of pattern.cells) {
+          const gx = x + offsetX;
+          const gy = y + offsetY;
+          if (gy >= 0 && gy < rows && gx >= 0 && gx < cols) {
+            grid[gy][gx] = 1;
+          }
+        }
+
+        infoEl.textContent = pattern.desc;
+      }
+
+      function countN(g, x, y) {
+        let c = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const ny = (y + dy + rows) % rows;
+            const nx = (x + dx + cols) % cols;
+            c += g[ny][nx];
+          }
+        }
+        return c;
+      }
+
+      function step() {
+        const next = [];
+        for (let y = 0; y < rows; y++) {
+          next[y] = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            const n = countN(grid, x, y);
+            if (grid[y][x]) {
+              next[y][x] = (n === 2 || n === 3) ? 1 : 0;
+            } else {
+              next[y][x] = (n === 3) ? 1 : 0;
+            }
+          }
+        }
+        grid = next;
+        generation++;
+      }
+
+      function draw() {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#2D6A4F';
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (grid[y] && grid[y][x]) {
+              ctx.fillRect(x * CELL_SIZE + 0.5, y * CELL_SIZE + 0.5, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+          }
+        }
+      }
+
+      let frameCount = 0;
+      function animate() {
+        frameCount++;
+        if (running && frameCount % 4 === 0) {
+          step();
+        }
+        draw();
+        requestAnimationFrame(animate);
+      }
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          buttons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          loadPattern(btn.dataset.pattern);
+          running = true;
+        });
+      });
+
+      resize();
+      loadPattern('glider');
+      requestAnimationFrame(animate);
+    })();
+
+    // ===== 2D GAME OF LIFE SANDBOX =====
+    (function() {
+      const canvas = document.getElementById('ca2dCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const playBtn = document.getElementById('ca2dPlay');
+      const stepBtn = document.getElementById('ca2dStep');
+      const clearBtn = document.getElementById('ca2dClear');
+      const randomBtn = document.getElementById('ca2dRandom');
+      const speedSlider = document.getElementById('ca2dSpeed');
+      const genLabel = document.getElementById('ca2dGenLabel');
+
+      const CELL_SIZE = 6;
+      let cols, rows, grid, running = false, generation = 0;
+      let lastStepTime = 0;
+
+      function resize() {
+        canvas.width = canvas.offsetWidth;
+        cols = Math.floor(canvas.width / CELL_SIZE);
+        rows = Math.floor(canvas.height / CELL_SIZE);
+      }
+
+      function initGrid(random) {
+        grid = [];
+        for (let y = 0; y < rows; y++) {
+          grid[y] = new Uint8Array(cols);
+          if (random) {
+            for (let x = 0; x < cols; x++) {
+              grid[y][x] = Math.random() < 0.25 ? 1 : 0;
+            }
+          }
+        }
+        generation = 0;
+        genLabel.textContent = 'Gen: 0';
+      }
+
+      function countNeighbors2d(g, x, y) {
+        let c = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            if (dx === 0 && dy === 0) continue;
+            const ny = (y + dy + rows) % rows;
+            const nx = (x + dx + cols) % cols;
+            c += g[ny][nx];
+          }
+        }
+        return c;
+      }
+
+      function step2d() {
+        const next = [];
+        for (let y = 0; y < rows; y++) {
+          next[y] = new Uint8Array(cols);
+          for (let x = 0; x < cols; x++) {
+            const n = countNeighbors2d(grid, x, y);
+            if (grid[y][x]) {
+              next[y][x] = (n === 2 || n === 3) ? 1 : 0;
+            } else {
+              next[y][x] = (n === 3) ? 1 : 0;
+            }
+          }
+        }
+        grid = next;
+        generation++;
+        genLabel.textContent = 'Gen: ' + generation;
+      }
+
+      function draw2d() {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw grid lines (subtle)
+        ctx.strokeStyle = '#f0f0f0';
+        ctx.lineWidth = 0.5;
+        for (let x = 0; x <= cols; x++) {
+          ctx.beginPath();
+          ctx.moveTo(x * CELL_SIZE, 0);
+          ctx.lineTo(x * CELL_SIZE, rows * CELL_SIZE);
+          ctx.stroke();
+        }
+        for (let y = 0; y <= rows; y++) {
+          ctx.beginPath();
+          ctx.moveTo(0, y * CELL_SIZE);
+          ctx.lineTo(cols * CELL_SIZE, y * CELL_SIZE);
+          ctx.stroke();
+        }
+
+        // Draw cells
+        ctx.fillStyle = '#2D6A4F';
+        for (let y = 0; y < rows; y++) {
+          for (let x = 0; x < cols; x++) {
+            if (grid[y] && grid[y][x]) {
+              ctx.fillRect(x * CELL_SIZE + 0.5, y * CELL_SIZE + 0.5, CELL_SIZE - 1, CELL_SIZE - 1);
+            }
+          }
+        }
+      }
+
+      function animate2d(timestamp) {
+        if (running) {
+          const speed = parseInt(speedSlider.value);
+          const interval = 1000 / speed;
+          if (timestamp - lastStepTime >= interval) {
+            step2d();
+            lastStepTime = timestamp;
+          }
+        }
+        draw2d();
+        requestAnimationFrame(animate2d);
+      }
+
+      // Mouse drawing
+      let isDrawing = false;
+      let drawValue = 1;
+
+      function getCellCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = Math.floor((e.clientX - rect.left) * scaleX / CELL_SIZE);
+        const y = Math.floor((e.clientY - rect.top) * scaleY / CELL_SIZE);
+        return { x, y };
+      }
+
+      canvas.addEventListener('mousedown', (e) => {
+        isDrawing = true;
+        const { x, y } = getCellCoords(e);
+        if (y >= 0 && y < rows && x >= 0 && x < cols) {
+          drawValue = grid[y][x] ? 0 : 1;
+          grid[y][x] = drawValue;
+          draw2d();
+        }
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (!isDrawing) return;
+        const { x, y } = getCellCoords(e);
+        if (y >= 0 && y < rows && x >= 0 && x < cols) {
+          grid[y][x] = drawValue;
+          draw2d();
+        }
+      });
+
+      window.addEventListener('mouseup', () => { isDrawing = false; });
+
+      playBtn.addEventListener('click', () => {
+        running = !running;
+        playBtn.textContent = running ? 'Pause' : 'Play';
+        playBtn.classList.toggle('active', running);
+      });
+
+      stepBtn.addEventListener('click', () => {
+        running = false;
+        playBtn.textContent = 'Play';
+        playBtn.classList.remove('active');
+        step2d();
+        draw2d();
+      });
+
+      clearBtn.addEventListener('click', () => {
+        running = false;
+        playBtn.textContent = 'Play';
+        playBtn.classList.remove('active');
+        initGrid(false);
+        draw2d();
+      });
+
+      randomBtn.addEventListener('click', () => {
+        initGrid(true);
+        draw2d();
+      });
+
+      resize();
+      initGrid(true);
+      requestAnimationFrame(animate2d);
+
+      window.addEventListener('resize', () => {
+        resize();
+        initGrid(true);
+      });
+    })();
+
+    // ===== TOC ACTIVE TRACKING =====
+    (function() {
+      const tocLinks = document.querySelectorAll('.toc-sidebar a');
+      const sections = [];
+
+      function updateSections() {
+        sections.length = 0;
+        tocLinks.forEach(link => {
+          const id = link.getAttribute('href').slice(1);
+          const el = document.getElementById(id);
+          if (el) sections.push({ id, el, link });
+        });
+      }
+
+      function onScroll() {
+        const scrollY = window.scrollY + 200;
+        let active = null;
+        for (let i = sections.length - 1; i >= 0; i--) {
+          if (sections[i].el.offsetTop <= scrollY) {
+            active = sections[i];
+            break;
+          }
+        }
+        tocLinks.forEach(l => l.classList.remove('active'));
+        if (active) active.link.classList.add('active');
+      }
+
+      // Delay to ensure all sections are in DOM
+      setTimeout(() => {
+        updateSections();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+      }, 500);
+    })();
+  </script>
+</body>
+</html>

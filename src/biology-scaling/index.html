@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Hidden Mathematics of Everything — Scaling Laws</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,700;1,6..72,400;1,6..72,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================
+       BASE RESET & TYPOGRAPHY
+       Matching explainers.blog reference exactly
+       ============================================ */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 21px;
+      line-height: 1.4;
+      color: rgb(45, 45, 45);
+      background-color: rgb(250, 249, 247);
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Content container */
+    .content {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Headings - Figtree sans-serif */
+    h1 {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 70px;
+      font-weight: 700;
+      line-height: 0.94;
+      color: #fff;
+      margin-top: 44px;
+      margin-bottom: 4px;
+    }
+
+    h2 {
+      font-family: 'Figtree', sans-serif;
+      font-size: 50px;
+      font-weight: 700;
+      line-height: 0.95;
+      color: rgb(45, 45, 45);
+      margin-top: 0;
+      margin-bottom: 50px;
+    }
+
+    h3 {
+      font-family: 'Figtree', sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 0.95;
+      color: rgb(45, 45, 45);
+      margin-top: 60px;
+      margin-bottom: 30px;
+    }
+
+    h4 {
+      font-family: 'Figtree', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgb(45, 45, 45);
+      margin: 0;
+    }
+
+    /* Paragraphs */
+    p {
+      margin: 0 0 12px;
+    }
+
+    /* Italic intro style */
+    .intro-text {
+      font-style: italic;
+      font-size: 23px;
+      line-height: 1.45;
+    }
+
+    /* Links */
+    a {
+      color: #5B4AE8;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 2px;
+    }
+
+    a:hover {
+      color: #7B4AE8;
+    }
+
+    /* Emphasis */
+    em {
+      font-style: italic;
+    }
+
+    strong {
+      font-weight: 700;
+    }
+
+    /* Subtitle */
+    .post-subtitle {
+      font-family: 'Figtree', sans-serif;
+      font-size: 30px;
+      font-weight: 500;
+      line-height: 0.94;
+      color: #fff;
+      margin-top: 0;
+      margin-bottom: 24px;
+    }
+
+    /* ============================================
+       HERO SECTION
+       ============================================ */
+    .hero {
+      position: relative;
+      width: 100%;
+      min-height: 280px;
+      padding: 40px 24px 40px;
+      overflow: hidden;
+      border-radius: 16px;
+      margin: 12px auto;
+      max-width: calc(100% - 24px);
+    }
+
+    .hero-bg {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 0;
+    }
+
+    .hero .content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ============================================
+       SECTION HEADERS (with Roman numerals)
+       ============================================ */
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 20px;
+      padding-top: 120px;
+      margin-bottom: 50px;
+      border-top: 1px solid rgb(220, 218, 214);
+    }
+
+    .section-number {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 50px;
+      font-weight: 400;
+      line-height: 1;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .section-header h2 {
+      margin: 0;
+    }
+
+    /* ============================================
+       TABLE OF CONTENTS
+       ============================================ */
+    .toc {
+      border-top: 1px solid rgb(220, 218, 214);
+      border-bottom: 1px solid rgb(220, 218, 214);
+      padding: 24px 0;
+      margin: 40px 0;
+    }
+
+    .toc ol {
+      list-style: upper-roman;
+      padding-left: 48px;
+      font-family: 'Figtree', sans-serif;
+      font-size: 17px;
+      line-height: 2;
+    }
+
+    .toc li {
+      padding-left: 8px;
+    }
+
+    .toc a {
+      color: rgb(45, 45, 45);
+      text-decoration: none;
+    }
+
+    .toc a:hover {
+      color: #5B4AE8;
+    }
+
+    .toc .active a {
+      color: #5B4AE8;
+    }
+
+    /* ============================================
+       INTERACTIVE DEMO CONTAINERS
+       ============================================ */
+    .demo-container {
+      background: rgb(242, 241, 239);
+      border-radius: 12px;
+      padding: 32px;
+      margin: 32px 0;
+      overflow: hidden;
+    }
+
+    .demo-container svg {
+      width: 100%;
+      display: block;
+    }
+
+    /* Labels in demos */
+    .label {
+      font-family: 'Figtree', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgb(45, 45, 45);
+    }
+
+    .label--small {
+      font-family: 'Figtree', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgb(100, 100, 100);
+    }
+
+    /* ============================================
+       SLIDERS
+       ============================================ */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgb(200, 198, 194);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #5B4AE8;
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #5B4AE8;
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* ============================================
+       FIGURE CAPTIONS
+       ============================================ */
+    figcaption, .caption {
+      font-family: 'Newsreader', Georgia, serif;
+      font-style: italic;
+      font-size: 17px;
+      line-height: 1.4;
+      text-align: center;
+      color: rgb(100, 100, 100);
+      margin: 16px 0 8px;
+      padding: 0 20px;
+    }
+
+    /* ============================================
+       SIDENOTES / FOOTNOTES
+       ============================================ */
+    .sidenote-trigger {
+      cursor: pointer;
+      color: #5B4AE8;
+      font-weight: 600;
+      font-size: 14px;
+      vertical-align: super;
+    }
+
+    .sidenote {
+      font-family: 'Figtree', sans-serif;
+      font-size: 15px;
+      line-height: 1.3;
+      background: rgb(242, 241, 239);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 12px 0;
+      display: none;
+    }
+
+    .sidenote.open {
+      display: block;
+    }
+
+    .sidenote p {
+      font-family: 'Figtree', sans-serif;
+      font-size: 15px;
+      line-height: 1.3;
+      margin-bottom: 6px;
+    }
+
+    /* ============================================
+       COMPARISON TABLES
+       ============================================ */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 32px 0;
+      font-family: 'Figtree', sans-serif;
+      font-size: 16px;
+    }
+
+    .comparison-table th {
+      font-weight: 700;
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 2px solid rgb(45, 45, 45);
+    }
+
+    .comparison-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgb(220, 218, 214);
+      vertical-align: top;
+    }
+
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ============================================
+       QUIZ BLOCKS
+       ============================================ */
+    .quiz-block {
+      background: rgb(242, 241, 239);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin: 32px 0;
+    }
+
+    .quiz-block .quiz-question {
+      font-weight: 700;
+      font-family: 'Figtree', sans-serif;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .quiz-block .quiz-answer {
+      display: none;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgb(200, 198, 194);
+    }
+
+    .quiz-block .quiz-reveal-btn {
+      font-family: 'Figtree', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: #5B4AE8;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 20px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .quiz-block .quiz-reveal-btn:hover {
+      background: #4A3A8A;
+    }
+
+    /* ============================================
+       LISTS
+       ============================================ */
+    ul, ol {
+      padding-left: 28px;
+      margin-bottom: 12px;
+    }
+
+    li {
+      margin-bottom: 6px;
+    }
+
+    /* ============================================
+       FOOTER
+       ============================================ */
+    .site-footer {
+      background: #4A3A8A;
+      color: #fff;
+      padding: 60px 24px;
+      margin-top: 80px;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .site-footer .content {
+      max-width: 700px;
+    }
+
+    .footer-tagline {
+      font-family: 'Figtree', sans-serif;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.7;
+      margin-top: 32px;
+    }
+
+    .credits {
+      font-style: italic;
+      font-size: 18px;
+      line-height: 1.5;
+      text-align: center;
+      margin: 60px 0;
+      color: rgb(120, 120, 120);
+    }
+
+    /* ============================================
+       SCROLL ANIMATIONS
+       ============================================ */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ============================================
+       REDUCED MOTION
+       ============================================ */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 768px) {
+      h1 { font-size: 42px; }
+      h2 { font-size: 36px; }
+      h3 { font-size: 24px; }
+      .post-subtitle { font-size: 22px; }
+      .section-number { font-size: 36px; }
+      .intro-text { font-size: 20px; }
+      body { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO SECTION -->
+  <div class="hero">
+    <svg class="hero-bg" viewBox="0 0 1280 400" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#E8634A;stop-opacity:1" />
+          <stop offset="30%" style="stop-color:#E8B44A;stop-opacity:1" />
+          <stop offset="55%" style="stop-color:#4A7DE8;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#7B4AE8;stop-opacity:1" />
+        </linearGradient>
+        <!-- Subtle pattern overlay -->
+        <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <rect width="1280" height="400" fill="url(#heroGrad)" />
+      <rect width="1280" height="400" fill="url(#gridPattern)" />
+      <!-- Scaling curve flowing across -->
+      <path d="M 80,340 C 200,330 250,300 350,260 C 450,220 500,180 620,150 C 740,120 850,100 950,80 C 1050,60 1100,55 1200,50"
+            fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="3" stroke-dasharray="8,6"/>
+      <!-- Animal/city silhouettes along the curve (small → large) -->
+      <!-- Mouse -->
+      <g transform="translate(130, 315) scale(0.4)" opacity="0.35" fill="white">
+        <ellipse cx="15" cy="12" rx="12" ry="8"/>
+        <circle cx="4" cy="6" r="4"/>
+        <circle cx="1" cy="4" r="2.5"/>
+        <path d="M27,12 Q38,10 42,14" stroke="white" fill="none" stroke-width="1.5"/>
+      </g>
+      <!-- Cat -->
+      <g transform="translate(310, 238) scale(0.6)" opacity="0.3" fill="white">
+        <ellipse cx="20" cy="18" rx="18" ry="12"/>
+        <circle cx="4" cy="6" r="7"/>
+        <polygon points="0,6 -4,-2 4,-2"/>
+        <polygon points="8,4 4,-4 12,-2"/>
+        <path d="M38,18 Q52,14 58,20" stroke="white" fill="none" stroke-width="2"/>
+      </g>
+      <!-- Human -->
+      <g transform="translate(560, 120) scale(0.55)" opacity="0.25" fill="white">
+        <circle cx="20" cy="8" r="8"/>
+        <path d="M20,16 L20,45 M20,25 L8,38 M20,25 L32,38 M20,45 L10,62 M20,45 L30,62" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+      </g>
+      <!-- Elephant -->
+      <g transform="translate(850, 50) scale(0.7)" opacity="0.2" fill="white">
+        <ellipse cx="40" cy="35" rx="35" ry="25"/>
+        <ellipse cx="8" cy="22" rx="12" ry="15"/>
+        <path d="M-2,28 Q-8,45 -4,55" stroke="white" fill="none" stroke-width="3"/>
+        <rect x="15" y="55" width="8" height="18" rx="3"/>
+        <rect x="32" y="55" width="8" height="18" rx="3"/>
+        <rect x="48" y="55" width="8" height="18" rx="3"/>
+        <rect x="60" y="55" width="8" height="18" rx="3"/>
+      </g>
+      <!-- City skyline hint -->
+      <g transform="translate(1050, 25)" opacity="0.15" fill="white">
+        <rect x="0" y="25" width="12" height="40"/>
+        <rect x="16" y="10" width="10" height="55"/>
+        <rect x="30" y="20" width="14" height="45"/>
+        <rect x="48" y="5" width="10" height="60"/>
+        <rect x="62" y="15" width="12" height="50"/>
+        <rect x="78" y="30" width="10" height="35"/>
+      </g>
+    </svg>
+    <div class="content">
+      <h1>The Hidden Mathematics of Everything</h1>
+      <p class="post-subtitle">Why elephants live longer than mice, cities are faster than towns, and companies always die</p>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- Introduction -->
+    <section class="intro" style="margin-top: 48px; margin-bottom: 40px;">
+      <p class="intro-text">If I told you that by knowing just one number — say, an animal's weight — you could predict its heart rate, its lifespan, how much food it needs per day, and even how fast it walks... you'd probably think I was making it up.</p>
+      <p class="intro-text">But it's true. And it's not just animals.</p>
+      <p class="intro-text">The same hidden mathematics governs how cities grow, how companies die, and why a whale's heart beats once every 10 seconds while a shrew's beats 1,000 times a minute.</p>
+      <p class="intro-text">Geoffrey West and his colleagues at the Santa Fe Institute discovered something remarkable: virtually every measurable property of living things, cities, and companies follows a breathtakingly simple pattern. A <em>power law</em>. And the exponent is almost always a simple multiple of &frac14;.</p>
+      <p class="intro-text">In this article, we'll explore these scaling laws — but we'll go deep enough that, by the time you finish, you won't just <em>know about</em> scaling laws. You'll be able to <em>use them</em> to predict things you've never measured.</p>
+    </section>
+
+    <!-- Table of Contents -->
+    <nav class="toc">
+      <h4>Contents</h4>
+      <ol>
+        <li><a href="#section-1">The &frac34; Power Law</a></li>
+        <li><a href="#section-2">Why Quarter Powers?</a></li>
+        <li><a href="#section-3">Predict an Animal's Heart Rate</a></li>
+        <li><a href="#section-4">The Pace of Life</a></li>
+        <li><a href="#section-5">Cities: Where Scaling Gets Weird</a></li>
+        <li><a href="#section-6">The Pace of Urban Life</a></li>
+        <li><a href="#section-7">Companies: Born to Die</a></li>
+        <li><a href="#section-8">The Universal Growth Curve</a></li>
+        <li><a href="#section-9">Putting It All Together</a></li>
+        <li><a href="#section-10">Further Resources</a></li>
+      </ol>
+    </nav>
+
+    <!-- SECTION I: The 3/4 Power Law -->
+    <section id="section-1" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">I.</span>
+        <h2>The &frac34; Power Law</h2>
+      </div>
+
+      <p>Here's one of the most jaw-dropping graphs in all of science.</p>
+
+      <p>In 1932, a Swiss biologist named Max Kleiber plotted the <em>metabolic rate</em> (how much energy an animal burns per day) against its <em>body mass</em> for a range of mammals. He expected a messy scatter. What he got was a nearly perfect straight line — on a log-log plot.</p>
+
+      <p>That line had a slope of &frac34;.</p>
+
+      <p>This means that metabolic rate scales as body mass raised to the power of 0.75. In math-speak: <strong>B = B₀ × M<sup>3/4</sup></strong>, where B is metabolic rate, M is mass, and B₀ is a constant.</p>
+
+      <!-- Interactive: Log-Log Metabolic Rate Plot -->
+      <div class="demo-container" id="kleiber-demo">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <p class="label" style="margin:0;">Kleiber's Law: Metabolic Rate vs Body Mass</p>
+          <button id="kleiber-toggle" style="font-family:'Figtree',sans-serif;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;background:#5B4AE8;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;">Toggle Log Scale</button>
+        </div>
+        <svg id="kleiber-svg" viewBox="0 0 636 380" xmlns="http://www.w3.org/2000/svg">
+          <!-- Axes and plot rendered by JS -->
+        </svg>
+        <figcaption style="margin-top:8px;">Each dot is a mammal species. On a log-log plot, they fall on a beautiful straight line with slope &frac34;. Kleiber expected 2/3 (surface area). He got 3/4. Nobody could explain why — for 65 years.</figcaption>
+      </div>
+
+      <p>Now, why is this remarkable? Let's think about what you might <em>expect</em>.</p>
+
+      <p>If metabolic rate were simply <em>proportional</em> to mass (i.e., the exponent was 1), then an elephant weighing 10,000 times more than a mouse would need 10,000 times more food. That's the "naive" guess.</p>
+
+      <p>But with a &frac34; exponent, the elephant only needs about <strong>1,000 times</strong> more food. That's a 10× savings!</p>
+
+      <p>This is the magic of <em>sublinear scaling</em>: bigger organisms are more efficient. Per gram of body weight, an elephant burns far less energy than a mouse. It's as if nature gives a "bulk discount" for being large<span class="sidenote-trigger" onclick="toggleSidenote('sn1')">[1]</span>.</p>
+
+      <div class="sidenote" id="sn1">
+        <p><strong>Why not 2/3?</strong> 🤔</p>
+        <p>Before Kleiber, the prevailing theory was that metabolic rate should scale with <em>surface area</em> — which goes as M<sup>2/3</sup>. The logic: animals lose heat through their skin, so metabolic rate should match surface area. This was Rubner's "surface law" from 1883.</p>
+        <p>Kleiber's data clearly showed 3/4, not 2/3. The difference seems small, but on a log-log plot across 27 orders of magnitude (from bacteria to whales), it's unmistakable. The surface area theory was wrong.</p>
+        <p>It took until 1997 for West, Brown, and Enquist to explain <em>why</em> it's 3/4. We'll get there in the next section.</p>
+      </div>
+
+      <p>And it's not just metabolic rate. Kleiber's &frac34; law turned out to be the tip of a massive iceberg. Virtually <em>every</em> measurable biological rate and time follows a power law with an exponent that's a simple multiple of &frac14;:</p>
+
+      <ul>
+        <li><strong>Heart rate</strong> scales as M<sup>−1/4</sup> (bigger → slower hearts)</li>
+        <li><strong>Lifespan</strong> scales as M<sup>1/4</sup> (bigger → longer lives)</li>
+        <li><strong>Aorta diameter</strong> scales as M<sup>3/8</sup></li>
+        <li><strong>Growth rate</strong> scales as M<sup>−1/4</sup></li>
+        <li><strong>Population density</strong> scales as M<sup>−3/4</sup></li>
+      </ul>
+
+      <p>Always quarter-powers. Always. Across mammals, birds, fish, plants, even single-celled organisms. Over 27 orders of magnitude in mass.</p>
+
+      <p>So the obvious question is: <em>why?</em> Why quarter powers? Why not third powers, or fifth powers, or some messy decimal?</p>
+    </section>
+
+    <!-- SECTION II: Why Quarter Powers? -->
+    <section id="section-2" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">II.</span>
+        <h2>Why Quarter Powers?</h2>
+      </div>
+
+      <p>For 65 years after Kleiber, the &frac34; exponent was an empirical mystery. Everyone could see it in the data, but nobody could derive it from first principles.</p>
+
+      <p>Then, in 1997, a physicist named Geoffrey West teamed up with two biologists — James Brown and Brian Enquist — and cracked it. Their explanation is one of the most elegant in all of biology.</p>
+
+      <p>The key insight: <strong>life is powered by networks</strong>.</p>
+
+      <p>Every living organism — from a tiny shrew to a blue whale — needs to deliver resources (oxygen, glucose, nutrients) to every single cell in its body. It does this through <em>branching distribution networks</em>: your circulatory system, your respiratory system, a tree's vascular system.</p>
+
+      <!-- Fractal Branching Network SVG -->
+      <div class="demo-container" id="fractal-demo">
+        <p class="label" style="margin-bottom: 16px;">Fractal Branching: From Aorta to Capillaries</p>
+        <svg id="fractal-svg" viewBox="0 0 636 350" xmlns="http://www.w3.org/2000/svg">
+        </svg>
+        <figcaption>A blood vessel network branches like a fractal — each level splits into smaller and smaller vessels. The aorta (left) feeds arteries, which feed arterioles, which feed capillaries. This self-similar branching pattern is the key to understanding quarter-power scaling.</figcaption>
+      </div>
+
+      <p>West, Brown, and Enquist (often called "WBE") realized that these networks must obey three constraints:</p>
+
+      <ol>
+        <li><strong>Space-filling</strong>: The network must reach every cell in the body. No dead zones allowed — every cubic millimeter of tissue needs a capillary nearby.</li>
+        <li><strong>Invariant terminal units</strong>: The smallest units of the network (capillaries) are the same size in a mouse as in a whale. A red blood cell is a red blood cell, regardless of the animal it's in.</li>
+        <li><strong>Energy minimization</strong>: Evolution has optimized these networks to minimize the energy required to pump resources through them. Hearts don't waste energy.</li>
+      </ol>
+
+      <p>Here's the beautiful part: when you work out the mathematics of a branching network that satisfies all three constraints, the &frac14; exponent <em>falls out automatically</em><span class="sidenote-trigger" onclick="toggleSidenote('sn2')">[2]</span>.</p>
+
+      <div class="sidenote" id="sn2">
+        <p><strong>The math, briefly</strong> 🤓</p>
+        <p>In a 3D organism, the network branches hierarchically. At each level, vessels split into <em>n</em> smaller branches. The ratio of vessel radii between levels follows a precise geometric series.</p>
+        <p>When you combine the three constraints mathematically, you find that the branching ratio forces the total number of capillaries to scale as M<sup>3/4</sup>. Since each capillary serves the same volume of tissue, the metabolic rate — which depends on how many capillaries deliver oxygen — also scales as M<sup>3/4</sup>.</p>
+        <p>The "quarter" comes from the fact that we live in 3 spatial dimensions, and the network adds an effective fourth dimension. So the exponent is 3/(3+1) = 3/4. In a hypothetical 2D organism, it would be 2/3. In 4D, it would be 4/5.</p>
+      </div>
+
+      <p>It's not a coincidence. It's not a statistical artifact. It's <em>geometry</em>.</p>
+
+      <p>The reason is deeply elegant: we live in three spatial dimensions, and the fractal branching network effectively adds a <em>fourth</em> dimension. The exponent is 3/(3+1) = &frac34;. If we lived in a two-dimensional world (like the flat creatures in <em>Flatland</em>), the exponent would be 2/3. If we lived in four spatial dimensions, it would be 4/5.</p>
+
+      <p>(This is completely analogous to how Einstein's relativity adds time as a fourth dimension to space — except here, the "extra dimension" is the hierarchical depth of the fractal network)</p>
+
+      <p>What makes this theory so powerful is its <em>universality</em>. The same math applies whether the network carries blood (animals), water and nutrients (plants), or air (lungs). Any organism with a fractal distribution network — which is essentially all complex life — will follow quarter-power scaling.</p>
+
+      <p>And here's where it gets really fun. If this theory is right, we should be able to <em>predict</em> specific biological quantities from body mass alone. Let's try it.</p>
+    </section>
+
+    <!-- SECTION III: Predict an Animal's Heart Rate -->
+    <section id="section-3" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">III.</span>
+        <h2>Predict an Animal's Heart Rate</h2>
+      </div>
+
+      <p>Heart rate scales as M<sup>−1/4</sup>. This means bigger animals have slower hearts. The formula is approximately:</p>
+
+      <p style="text-align:center; font-size: 24px; margin: 24px 0; font-family: 'Figtree', sans-serif; font-weight: 600; color: #5B4AE8;">Heart Rate ≈ 241 × M<sup>−0.25</sup> beats per minute</p>
+
+      <p>where M is body mass in kilograms. Try it out — slide the mass slider and watch the heart beat in real time.</p>
+
+      <!-- Interactive: Heart Rate Predictor -->
+      <div class="demo-container" id="heartrate-demo">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:32px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:250px;">
+            <p class="label">Animated Heart</p>
+            <div style="display:flex;align-items:center;justify-content:center;height:180px;">
+              <svg id="heart-svg" viewBox="0 0 120 120" width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+                <g id="heart-group" transform="translate(60,55)">
+                  <path d="M0,-15 C-20,-45 -55,-20 -30,10 C-20,25 0,40 0,40 C0,40 20,25 30,10 C55,-20 20,-45 0,-15Z" fill="#E8634A" id="heart-path"/>
+                </g>
+              </svg>
+            </div>
+            <p style="text-align:center;font-family:'Figtree',sans-serif;font-size:28px;font-weight:700;color:#E8634A;margin:0;" id="bpm-display">72 bpm</p>
+            <p style="text-align:center;font-family:'Figtree',sans-serif;font-size:13px;color:#888;margin-top:4px;" id="animal-label">Human (~70 kg)</p>
+          </div>
+          <div style="flex:1;min-width:250px;">
+            <p class="label">Predictions from Body Mass</p>
+            <div style="margin-top:12px;">
+              <label style="font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;display:block;margin-bottom:8px;">
+                Body Mass: <span id="mass-display">70 kg</span>
+              </label>
+              <input type="range" id="mass-slider" min="-1.6" max="5.2" step="0.01" value="1.845" style="width:100%;">
+              <div style="display:flex;justify-content:space-between;font-family:'Figtree',sans-serif;font-size:10px;color:#888;margin-top:4px;">
+                <span>0.025 kg (mouse)</span>
+                <span>150,000 kg (whale)</span>
+              </div>
+            </div>
+            <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+                <p class="label--small" style="margin-bottom:4px;">Heart Rate</p>
+                <p style="font-family:'Figtree',sans-serif;font-size:22px;font-weight:700;margin:0;color:#E8634A;" id="hr-value">72</p>
+                <p style="font-family:'Figtree',sans-serif;font-size:11px;color:#888;margin:0;">bpm</p>
+              </div>
+              <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+                <p class="label--small" style="margin-bottom:4px;">Lifespan</p>
+                <p style="font-family:'Figtree',sans-serif;font-size:22px;font-weight:700;margin:0;color:#4A7DE8;" id="lifespan-value">39</p>
+                <p style="font-family:'Figtree',sans-serif;font-size:11px;color:#888;margin:0;">years</p>
+              </div>
+              <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+                <p class="label--small" style="margin-bottom:4px;">Metabolic Rate</p>
+                <p style="font-family:'Figtree',sans-serif;font-size:22px;font-weight:700;margin:0;color:#E8B44A;" id="metabolic-value">80</p>
+                <p style="font-family:'Figtree',sans-serif;font-size:11px;color:#888;margin:0;">watts</p>
+              </div>
+              <div style="background:white;border-radius:8px;padding:12px;text-align:center;">
+                <p class="label--small" style="margin-bottom:4px;">Total Heartbeats</p>
+                <p style="font-family:'Figtree',sans-serif;font-size:22px;font-weight:700;margin:0;color:#7B4AE8;" id="heartbeats-value">1.5B</p>
+                <p style="font-family:'Figtree',sans-serif;font-size:11px;color:#888;margin:0;">lifetime</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figcaption style="margin-top:16px;">Slide the mass slider from mouse to whale. Notice how the heart rate plummets — but the total lifetime heartbeats barely change. Every mammal gets roughly 1.5 billion heartbeats. Spend them fast (mouse) or slow (whale).</figcaption>
+      </div>
+
+      <p>Did you catch that? The most astonishing prediction: <strong>every mammal gets approximately the same number of heartbeats in its lifetime</strong> — about 1.5 billion.</p>
+
+      <p>A shrew's heart races at 1,000 beats per minute, and it lives about 2 years. A blue whale's heart beats 6 times a minute, and it lives about 70 years. Do the math: both end up at roughly 1.5 billion total heartbeats.</p>
+
+      <p>It's as if each mammal is born with a fixed "heartbeat budget." Burn through it quickly (like a mouse), and you live fast and die young. Spend it slowly (like a whale), and you get a long, languid life<span class="sidenote-trigger" onclick="toggleSidenote('sn3')">[3]</span>.</p>
+
+      <div class="sidenote" id="sn3">
+        <p><strong>Humans are cheaters</strong> 🏃‍♂️</p>
+        <p>If you run the numbers, a 70kg mammal "should" live about 35-40 years and have a heart rate of about 72 bpm. The heart rate is spot on — but modern humans live to 75-80! We've roughly doubled our "natural" lifespan through medicine, sanitation, nutrition, and social cooperation.</p>
+        <p>We're the only mammal to significantly beat the scaling prediction. We've essentially cheated the mathematics of biology.</p>
+      </div>
+
+      <p>This "invariant number of heartbeats" is a direct consequence of the quarter-power scaling. Heart rate goes as M<sup>−1/4</sup>, lifespan goes as M<sup>+1/4</sup>. Multiply them together: M<sup>−1/4</sup> × M<sup>+1/4</sup> = M<sup>0</sup> = constant. The mass dependence cancels out perfectly.</p>
+
+      <p>The same trick works for breaths. Every mammal takes about 200 million breaths in its life, regardless of size.</p>
+
+      <p>This raises a profound philosophical question about the <em>experience</em> of time...</p>
+    </section>
+
+    <!-- SECTION IV: The Pace of Life -->
+    <section id="section-4" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">IV.</span>
+        <h2>The Pace of Life</h2>
+      </div>
+
+      <p>Here's a thought experiment that might rearrange your brain a little.</p>
+
+      <p>A mouse lives about 2-3 years. An elephant lives about 60-70 years. From our human perspective, the mouse's life seems tragically short, and the elephant's impressively long.</p>
+
+      <p>But what about from the <em>mouse's</em> perspective?</p>
+
+      <!-- Biological Time SVG -->
+      <div class="demo-container" id="biotime-demo">
+        <p class="label" style="margin-bottom: 16px;">Biological Time: Same Lifetime, Different Clocks</p>
+        <svg id="biotime-svg" viewBox="0 0 636 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- Mouse side -->
+          <rect x="0" y="0" width="308" height="280" rx="8" fill="#FFF5F2"/>
+          <!-- Elephant side -->
+          <rect x="328" y="0" width="308" height="280" rx="8" fill="#F2F5FF"/>
+
+          <!-- Mouse -->
+          <text x="154" y="28" text-anchor="middle" font-family="Figtree,sans-serif" font-size="13" font-weight="700" fill="#E8634A" letter-spacing="0.05em">MOUSE</text>
+          <!-- Mouse body -->
+          <g transform="translate(130, 70)">
+            <ellipse cx="20" cy="12" rx="16" ry="10" fill="#E8634A" opacity="0.7"/>
+            <circle cx="6" cy="4" r="5" fill="#E8634A" opacity="0.7"/>
+            <circle cx="2" cy="0" r="3" fill="#E8634A" opacity="0.5"/>
+            <circle cx="10" cy="0" r="3" fill="#E8634A" opacity="0.5"/>
+            <path d="M36,12 Q50,8 54,14" stroke="#E8634A" fill="none" stroke-width="1.5" opacity="0.7"/>
+          </g>
+          <!-- Mouse clock -->
+          <circle cx="154" cy="170" r="45" fill="none" stroke="#E8634A" stroke-width="2" opacity="0.5"/>
+          <line x1="154" y1="170" x2="154" y2="135" stroke="#E8634A" stroke-width="2.5" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 154 170" to="360 154 170" dur="2s" repeatCount="indefinite"/>
+          </line>
+          <line x1="154" y1="170" x2="154" y2="142" stroke="#E8634A" stroke-width="1.5" stroke-linecap="round" opacity="0.6">
+            <animateTransform attributeName="transform" type="rotate" from="0 154 170" to="360 154 170" dur="24s" repeatCount="indefinite"/>
+          </line>
+          <circle cx="154" cy="170" r="3" fill="#E8634A"/>
+          <text x="154" y="238" text-anchor="middle" font-family="Figtree,sans-serif" font-size="11" fill="#E8634A" font-weight="600">~1,000 bpm • 2 years</text>
+          <text x="154" y="255" text-anchor="middle" font-family="Figtree,sans-serif" font-size="11" fill="#E8634A">~1.5 billion heartbeats</text>
+
+          <!-- Elephant -->
+          <text x="482" y="28" text-anchor="middle" font-family="Figtree,sans-serif" font-size="13" font-weight="700" fill="#4A7DE8" letter-spacing="0.05em">ELEPHANT</text>
+          <!-- Elephant body -->
+          <g transform="translate(440, 50)">
+            <ellipse cx="40" cy="35" rx="35" ry="25" fill="#4A7DE8" opacity="0.5"/>
+            <ellipse cx="10" cy="22" rx="12" ry="14" fill="#4A7DE8" opacity="0.5"/>
+            <path d="M0,28 Q-6,42 -2,52" stroke="#4A7DE8" fill="none" stroke-width="3" opacity="0.5"/>
+            <rect x="18" y="55" width="7" height="16" rx="3" fill="#4A7DE8" opacity="0.5"/>
+            <rect x="33" y="55" width="7" height="16" rx="3" fill="#4A7DE8" opacity="0.5"/>
+            <rect x="48" y="55" width="7" height="16" rx="3" fill="#4A7DE8" opacity="0.5"/>
+            <rect x="60" y="55" width="7" height="16" rx="3" fill="#4A7DE8" opacity="0.5"/>
+          </g>
+          <!-- Elephant clock (much slower) -->
+          <circle cx="482" cy="170" r="45" fill="none" stroke="#4A7DE8" stroke-width="2" opacity="0.5"/>
+          <line x1="482" y1="170" x2="482" y2="135" stroke="#4A7DE8" stroke-width="2.5" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 482 170" to="360 482 170" dur="20s" repeatCount="indefinite"/>
+          </line>
+          <line x1="482" y1="170" x2="482" y2="142" stroke="#4A7DE8" stroke-width="1.5" stroke-linecap="round" opacity="0.6">
+            <animateTransform attributeName="transform" type="rotate" from="0 482 170" to="360 482 170" dur="240s" repeatCount="indefinite"/>
+          </line>
+          <circle cx="482" cy="170" r="3" fill="#4A7DE8"/>
+          <text x="482" y="238" text-anchor="middle" font-family="Figtree,sans-serif" font-size="11" fill="#4A7DE8" font-weight="600">~30 bpm • 65 years</text>
+          <text x="482" y="255" text-anchor="middle" font-family="Figtree,sans-serif" font-size="11" fill="#4A7DE8">~1.5 billion heartbeats</text>
+
+          <!-- Center divider -->
+          <line x1="318" y1="20" x2="318" y2="260" stroke="#ddd" stroke-width="1" stroke-dasharray="4,4"/>
+          <text x="318" y="275" text-anchor="middle" font-family="Figtree,sans-serif" font-size="10" fill="#aaa">Same biological lifetime</text>
+        </svg>
+        <figcaption>Both clocks tick the same number of times. The mouse's clock just runs 10× faster. From a "biological time" perspective, both creatures experience equally full lives.</figcaption>
+      </div>
+
+      <p>All biological times scale as M<sup>1/4</sup>. Time between heartbeats, time between breaths, time to reach maturity, time to reproduce — they all slow down with body size in exactly the same way.</p>
+
+      <p>This means that from the <em>internal</em> perspective of an animal — measured in heartbeats or breaths rather than clock seconds — every mammal lives roughly the same length of life. A mouse processes its environment, makes decisions, and experiences its world at a much higher "frame rate" than an elephant.</p>
+
+      <p>Geoffrey West draws an analogy to Einstein's time dilation. In special relativity, time slows down as you approach the speed of light. In biology, <strong>time slows down as you approach the size of a whale</strong>. Size is the "speed of light" of the biological world.</p>
+
+      <p>Even walking speed scales with body mass — larger animals walk faster. But when you measure walking speed in "body lengths per heartbeat" rather than meters per second, all mammals walk at the same pace. Everyone is walking one biological step at a time.</p>
+
+      <p>This is spooky. It's as if nature is running the same software on different hardware, just clocked at different speeds<span class="sidenote-trigger" onclick="toggleSidenote('sn4')">[4]</span>.</p>
+
+      <div class="sidenote" id="sn4">
+        <p><strong>Why do we "feel" like we live longer than mice?</strong> 🤔</p>
+        <p>Great question. It's because our perception of time is set by our <em>own</em> biological clock, not by some absolute reference. We experience 75 years at "human speed" — which <em>feels</em> long to us. A mouse experiences 2 years at "mouse speed" — which presumably feels just as long to the mouse.</p>
+        <p>Of course, comparing subjective experience across species is philosophically fraught. But the invariance of biological time is real and measurable.</p>
+      </div>
+
+      <p>So: organisms follow elegant, universal scaling laws rooted in the geometry of their internal networks. Everything scales. Everything is predictable. Life is mathematically beautiful.</p>
+
+      <p>But then West turned his attention to something that isn't alive in the biological sense — but arguably has a life of its own.</p>
+
+      <p>He turned his attention to <em>cities</em>.</p>
+
+      <p>And everything changed.</p>
+    </section>
+
+    <!-- SECTION V: Cities: Where Scaling Gets Weird -->
+    <section id="section-5" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">V.</span>
+        <h2>Cities: Where Scaling Gets Weird</h2>
+      </div>
+
+      <p>When Geoffrey West first started looking at city data, he expected to find the same sublinear scaling he'd found in biology. After all, cities have distribution networks too — roads, power lines, water pipes, internet cables. A bigger city is, in some sense, just a bigger organism.</p>
+
+      <p>He was half right. And the half that was wrong turned out to be far more interesting.</p>
+
+      <p>Cities do show sublinear scaling — but <em>only for infrastructure</em>. Roads, gas stations, power lines, water pipes: they all scale with an exponent of about <strong>0.85</strong>. Double the population, and you only need about 85% more roads. This is economies of scale, and it's exactly what you'd expect from a network-based argument<span class="sidenote-trigger" onclick="toggleSidenote('sn5')">[5]</span>.</p>
+
+      <div class="sidenote" id="sn5">
+        <p><strong>The 15% infrastructure bonus</strong> 🏗️</p>
+        <p>This is a real, measurable savings. When a city doubles in size, it doesn't need to double its infrastructure. It saves about 15% on everything — roads, pipes, gas stations, electrical cables. This is why, per capita, New York City is more resource-efficient than a small town. Living together is efficient.</p>
+        <p>Specifically, the data show infrastructure scales as Population<sup>0.85</sup> — remarkably consistent across countries and cultures.</p>
+      </div>
+
+      <p>But then West looked at <em>socioeconomic</em> quantities — wages, patents, GDP, number of restaurants, creative professionals, crime, disease, pollution — and found something completely different.</p>
+
+      <p><strong>They scale <em>super</em>linearly</strong>. The exponent is about <strong>1.15</strong>.</p>
+
+      <!-- Interactive: City Scaling Dashboard -->
+      <div class="demo-container" id="city-scaling-demo">
+        <p class="label" style="margin-bottom: 16px;">City Scaling: Infrastructure vs. Socioeconomic Output</p>
+        <div style="margin-bottom:16px;">
+          <label style="font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;display:block;margin-bottom:8px;">
+            Population: <span id="pop-display">1,000,000</span>
+          </label>
+          <input type="range" id="pop-slider" min="4" max="7.2" step="0.01" value="6" style="width:100%;">
+          <div style="display:flex;justify-content:space-between;font-family:'Figtree',sans-serif;font-size:10px;color:#888;margin-top:4px;">
+            <span>10,000 (small town)</span>
+            <span>15,000,000 (megacity)</span>
+          </div>
+        </div>
+
+        <svg id="city-bars-svg" viewBox="0 0 636 300" xmlns="http://www.w3.org/2000/svg">
+        </svg>
+
+        <figcaption style="margin-top:8px;">Double the population and watch what happens. Infrastructure grows LESS than double (saving ~15%). But socioeconomic output grows MORE than double (a ~15% bonus). The good and bad scale together — you can't have the patents without the crime.</figcaption>
+      </div>
+
+      <p>This is staggering. Double a city's population and you get:</p>
+
+      <ul>
+        <li><strong>~115% more</strong> wages, GDP, patents, restaurants, artists, ideas</li>
+        <li><strong>~115% more</strong> crime, pollution, disease, traffic</li>
+        <li><strong>~85% more</strong> roads, gas stations, power lines (a 15% savings!)</li>
+      </ul>
+
+      <p>The good and the bad scale <em>together</em>. You can't cherry-pick. A city that's 15% more creative is also 15% more criminal. A city that's 15% wealthier also has 15% more AIDS cases. West calls this "the unity of the urban phenomenon."</p>
+
+      <p>This is <em>fundamentally different</em> from biology. No living organism shows superlinear scaling. In biology, bigger always means slower and more efficient. In cities, <strong>bigger means faster and more intense</strong>.</p>
+
+      <p>Why? Because the "network" driving city scaling isn't a physical infrastructure network — it's a <em>social</em> network. The scaling comes from human interactions. When you pack more people together, the number of possible interactions grows faster than the population. And it's interactions — conversations, collaborations, transactions, arguments — that drive economic output, innovation, and, yes, crime.</p>
+
+      <p>West puts it vividly: <strong>"A city is a particle accelerator for humans."</strong> Cram people together, speed up their interactions, and creative output increases — along with everything else.</p>
+    </section>
+
+    <!-- SECTION VI: The Pace of Urban Life -->
+    <section id="section-6" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">VI.</span>
+        <h2>The Pace of Urban Life</h2>
+      </div>
+
+      <p>Here's something you've probably noticed intuitively but never put a number on: <strong>people in big cities walk faster</strong>.</p>
+
+      <p>It's not your imagination. In the 1970s, psychologist Marc Bornstein measured pedestrian walking speeds in cities around the world. He found a systematic pattern: the bigger the city, the faster the walking speed. And in 2007, a much larger study confirmed it — and found the same ~1.15 superlinear exponent.</p>
+
+      <p>This is remarkable. Walking speed isn't determined by infrastructure or policy. Nobody is <em>told</em> to walk faster in Tokyo. It emerges spontaneously from the increased pace of social and economic interactions.</p>
+
+      <!-- Walking Speed Interactive -->
+      <div class="demo-container" id="walking-demo">
+        <p class="label" style="margin-bottom: 16px;">Walking Speed vs. City Population</p>
+        <svg id="walking-svg" viewBox="0 0 636 220" xmlns="http://www.w3.org/2000/svg">
+        </svg>
+        <div style="margin-top:12px;">
+          <label style="font-family:'Figtree',sans-serif;font-size:14px;font-weight:600;display:block;margin-bottom:8px;">
+            City Population: <span id="walk-pop-display">500,000</span>
+          </label>
+          <input type="range" id="walk-slider" min="3.5" max="7.2" step="0.01" value="5.7" style="width:100%;">
+        </div>
+        <figcaption style="margin-top:8px;">The stick figure walks faster as the city grows. Everything in a city accelerates with size — not just walking, but transaction times, business formation, even the spread of disease.</figcaption>
+      </div>
+
+      <p>And it's not just walking speed. The pace of <em>everything</em> in a city scales superlinearly:</p>
+
+      <ul>
+        <li><strong>Speed of business transactions</strong> — deals close faster in New York than in Topeka</li>
+        <li><strong>Rate of innovation</strong> — patents per capita increase with city size</li>
+        <li><strong>Speed of disease spread</strong> — epidemics move faster in bigger cities</li>
+        <li><strong>Frequency of social interactions</strong> — you meet more people, more often</li>
+      </ul>
+
+      <p>Remember how in biology, bigger meant <em>slower</em>? The pace of life decreased with size? In cities, it's the exact opposite. <strong>Bigger means faster.</strong> The whole city speeds up.</p>
+
+      <p>West argues this is because cities are driven by social networks, not physical distribution networks. And social networks have a fundamentally different geometry — one that leads to <em>increasing</em> returns rather than decreasing ones.</p>
+
+      <p>But superlinear scaling has a dark side. And to see it, we need to look at the one thing that's supposed to <em>grow</em> but actually behaves like an organism rather than a city.</p>
+    </section>
+
+    <!-- SECTION VII: Companies: Born to Die -->
+    <section id="section-7" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">VII.</span>
+        <h2>Companies: Born to Die</h2>
+      </div>
+
+      <p>Here's a question that should keep CEOs up at night: <strong>why do cities almost never die, but companies almost always do?</strong></p>
+
+      <p>Think about it. Athens is 3,400 years old. Rome is 2,700 years old. London has been continuously inhabited for nearly 2,000 years. These cities have survived wars, plagues, fires, economic collapses, and the fall of empires.</p>
+
+      <p>Meanwhile, the average lifespan of a company on the Fortune 500 list is about 10.5 years (counted from when they enter the list)<span class="sidenote-trigger" onclick="toggleSidenote('sn6')">[6]</span>. Half of all publicly traded companies die within a decade. Of the Fortune 500 companies in 1955, 88% are gone.</p>
+
+      <div class="sidenote" id="sn6">
+        <p><strong>Some notable corporate deaths</strong> 💀</p>
+        <p>Kodak (founded 1888, bankrupt 2012): invented the digital camera, then was killed by it. Sears (founded 1893, bankrupt 2018): once the Amazon of its day. Blockbuster (founded 1985, bankrupt 2010): had a chance to buy Netflix for $50 million. Pan Am (founded 1927, bankrupt 1991): once the world's largest airline.</p>
+        <p>The pattern is eerily consistent. Companies grow, optimize, calcify, and die.</p>
+      </div>
+
+      <!-- Company Mortality Curve -->
+      <div class="demo-container" id="mortality-demo">
+        <p class="label" style="margin-bottom: 16px;">Company Survival Rate Over Time</p>
+        <svg id="mortality-svg" viewBox="0 0 636 320" xmlns="http://www.w3.org/2000/svg">
+        </svg>
+        <figcaption>The survival curve for publicly traded companies looks like the decay of a radioactive isotope. The "half-life" is about 10.5 years. No matter how big or dominant a company seems, the math is relentless.</figcaption>
+      </div>
+
+      <p>West's explanation is elegant and devastating: <strong>companies scale like organisms, not like cities</strong>.</p>
+
+      <p>When you analyze company data, you find sublinear scaling — just like biology. As companies grow, their revenue-per-employee grows, but <em>sub</em>linearly (exponent ~0.9). They become more efficient with scale — but at a cost.</p>
+
+      <p>That cost is innovation. Per capita innovation (measured by R&D output, patents per employee, new products per dollar spent) <em>decreases</em> as companies grow. The bigger the company, the less innovative each person becomes.</p>
+
+      <p>Why? Because companies, unlike cities, develop rigid hierarchies and bureaucratic networks. They optimize for efficiency — standardizing processes, reducing variance, eliminating redundancy. This makes them great at doing what they <em>already do</em>, but terrible at adapting to change.</p>
+
+      <p>"Cities keep reinventing themselves," West writes. "Horse and buggy gave way to automobiles, which are giving way to ride-sharing. But companies calcify around their core business. They fight the last war."</p>
+
+      <p>The contrast is stark:</p>
+
+      <ul>
+        <li><strong>Cities</strong>: superlinear scaling → accelerating innovation → open-ended growth → almost never die</li>
+        <li><strong>Companies</strong>: sublinear scaling → decelerating innovation → bounded growth → almost always die</li>
+      </ul>
+
+      <p>A city is an open platform that continuously generates new ideas. A company is a closed system that eventually runs out of them.</p>
+
+      <p>This brings us to the deepest insight of West's work — the universal mathematics of growth itself.</p>
+    </section>
+
+    <!-- SECTION VIII: The Universal Growth Curve -->
+    <section id="section-8" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">VIII.</span>
+        <h2>The Universal Growth Curve</h2>
+      </div>
+
+      <p>West and his collaborators derived a remarkably simple equation that governs growth in all three domains — organisms, cities, and companies. It looks like this:</p>
+
+      <p style="text-align:center; font-size: 22px; margin: 24px 0; font-family: 'Figtree', sans-serif; font-weight: 600; color: #7B4AE8;">dM/dt = a·M<sup>β</sup> − b·M</p>
+
+      <p>Translation: the rate of growth equals "resources generated" (which scales as M<sup>β</sup>) minus "resources spent on maintenance" (which scales linearly with size).</p>
+
+      <p>The magic is in the exponent β. And this one parameter determines <em>everything</em> about how a system grows.</p>
+
+      <!-- Growth Curve Interactive -->
+      <div class="demo-container" id="growth-demo">
+        <p class="label" style="margin-bottom: 16px;">The Universal Growth Curve</p>
+        <div style="display:flex;gap:20px;margin-bottom:16px;flex-wrap:wrap;">
+          <label style="font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
+            <span style="width:14px;height:14px;background:#E8634A;border-radius:3px;display:inline-block;"></span>
+            Organisms (β=0.75)
+          </label>
+          <label style="font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
+            <span style="width:14px;height:14px;background:#4A7DE8;border-radius:3px;display:inline-block;"></span>
+            Cities (β=1.15)
+          </label>
+          <label style="font-family:'Figtree',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
+            <span style="width:14px;height:14px;background:#E8B44A;border-radius:3px;display:inline-block;"></span>
+            Companies (β=0.90)
+          </label>
+        </div>
+        <svg id="growth-svg" viewBox="0 0 636 350" xmlns="http://www.w3.org/2000/svg">
+        </svg>
+        <figcaption>Organisms grow fast, then plateau — reaching a stable adult size. Companies grow similarly but eventually decline and die. Cities never stop growing — but they require ever-faster cycles of innovation to sustain themselves.</figcaption>
+      </div>
+
+      <p>When <strong>β &lt; 1</strong> (sublinear — organisms and companies): maintenance costs eventually catch up with resource generation. Growth slows, plateaus, and stops. The system reaches a stable "adult" size. For organisms, this is healthy maturity. For companies, it often precedes decline and death.</p>
+
+      <p>When <strong>β &gt; 1</strong> (superlinear — cities): resource generation always outpaces maintenance. Growth never stops. The system keeps getting bigger, faster, and more intense. But there's a terrifying catch<span class="sidenote-trigger" onclick="toggleSidenote('sn7')">[7]</span>.</p>
+
+      <div class="sidenote" id="sn7">
+        <p><strong>The finite-time singularity</strong> 🤯</p>
+        <p>When β > 1, the growth equation predicts something alarming: the system reaches <em>infinite size in finite time</em>. Obviously, this can't happen in reality. What it means is that the current paradigm of growth must break down — requiring a major innovation or paradigm shift to reset the clock.</p>
+        <p>West argues this is why cities need ever-faster cycles of innovation. The time between major paradigm shifts (fire → agriculture → industrialization → digital) keeps shrinking. Each innovation resets the clock, but the treadmill speeds up every time.</p>
+        <p>Mathematically, this means we need infinite innovation in finite time. West calls this "the treadmill of accelerating growth" — and warns it may be unsustainable.</p>
+      </div>
+
+      <p>Superlinear growth requires the pace of innovation to <em>accelerate</em> — you need new paradigm shifts faster and faster. The time between major innovations keeps shrinking: millennia between fire and agriculture, centuries between the printing press and industrialization, decades between electricity and computers, years between the internet and AI.</p>
+
+      <p>West calls this "<strong>the treadmill of accelerating growth</strong>." The treadmill keeps speeding up, and you have to keep running faster just to stay in place. Miss one cycle of innovation, and the system crashes.</p>
+
+      <p>This is the deep mathematical reason why cities feel so relentless, why the pace of modern life keeps increasing, and why "disruption" is the defining word of our era. It's not a cultural choice — it's a <em>mathematical necessity</em> of superlinear scaling.</p>
+    </section>
+
+    <!-- SECTION IX: Putting It All Together -->
+    <section id="section-9" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">IX.</span>
+        <h2>Putting It All Together</h2>
+      </div>
+
+      <p>Let's step back and appreciate the big picture. Three domains — organisms, cities, and companies — and <em>one equation</em> with one parameter (β) explains the fundamental behavior of all three.</p>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th style="color:#E8634A;">Organisms</th>
+            <th style="color:#4A7DE8;">Cities</th>
+            <th style="color:#E8B44A;">Companies</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Scaling exponent (β)</strong></td>
+            <td>~0.75 (sublinear)</td>
+            <td>~1.15 (superlinear)</td>
+            <td>~0.85–0.9 (sublinear)</td>
+          </tr>
+          <tr>
+            <td><strong>Growth pattern</strong></td>
+            <td>Fast then plateau</td>
+            <td>Accelerating, unbounded</td>
+            <td>Fast then plateau then decline</td>
+          </tr>
+          <tr>
+            <td><strong>Pace of life with size</strong></td>
+            <td>Slows down</td>
+            <td>Speeds up</td>
+            <td>Slows down</td>
+          </tr>
+          <tr>
+            <td><strong>Efficiency with size</strong></td>
+            <td>More efficient</td>
+            <td>More efficient (infra)</td>
+            <td>More efficient</td>
+          </tr>
+          <tr>
+            <td><strong>Innovation with size</strong></td>
+            <td>N/A</td>
+            <td>Increases per capita</td>
+            <td>Decreases per capita</td>
+          </tr>
+          <tr>
+            <td><strong>Death</strong></td>
+            <td>Inevitable</td>
+            <td>Extremely rare</td>
+            <td>Almost certain</td>
+          </tr>
+          <tr>
+            <td><strong>Network type</strong></td>
+            <td>Fractal distribution</td>
+            <td>Social interaction</td>
+            <td>Hierarchical</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>The deep unity is striking. Whether it's a shrew or a whale, a village or a megacity, a startup or a Fortune 500 company — the same mathematical framework applies. The exponent β is the <em>only</em> thing that changes, and it determines everything: growth trajectory, pace of life, and ultimate fate.</p>
+
+      <p>Now, let's see if you can use what you've learned to make predictions yourself.</p>
+
+      <!-- Quiz 1 -->
+      <div class="quiz-block">
+        <p class="quiz-question">QUIZ 1: A newly discovered mammal species weighs 50 kg. Its heart rate hasn't been measured yet. What's your best guess?</p>
+        <button class="quiz-reveal-btn" onclick="this.nextElementSibling.style.display='block'; this.style.display='none';">Reveal Answer</button>
+        <div class="quiz-answer">
+          <p>Using Heart Rate ≈ 241 × M<sup>−0.25</sup>:</p>
+          <p style="font-family:'Figtree',sans-serif; font-size:18px; font-weight:700; color:#E8634A; margin: 8px 0;">241 × 50<sup>−0.25</sup> = 241 × 0.376 ≈ 91 bpm</p>
+          <p>For reference, a similarly-sized dog has a resting heart rate of about 70–120 bpm. The scaling law nails it! We also get a lifespan estimate of ~30 years (11.8 × 50<sup>0.25</sup>).</p>
+        </div>
+      </div>
+
+      <!-- Quiz 2 -->
+      <div class="quiz-block">
+        <p class="quiz-question">QUIZ 2: City A has twice the population of City B. How many more patents does City A produce per year?</p>
+        <button class="quiz-reveal-btn" onclick="this.nextElementSibling.style.display='block'; this.style.display='none';">Reveal Answer</button>
+        <div class="quiz-answer">
+          <p>Patents scale superlinearly with exponent ~1.15:</p>
+          <p style="font-family:'Figtree',sans-serif; font-size:18px; font-weight:700; color:#4A7DE8; margin: 8px 0;">2<sup>1.15</sup> ≈ 2.22× as many patents</p>
+          <p>Not just double — but <em>more</em> than double! That extra 22% is the "superlinear bonus" of urban agglomeration. The same math applies to wages, GDP, restaurants, and unfortunately, crime.</p>
+        </div>
+      </div>
+
+      <!-- Quiz 3 -->
+      <div class="quiz-block">
+        <p class="quiz-question">QUIZ 3: A city triples its population through migration. What happens to per-capita income?</p>
+        <button class="quiz-reveal-btn" onclick="this.nextElementSibling.style.display='block'; this.style.display='none';">Reveal Answer</button>
+        <div class="quiz-answer">
+          <p>Total wages scale as Pop<sup>1.15</sup>, so per-capita wages scale as Pop<sup>0.15</sup>:</p>
+          <p style="font-family:'Figtree',sans-serif; font-size:18px; font-weight:700; color:#4A7DE8; margin: 8px 0;">3<sup>0.15</sup> ≈ 1.17× → a ~17% raise for everyone</p>
+          <p>Everyone in the city gets richer — not just the newcomers. This is why urbanization is one of the most powerful forces for economic growth in human history. (But remember: crime per capita also goes up ~17%.)</p>
+        </div>
+      </div>
+
+      <p>Pretty powerful, right? One equation, a handful of exponents, and you can predict heart rates, city economics, and corporate lifespans.</p>
+
+      <p>Of course, scaling laws aren't perfectly precise — they describe <em>averages</em> across many systems. Any individual animal, city, or company can deviate. But the deviations themselves are interesting: they tell you which systems are outperforming or underperforming their "expected" behavior given their size<span class="sidenote-trigger" onclick="toggleSidenote('sn8')">[8]</span>.</p>
+
+      <div class="sidenote" id="sn8">
+        <p><strong>The power of residuals</strong> 📊</p>
+        <p>When a city produces more patents than its population predicts, that tells you something real — it has an unusually innovative environment. When a company grows slower than its size predicts, it may be in trouble.</p>
+        <p>West argues that the <em>deviations</em> from scaling laws are just as informative as the laws themselves. Scaling laws give you the baseline; residuals tell you what's unique.</p>
+        <p>Controversies remain — some researchers argue the exponents are closer to 2/3 than 3/4 for biology, or that city scaling exponents vary more by metric than West suggests. But the broad framework of universal power-law scaling remains robust and productive.</p>
+      </div>
+
+      <p>Geoffrey West ends his book with a warning. The accelerating treadmill of urban innovation is not sustainable indefinitely. At some point, the pace of required paradigm shifts becomes impossibly fast. We may already be feeling this — the sense that the world is changing faster than we can adapt.</p>
+
+      <p>The mathematics of scaling doesn't tell us <em>what</em> to do about it. But it tells us clearly what the constraints are. And understanding the constraints is always the first step toward wisdom.</p>
+    </section>
+
+    <!-- SECTION X: Further Resources -->
+    <section id="section-10" class="fade-in">
+      <div class="section-header">
+        <span class="section-number">X.</span>
+        <h2>Further Resources</h2>
+      </div>
+
+      <ul>
+        <li><strong>Geoffrey West's book</strong>: <em>"Scale: The Universal Laws of Growth, Innovation, Sustainability, and the Pace of Life in Organisms, Cities, Economies, and Companies"</em> (2017). The definitive popular treatment — deeply researched, eloquently written, and far more comprehensive than this article.</li>
+        <li><strong>Geoffrey West's TED Talk</strong>: "The surprising math of cities and corporations." A 17-minute overview of the key ideas — a great place to start.</li>
+        <li><strong>The original paper</strong>: West, Brown &amp; Enquist, "A General Model for the Origin of Allometric Scaling Laws in Biology" (<em>Science</em>, 1997). The landmark paper that explained the &frac34; power law.</li>
+        <li><strong>Bettencourt et al.</strong>, "Growth, innovation, scaling, and the pace of life in cities" (<em>PNAS</em>, 2007). The key paper on superlinear scaling in cities.</li>
+        <li><strong>The Santa Fe Institute</strong>: The interdisciplinary research institute where much of this work was done. Their Complexity Explorer courses are excellent free resources.</li>
+      </ul>
+    </section>
+
+    <!-- Credits -->
+    <p class="credits">This explainer is based on the work of Geoffrey West, James Brown, Brian Enquist, Luís Bettencourt, and colleagues at the Santa Fe Institute. Any errors are the author's own. Scaling law research is an active field with ongoing debates — the numbers presented here are approximations meant to convey the core ideas.</p>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="content">
+      <p style="font-family: 'Figtree', sans-serif; font-size: 18px; font-weight: 700;">The Hidden Mathematics of Everything</p>
+      <p style="font-family: 'Newsreader', serif; font-size: 16px; opacity: 0.8; margin-top: 16px; line-height: 1.5;">Based on Geoffrey West's <em>Scale</em>. An exploration of the universal power laws that govern organisms, cities, and companies.</p>
+      <p class="footer-tagline">The math is simple. The implications are everything.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ============================================
+    // UTILITY: Toggle sidenotes
+    // ============================================
+    function toggleSidenote(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('open');
+    }
+
+    // ============================================
+    // INTERACTIVE 1: Kleiber's Law Log-Log Plot
+    // ============================================
+    (function() {
+      const svg = document.getElementById('kleiber-svg');
+      if (!svg) return;
+
+      // Real data: [name, mass_kg, metabolic_rate_watts]
+      const animals = [
+        ['Mouse', 0.025, 0.5],
+        ['Rat', 0.3, 2.5],
+        ['Pigeon', 0.35, 3.0],
+        ['Rabbit', 2, 10],
+        ['Cat', 4, 16],
+        ['Dog', 15, 42],
+        ['Sheep', 50, 100],
+        ['Human', 70, 130],
+        ['Pig', 120, 195],
+        ['Cow', 500, 560],
+        ['Horse', 450, 510],
+        ['Elephant', 4000, 2800],
+        ['Whale', 100000, 35000],
+      ];
+
+      const colors = {
+        'Mouse': '#E8634A', 'Rat': '#E87A4A', 'Pigeon': '#E8964A',
+        'Rabbit': '#E8B44A', 'Cat': '#C8E84A', 'Dog': '#7DE84A',
+        'Sheep': '#4AE88A', 'Human': '#4A7DE8', 'Pig': '#4ABCE8',
+        'Cow': '#6A4AE8', 'Horse': '#9B4AE8', 'Elephant': '#E84A9B',
+        'Whale': '#7B4AE8'
+      };
+
+      let isLogScale = true;
+      const W = 636, H = 380;
+      const pad = { top: 30, right: 40, bottom: 55, left: 70 };
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
+
+      function logRange(data, accessor) {
+        const vals = data.map(accessor);
+        return [Math.log10(Math.min(...vals)), Math.log10(Math.max(...vals))];
+      }
+
+      function render() {
+        const [xMin, xMax] = isLogScale ? logRange(animals, a => a[1]) : [0, 110000];
+        const [yMin, yMax] = isLogScale ? logRange(animals, a => a[2]) : [0, 38000];
+        const xPad = isLogScale ? 0.3 : 5000;
+        const yPad = isLogScale ? 0.3 : 2000;
+
+        function xScale(v) {
+          const val = isLogScale ? Math.log10(v) : v;
+          const min = isLogScale ? xMin - xPad : 0 - xPad;
+          const max = isLogScale ? xMax + xPad : xMax + xPad;
+          return pad.left + ((val - min) / (max - min)) * plotW;
+        }
+
+        function yScale(v) {
+          const val = isLogScale ? Math.log10(v) : v;
+          const min = isLogScale ? yMin - yPad : 0 - yPad;
+          const max = isLogScale ? yMax + yPad : yMax + yPad;
+          return pad.top + plotH - ((val - min) / (max - min)) * plotH;
+        }
+
+        let html = '';
+
+        // Background
+        html += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="white" rx="4"/>`;
+
+        // Grid lines
+        if (isLogScale) {
+          for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+            const px = xScale(Math.pow(10, x));
+            html += `<line x1="${px}" y1="${pad.top}" x2="${px}" y2="${pad.top + plotH}" stroke="#eee" stroke-width="1"/>`;
+          }
+          for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+            const py = yScale(Math.pow(10, y));
+            html += `<line x1="${pad.left}" y1="${py}" x2="${pad.left + plotW}" y2="${py}" stroke="#eee" stroke-width="1"/>`;
+          }
+        }
+
+        // 3/4 power law line
+        if (isLogScale) {
+          const linePoints = [];
+          for (let lx = xMin - 0.5; lx <= xMax + 0.5; lx += 0.1) {
+            const ly = 0.75 * lx + Math.log10(10); // B = 10 * M^0.75 (approx Kleiber constant)
+            linePoints.push(`${xScale(Math.pow(10, lx))},${yScale(Math.pow(10, ly))}`);
+          }
+          html += `<polyline points="${linePoints.join(' ')}" fill="none" stroke="#5B4AE8" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.6"/>`;
+          html += `<text x="${xScale(Math.pow(10, xMax + 0.15))}" y="${yScale(Math.pow(10, 0.75 * (xMax + 0.15) + Math.log10(10))) - 8}" font-family="Figtree,sans-serif" font-size="11" fill="#5B4AE8" font-weight="600">slope = ¾</text>`;
+        }
+
+        // Data points
+        animals.forEach((a, i) => {
+          const cx = xScale(a[1]);
+          const cy = yScale(a[2]);
+          const color = colors[a[0]] || '#5B4AE8';
+          html += `<circle cx="${cx}" cy="${cy}" r="6" fill="${color}" stroke="white" stroke-width="1.5" opacity="0.9">
+            <animate attributeName="r" from="0" to="6" dur="0.4s" begin="${i * 0.12}s" fill="freeze"/>
+            <animate attributeName="opacity" from="0" to="0.9" dur="0.3s" begin="${i * 0.12}s" fill="freeze"/>
+          </circle>`;
+          // Labels
+          const labelOffset = a[0] === 'Whale' ? -12 : (a[0] === 'Mouse' ? -10 : -10);
+          const labelX = a[0] === 'Whale' ? cx - 30 : cx + 9;
+          html += `<text x="${labelX}" y="${cy + labelOffset + 6}" font-family="Figtree,sans-serif" font-size="10" fill="#666" opacity="0">
+            ${a[0]}
+            <animate attributeName="opacity" from="0" to="1" dur="0.3s" begin="${i * 0.12 + 0.2}s" fill="freeze"/>
+          </text>`;
+        });
+
+        // Axes
+        html += `<line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="#333" stroke-width="1.5"/>`;
+        html += `<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="#333" stroke-width="1.5"/>`;
+
+        // Axis labels
+        html += `<text x="${pad.left + plotW / 2}" y="${H - 8}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="12" font-weight="600" text-transform="uppercase" letter-spacing="0.08em" fill="#333">Body Mass ${isLogScale ? '(log kg)' : '(kg)'}</text>`;
+        html += `<text x="15" y="${pad.top + plotH / 2}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="12" font-weight="600" fill="#333" transform="rotate(-90, 15, ${pad.top + plotH / 2})">Metabolic Rate ${isLogScale ? '(log W)' : '(W)'}</text>`;
+
+        // Tick labels
+        if (isLogScale) {
+          for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x++) {
+            const px = xScale(Math.pow(10, x));
+            const label = x <= 0 ? (Math.pow(10, x) < 1 ? Math.pow(10, x).toFixed(Math.abs(x)) : Math.pow(10, x)) : Math.pow(10, x).toLocaleString();
+            html += `<text x="${px}" y="${pad.top + plotH + 18}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="10" fill="#888">${label}</text>`;
+          }
+          for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y++) {
+            const py = yScale(Math.pow(10, y));
+            html += `<text x="${pad.left - 8}" y="${py + 4}" text-anchor="end" font-family="Figtree,sans-serif" font-size="10" fill="#888">${Math.pow(10, y).toLocaleString()}</text>`;
+          }
+        }
+
+        svg.innerHTML = html;
+      }
+
+      render();
+
+      document.getElementById('kleiber-toggle').addEventListener('click', function() {
+        isLogScale = !isLogScale;
+        this.textContent = isLogScale ? 'Toggle Linear Scale' : 'Toggle Log Scale';
+        render();
+      });
+    })();
+    // ============================================
+    // INTERACTIVE 2: Fractal Branching Network
+    // ============================================
+    (function() {
+      const svg = document.getElementById('fractal-svg');
+      if (!svg) return;
+
+      function drawBranch(x, y, angle, length, width, depth, maxDepth) {
+        if (depth > maxDepth || length < 2) return '';
+
+        const endX = x + Math.cos(angle) * length;
+        const endY = y + Math.sin(angle) * length;
+
+        // Color gradient from red (aorta) to blue (capillaries)
+        const t = depth / maxDepth;
+        const r = Math.round(232 * (1 - t) + 74 * t);
+        const g = Math.round(99 * (1 - t) + 125 * t);
+        const b = Math.round(74 * (1 - t) + 232 * t);
+        const color = `rgb(${r},${g},${b})`;
+
+        const delay = depth * 0.3;
+        let html = `<line x1="${x}" y1="${y}" x2="${endX}" y2="${endY}"
+          stroke="${color}" stroke-width="${width}" stroke-linecap="round" opacity="0">
+          <animate attributeName="opacity" from="0" to="0.8" dur="0.4s" begin="${delay}s" fill="freeze"/>
+        </line>`;
+
+        // Pulse animation (blood flow)
+        if (depth < maxDepth) {
+          html += `<circle r="${Math.max(width * 0.4, 1.5)}" fill="#E8634A" opacity="0">
+            <animateMotion dur="${1.5 + depth * 0.3}s" repeatCount="indefinite" begin="${delay + 0.5}s">
+              <mpath href="#pulse-path-${depth}-${Math.round(x)}-${Math.round(y)}"/>
+            </animateMotion>
+            <animate attributeName="opacity" from="0" to="0.6" dur="0.3s" begin="${delay + 0.5}s" fill="freeze"/>
+          </circle>`;
+          html += `<path id="pulse-path-${depth}-${Math.round(x)}-${Math.round(y)}" d="M${x},${y} L${endX},${endY}" fill="none" stroke="none"/>`;
+        }
+
+        // Branch further
+        const branchAngle = 0.45 - depth * 0.03;
+        const lengthRatio = 0.7;
+        const widthRatio = 0.65;
+
+        html += drawBranch(endX, endY, angle - branchAngle, length * lengthRatio, width * widthRatio, depth + 1, maxDepth);
+        html += drawBranch(endX, endY, angle + branchAngle, length * lengthRatio, width * widthRatio, depth + 1, maxDepth);
+
+        return html;
+      }
+
+      let html = '';
+      // Draw the tree from left to right
+      html += drawBranch(30, 175, 0, 100, 12, 0, 7);
+
+      // Labels
+      html += `<text x="10" y="335" font-family="Figtree,sans-serif" font-size="11" font-weight="600" fill="#E8634A" text-transform="uppercase" letter-spacing="0.05em">Aorta</text>`;
+      html += `<text x="540" y="335" font-family="Figtree,sans-serif" font-size="11" font-weight="600" fill="#4A7DE8" text-transform="uppercase" letter-spacing="0.05em">Capillaries</text>`;
+      html += `<text x="250" y="20" font-family="Figtree,sans-serif" font-size="11" fill="#888">Each branch splits into smaller vessels — a self-similar fractal pattern</text>`;
+
+      svg.innerHTML = html;
+    })();
+
+    // ============================================
+    // INTERACTIVE 3: Heart Rate Predictor
+    // ============================================
+    (function() {
+      const slider = document.getElementById('mass-slider');
+      if (!slider) return;
+
+      const bpmDisplay = document.getElementById('bpm-display');
+      const massDisplay = document.getElementById('mass-display');
+      const animalLabel = document.getElementById('animal-label');
+      const hrValue = document.getElementById('hr-value');
+      const lifespanValue = document.getElementById('lifespan-value');
+      const metabolicValue = document.getElementById('metabolic-value');
+      const heartbeatsValue = document.getElementById('heartbeats-value');
+      const heartPath = document.getElementById('heart-path');
+
+      const animalGuide = [
+        [0.025, 'Mouse'], [0.3, 'Rat'], [2, 'Rabbit'], [4, 'Cat'],
+        [15, 'Dog'], [70, 'Human'], [500, 'Cow'], [4000, 'Elephant'],
+        [100000, 'Blue Whale'], [150000, 'Blue Whale']
+      ];
+
+      let beatInterval = null;
+
+      function formatMass(kg) {
+        if (kg < 1) return (kg * 1000).toFixed(0) + ' g';
+        if (kg < 1000) return kg.toFixed(1) + ' kg';
+        return (kg / 1000).toFixed(1) + ' tonnes';
+      }
+
+      function getAnimalName(kg) {
+        let closest = animalGuide[0];
+        let minDist = Infinity;
+        for (const [m, name] of animalGuide) {
+          const dist = Math.abs(Math.log10(kg) - Math.log10(m));
+          if (dist < minDist) { minDist = dist; closest = [m, name]; }
+        }
+        return closest[1] + ' (~' + formatMass(closest[0]) + ')';
+      }
+
+      function update() {
+        const logMass = parseFloat(slider.value);
+        const mass = Math.pow(10, logMass);
+
+        // Predictions using scaling laws
+        const heartRate = Math.round(241 * Math.pow(mass, -0.25));
+        const lifespan = (11.8 * Math.pow(mass, 0.25)).toFixed(1);
+        const metabolic = (10 * Math.pow(mass, 0.75)).toFixed(1);
+        const lifespanMinutes = parseFloat(lifespan) * 365.25 * 24 * 60;
+        const totalBeats = heartRate * lifespanMinutes;
+        const totalBeatsStr = (totalBeats / 1e9).toFixed(1) + 'B';
+
+        massDisplay.textContent = formatMass(mass);
+        bpmDisplay.textContent = heartRate + ' bpm';
+        animalLabel.textContent = getAnimalName(mass);
+        hrValue.textContent = heartRate;
+        lifespanValue.textContent = parseFloat(lifespan) > 100 ? lifespan.split('.')[0] : lifespan;
+        metabolicValue.textContent = parseFloat(metabolic) > 100 ? Math.round(metabolic) : metabolic;
+        heartbeatsValue.textContent = totalBeatsStr;
+
+        // Animate heart beating
+        if (beatInterval) clearInterval(beatInterval);
+        const beatMs = (60 / heartRate) * 1000;
+
+        function beat() {
+          heartPath.style.transition = 'transform 0.1s ease-out';
+          heartPath.style.transform = 'scale(1.2)';
+          setTimeout(() => {
+            heartPath.style.transition = 'transform 0.15s ease-in';
+            heartPath.style.transform = 'scale(1)';
+          }, Math.min(100, beatMs * 0.3));
+        }
+
+        beat();
+        beatInterval = setInterval(beat, Math.max(beatMs, 60));
+      }
+
+      slider.addEventListener('input', update);
+      update();
+    })();
+    // ============================================
+    // INTERACTIVE 5: City Scaling Dashboard
+    // ============================================
+    (function() {
+      const slider = document.getElementById('pop-slider');
+      const svg = document.getElementById('city-bars-svg');
+      const popDisplay = document.getElementById('pop-display');
+      if (!slider || !svg) return;
+
+      const basePop = 100000; // reference population
+      const W = 636, H = 300;
+      const pad = { top: 40, right: 20, bottom: 40, left: 20 };
+
+      const metrics = [
+        { name: 'Roads', type: 'infra', exponent: 0.85, color: '#8BBCCC' },
+        { name: 'Gas Stations', type: 'infra', exponent: 0.85, color: '#73A9BD' },
+        { name: 'Power Lines', type: 'infra', exponent: 0.85, color: '#5B96AE' },
+        { name: 'Wages', type: 'socio', exponent: 1.15, color: '#E8634A' },
+        { name: 'Patents', type: 'socio', exponent: 1.15, color: '#E8964A' },
+        { name: 'GDP', type: 'socio', exponent: 1.15, color: '#E8B44A' },
+        { name: 'Crime', type: 'socio', exponent: 1.15, color: '#D45B5B' },
+        { name: 'Restaurants', type: 'socio', exponent: 1.15, color: '#E87A4A' },
+      ];
+
+      function render() {
+        const logPop = parseFloat(slider.value);
+        const pop = Math.pow(10, logPop);
+        popDisplay.textContent = pop >= 1e6 ? (pop / 1e6).toFixed(1) + ' million' : Math.round(pop).toLocaleString();
+
+        const ratio = pop / basePop;
+        const linearVal = ratio;
+
+        const barW = 60;
+        const gap = 12;
+        const totalW = metrics.length * (barW + gap) - gap;
+        const startX = (W - totalW) / 2;
+        const maxH = H - pad.top - pad.bottom - 30;
+
+        // Normalize so linear scaling = 60% of max height
+        const maxVal = Math.max(...metrics.map(m => Math.pow(ratio, m.exponent)), linearVal);
+        const scale = (maxH * 0.85) / maxVal;
+
+        let html = '';
+
+        // Linear reference line
+        const linearH = linearVal * scale;
+        const linearY = H - pad.bottom - linearH;
+        html += `<line x1="${startX - 10}" y1="${linearY}" x2="${startX + totalW + 10}" y2="${linearY}" stroke="#333" stroke-width="1" stroke-dasharray="6,4" opacity="0.4"/>`;
+        html += `<text x="${startX + totalW + 14}" y="${linearY + 4}" font-family="Figtree,sans-serif" font-size="10" fill="#888">Linear (1×)</text>`;
+
+        // Bars
+        metrics.forEach((m, i) => {
+          const x = startX + i * (barW + gap);
+          const val = Math.pow(ratio, m.exponent);
+          const barH = val * scale;
+          const y = H - pad.bottom - barH;
+
+          html += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="${m.color}" opacity="0.85">
+            <animate attributeName="height" from="0" to="${barH}" dur="0.3s" fill="freeze"/>
+            <animate attributeName="y" from="${H - pad.bottom}" to="${y}" dur="0.3s" fill="freeze"/>
+          </rect>`;
+
+          // Value label
+          const pctVsLinear = ((val / linearVal - 1) * 100);
+          const pctStr = pctVsLinear > 0 ? `+${pctVsLinear.toFixed(0)}%` : `${pctVsLinear.toFixed(0)}%`;
+          const pctColor = pctVsLinear > 0 ? '#E8634A' : '#4A7DE8';
+          html += `<text x="${x + barW/2}" y="${y - 8}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="10" font-weight="600" fill="${pctColor}">${ratio > 1.05 ? pctStr : ''}</text>`;
+
+          // Name label
+          html += `<text x="${x + barW/2}" y="${H - pad.bottom + 16}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="9" fill="#666">${m.name}</text>`;
+        });
+
+        // Category labels
+        html += `<text x="${startX + 1.5 * (barW + gap)}" y="25" text-anchor="middle" font-family="Figtree,sans-serif" font-size="12" font-weight="700" fill="#5B96AE" letter-spacing="0.05em">INFRASTRUCTURE (β≈0.85)</text>`;
+        html += `<text x="${startX + 5.5 * (barW + gap)}" y="25" text-anchor="middle" font-family="Figtree,sans-serif" font-size="12" font-weight="700" fill="#E8634A" letter-spacing="0.05em">SOCIOECONOMIC (β≈1.15)</text>`;
+
+        // Baseline
+        html += `<line x1="${startX - 10}" y1="${H - pad.bottom}" x2="${startX + totalW + 10}" y2="${H - pad.bottom}" stroke="#ccc" stroke-width="1"/>`;
+
+        svg.innerHTML = html;
+      }
+
+      slider.addEventListener('input', render);
+      render();
+    })();
+    // ============================================
+    // INTERACTIVE 6: Walking Speed Predictor
+    // ============================================
+    (function() {
+      const slider = document.getElementById('walk-slider');
+      const svg = document.getElementById('walking-svg');
+      const popDisplay = document.getElementById('walk-pop-display');
+      if (!slider || !svg) return;
+
+      function render() {
+        const logPop = parseFloat(slider.value);
+        const pop = Math.pow(10, logPop);
+        popDisplay.textContent = pop >= 1e6 ? (pop / 1e6).toFixed(1) + ' million' : Math.round(pop).toLocaleString();
+
+        // Walking speed ~ pop^0.1 (approx), baseline 4.5 km/h for 10k city
+        const baseSpeed = 3.5;
+        const speed = baseSpeed * Math.pow(pop / 10000, 0.06);
+        const speedMph = (speed * 0.621371).toFixed(1);
+
+        const W = 636, H = 220;
+        // Draw a simple street scene with walking figure
+        let html = '';
+
+        // Ground
+        html += `<rect x="0" y="170" width="${W}" height="50" fill="#f0eeea" rx="4"/>`;
+        html += `<line x1="0" y1="170" x2="${W}" y2="170" stroke="#ddd" stroke-width="1"/>`;
+
+        // Buildings (deterministic, more/taller for bigger cities)
+        // Use seeded pseudo-random for consistent renders
+        const seedHeights = [0.3, 0.7, 0.5, 0.9, 0.2, 0.8, 0.4, 0.6, 0.1, 0.75, 0.55, 0.85, 0.35, 0.65];
+        const seedShades = [210, 230, 215, 225, 240, 205, 235, 220, 208, 232, 218, 228, 212, 238];
+        const numBuildings = Math.min(Math.floor(3 + logPop * 1.5), 14);
+        for (let i = 0; i < numBuildings; i++) {
+          const bx = 20 + i * (W / numBuildings);
+          const bh = 30 + seedHeights[i] * 40 + (logPop - 3.5) * 15;
+          const bw = W / numBuildings - 8;
+          const shade = seedShades[i];
+          html += `<rect x="${bx}" y="${170 - bh}" width="${bw}" height="${bh}" fill="rgb(${shade},${shade-10},${shade-20})" rx="2"/>`;
+          // Windows
+          for (let wy = 170 - bh + 8; wy < 165; wy += 12) {
+            for (let wx = bx + 4; wx < bx + bw - 4; wx += 8) {
+              html += `<rect x="${wx}" y="${wy}" width="4" height="5" fill="rgba(74,125,232,0.3)" rx="0.5"/>`;
+            }
+          }
+        }
+
+        // Walking figure
+        const figX = 300;
+        const walkCycle = speed * 2; // animation speed proportional to walking speed
+        const stepDur = (2 / walkCycle).toFixed(2);
+
+        html += `<g transform="translate(${figX}, 130)">`;
+        // Body
+        html += `<circle cx="0" cy="0" r="8" fill="#E8634A"/>`;
+        html += `<line x1="0" y1="8" x2="0" y2="28" stroke="#E8634A" stroke-width="3" stroke-linecap="round"/>`;
+        // Arms
+        html += `<line x1="0" y1="14" x2="-10" y2="24" stroke="#E8634A" stroke-width="2.5" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" values="-20 0 14;20 0 14;-20 0 14" dur="${stepDur}s" repeatCount="indefinite"/>
+        </line>`;
+        html += `<line x1="0" y1="14" x2="10" y2="24" stroke="#E8634A" stroke-width="2.5" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" values="20 0 14;-20 0 14;20 0 14" dur="${stepDur}s" repeatCount="indefinite"/>
+        </line>`;
+        // Legs
+        html += `<line x1="0" y1="28" x2="-8" y2="40" stroke="#E8634A" stroke-width="2.5" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" values="-25 0 28;25 0 28;-25 0 28" dur="${stepDur}s" repeatCount="indefinite"/>
+        </line>`;
+        html += `<line x1="0" y1="28" x2="8" y2="40" stroke="#E8634A" stroke-width="2.5" stroke-linecap="round">
+          <animateTransform attributeName="transform" type="rotate" values="25 0 28;-25 0 28;25 0 28" dur="${stepDur}s" repeatCount="indefinite"/>
+        </line>`;
+        html += `</g>`;
+
+        // Speed display
+        html += `<text x="${figX}" y="195" text-anchor="middle" font-family="Figtree,sans-serif" font-size="16" font-weight="700" fill="#E8634A">${speed.toFixed(1)} km/h</text>`;
+        html += `<text x="${figX}" y="212" text-anchor="middle" font-family="Figtree,sans-serif" font-size="11" fill="#888">(${speedMph} mph)</text>`;
+
+        // Speed arrows (motion lines)
+        const numArrows = Math.min(Math.floor(speed), 8);
+        for (let i = 0; i < numArrows; i++) {
+          const ax = figX - 30 - i * 12;
+          html += `<line x1="${ax}" y1="140" x2="${ax - 8}" y2="140" stroke="#E8634A" stroke-width="1.5" opacity="${0.3 + (numArrows - i) * 0.08}" stroke-linecap="round"/>`;
+        }
+
+        svg.innerHTML = html;
+      }
+
+      slider.addEventListener('input', render);
+      render();
+    })();
+
+    // ============================================
+    // SVG 7: Company Mortality Curve
+    // ============================================
+    (function() {
+      const svg = document.getElementById('mortality-svg');
+      if (!svg) return;
+
+      const W = 636, H = 320;
+      const pad = { top: 30, right: 30, bottom: 55, left: 65 };
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
+
+      let html = '';
+      html += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="white" rx="4"/>`;
+
+      // Survival curve: S(t) = e^(-t/15) approximately (half-life ~10.5 years)
+      const halfLife = 10.5;
+      const lambda = Math.log(2) / halfLife;
+      const maxYears = 50;
+
+      const points = [];
+      for (let t = 0; t <= maxYears; t += 0.5) {
+        const survival = Math.exp(-lambda * t) * 100;
+        const x = pad.left + (t / maxYears) * plotW;
+        const y = pad.top + plotH - (survival / 100) * plotH;
+        points.push(`${x},${y}`);
+      }
+
+      // Fill area under curve
+      html += `<polygon points="${pad.left},${pad.top + plotH} ${points.join(' ')} ${pad.left + plotW},${pad.top + plotH}" fill="#E8B44A" opacity="0.15"/>`;
+
+      // Curve itself
+      html += `<polyline points="${points.join(' ')}" fill="none" stroke="#E8B44A" stroke-width="3">
+        <animate attributeName="stroke-dasharray" from="${plotW * 3} ${plotW * 3}" to="0 ${plotW * 3}" dur="0s" fill="freeze"/>
+      </polyline>`;
+
+      // Half-life line
+      const halfX = pad.left + (halfLife / maxYears) * plotW;
+      const halfY = pad.top + plotH * 0.5;
+      html += `<line x1="${halfX}" y1="${pad.top}" x2="${halfX}" y2="${pad.top + plotH}" stroke="#D45B5B" stroke-width="1.5" stroke-dasharray="5,4" opacity="0.7"/>`;
+      html += `<text x="${halfX + 6}" y="${pad.top + 15}" font-family="Figtree,sans-serif" font-size="11" fill="#D45B5B" font-weight="600">Half-life: ${halfLife} years</text>`;
+
+      // 50% line
+      html += `<line x1="${pad.left}" y1="${halfY}" x2="${pad.left + plotW}" y2="${halfY}" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>`;
+      html += `<text x="${pad.left + plotW - 5}" y="${halfY - 6}" text-anchor="end" font-family="Figtree,sans-serif" font-size="10" fill="#aaa">50% surviving</text>`;
+
+      // Notable company markers
+      const companies = [
+        { name: 'Kodak', years: 124, yPos: 0 },
+        { name: 'Sears', years: 125, yPos: 0 },
+        { name: 'Pan Am', years: 64, yPos: 0 },
+        { name: 'Blockbuster', years: 25, yPos: 0 },
+        { name: 'Lehman Bros', years: 158, yPos: 0 },
+      ];
+
+      companies.forEach((c, i) => {
+        // Place along x-axis as if "this is when a company of this age died"
+        const ageAtDeath = Math.min(c.years, maxYears);
+        const cx = pad.left + Math.min((ageAtDeath / maxYears), 0.92) * plotW - i * 8;
+        const survival = Math.exp(-lambda * ageAtDeath) * 100;
+        const cy = pad.top + plotH - (survival / 100) * plotH;
+        html += `<circle cx="${cx}" cy="${pad.top + plotH - 10 - i * 22}" r="3" fill="#D45B5B"/>`;
+        html += `<text x="${cx + 6}" y="${pad.top + plotH - 7 - i * 22}" font-family="Figtree,sans-serif" font-size="10" fill="#D45B5B">${c.name} (${c.years}yr)</text>`;
+      });
+
+      // Grid
+      for (let t = 10; t <= maxYears; t += 10) {
+        const x = pad.left + (t / maxYears) * plotW;
+        html += `<line x1="${x}" y1="${pad.top}" x2="${x}" y2="${pad.top + plotH}" stroke="#f0f0f0" stroke-width="1"/>`;
+        html += `<text x="${x}" y="${pad.top + plotH + 18}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="10" fill="#888">${t}</text>`;
+      }
+
+      // Axes
+      html += `<line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="#333" stroke-width="1.5"/>`;
+      html += `<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="#333" stroke-width="1.5"/>`;
+      html += `<text x="${pad.left + plotW / 2}" y="${H - 5}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="12" font-weight="600" fill="#333" letter-spacing="0.05em">YEARS SINCE LISTING</text>`;
+      html += `<text x="18" y="${pad.top + plotH / 2}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="12" font-weight="600" fill="#333" transform="rotate(-90, 18, ${pad.top + plotH / 2})" letter-spacing="0.05em">% SURVIVING</text>`;
+
+      // Y-axis ticks
+      for (let p = 0; p <= 100; p += 25) {
+        const y = pad.top + plotH - (p / 100) * plotH;
+        html += `<text x="${pad.left - 8}" y="${y + 4}" text-anchor="end" font-family="Figtree,sans-serif" font-size="10" fill="#888">${p}%</text>`;
+      }
+
+      svg.innerHTML = html;
+    })();
+
+    // ============================================
+    // INTERACTIVE 8: Universal Growth Curve
+    // ============================================
+    (function() {
+      const svg = document.getElementById('growth-svg');
+      if (!svg) return;
+
+      const W = 636, H = 350;
+      const pad = { top: 20, right: 30, bottom: 50, left: 60 };
+      const plotW = W - pad.left - pad.right;
+      const plotH = H - pad.top - pad.bottom;
+
+      let html = '';
+      html += `<rect x="${pad.left}" y="${pad.top}" width="${plotW}" height="${plotH}" fill="white" rx="4"/>`;
+
+      // Simulate growth curves for three types
+      const maxT = 100;
+      const dt = 0.5;
+
+      function simulateGrowth(beta, a, b, M0, decay) {
+        const points = [];
+        let M = M0;
+        for (let t = 0; t <= maxT; t += dt) {
+          points.push({ t, M });
+          const dM = a * Math.pow(Math.max(M, 0.01), beta) - b * M;
+          M = M + dM * dt;
+          if (decay && t > 60) M *= (1 - decay); // company decline
+          if (M < 0.01) M = 0.01;
+          if (M > 1000) M = 1000;
+        }
+        return points;
+      }
+
+      const organisms = simulateGrowth(0.75, 0.8, 0.1, 0.5, 0);
+      const cities = simulateGrowth(1.15, 0.15, 0.1, 1, 0);
+      const companies = simulateGrowth(0.9, 0.5, 0.12, 0.5, 0.008);
+
+      const allM = [...organisms, ...cities, ...companies].map(p => p.M);
+      const maxM = Math.min(Math.max(...allM), 200);
+
+      function toX(t) { return pad.left + (t / maxT) * plotW; }
+      function toY(M) { return pad.top + plotH - (Math.min(M, maxM) / maxM) * plotH; }
+
+      // Draw curves
+      function drawCurve(data, color, label) {
+        const pts = data.map(p => `${toX(p.t)},${toY(p.M)}`).join(' ');
+        html += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" opacity="0.85"/>`;
+      }
+
+      drawCurve(organisms, '#E8634A', 'Organisms');
+      drawCurve(companies, '#E8B44A', 'Companies');
+      drawCurve(cities, '#4A7DE8', 'Cities');
+
+      // Labels on curves
+      const orgEnd = organisms[Math.floor(organisms.length * 0.6)];
+      html += `<text x="${toX(orgEnd.t) + 5}" y="${toY(orgEnd.M) - 8}" font-family="Figtree,sans-serif" font-size="11" fill="#E8634A" font-weight="600">Organisms</text>`;
+      html += `<text x="${toX(orgEnd.t) + 5}" y="${toY(orgEnd.M) + 5}" font-family="Figtree,sans-serif" font-size="9" fill="#E8634A">grow → plateau</text>`;
+
+      const cityEnd = cities[Math.min(cities.length - 1, Math.floor(cities.length * 0.45))];
+      html += `<text x="${toX(cityEnd.t) - 60}" y="${toY(cityEnd.M) - 12}" font-family="Figtree,sans-serif" font-size="11" fill="#4A7DE8" font-weight="600">Cities</text>`;
+      html += `<text x="${toX(cityEnd.t) - 60}" y="${toY(cityEnd.M) + 1}" font-family="Figtree,sans-serif" font-size="9" fill="#4A7DE8">grow → accelerate!</text>`;
+
+      const compPeak = companies.reduce((a, b) => a.M > b.M ? a : b);
+      html += `<text x="${toX(compPeak.t) + 5}" y="${toY(compPeak.M) + 4}" font-family="Figtree,sans-serif" font-size="11" fill="#E8B44A" font-weight="600">Companies</text>`;
+      html += `<text x="${toX(compPeak.t) + 5}" y="${toY(compPeak.M) + 17}" font-family="Figtree,sans-serif" font-size="9" fill="#E8B44A">grow → peak → die</text>`;
+
+      // Axes
+      html += `<line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="#333" stroke-width="1.5"/>`;
+      html += `<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="#333" stroke-width="1.5"/>`;
+      html += `<text x="${pad.left + plotW / 2}" y="${H - 5}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="12" font-weight="600" fill="#333" letter-spacing="0.05em">TIME</text>`;
+      html += `<text x="16" y="${pad.top + plotH / 2}" text-anchor="middle" font-family="Figtree,sans-serif" font-size="12" font-weight="600" fill="#333" transform="rotate(-90, 16, ${pad.top + plotH / 2})" letter-spacing="0.05em">SIZE</text>`;
+
+      svg.innerHTML = html;
+    })();
+  </script>
+
+  <!-- Scroll-triggered fade-in animations -->
+  <script>
+    (function() {
+      const faders = document.querySelectorAll('.fade-in');
+      if (!faders.length) return;
+
+      const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+      faders.forEach(function(el) { observer.observe(el); });
+    })();
+  </script>
+</body>
+</html>

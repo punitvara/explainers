@@ -1,0 +1,2080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Does Shazam Know What Song is Playing?</title>
+
+<!-- Fonts (matching reference: Newsreader serif + Figtree sans) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&family=Figtree:wght@400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- KaTeX -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:           #FAF9F7;
+  --demo-bg:      #F3F2EE;
+  --text:         #2D2D2D;
+  --text-secondary:#666;
+  --accent:       #2563EB;
+  --accent-light: #DBEAFE;
+  --blue:         #2563EB;
+  --red:          #DC2626;
+  --green:        #16A34A;
+  --amber:        #D97706;
+  --purple:       #7C3AED;
+  --orange:       #EA580C;
+  --pink:         #DB2777;
+  --sum:          #7C3AED;
+  --border:       #E5E5E0;
+  --radius:       12px;
+  --max-w:        680px;
+  --font-serif:   'Newsreader', Georgia, serif;
+  --font-sans:    'Figtree', system-ui, sans-serif;
+  --font-mono:    'Source Code Pro', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-serif);
+  font-size: 21px;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+article {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 24px 120px;
+}
+
+/* ============================================================
+   HEADER (hero style matching reference)
+   ============================================================ */
+.hero {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 40%, #60a5fa 70%, #93c5fd 100%);
+  padding: 80px 24px 60px;
+  margin-bottom: 48px;
+  border-radius: 0 0 16px 16px;
+  text-align: left;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: clamp(36px, 6vw, 70px);
+  font-weight: 700;
+  line-height: 0.94;
+  margin-bottom: 12px;
+  color: white;
+}
+
+.hero .subtitle {
+  font-family: var(--font-sans);
+  font-size: clamp(16px, 2.5vw, 22px);
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  max-width: 540px;
+  line-height: 1.35;
+}
+
+/* ============================================================
+   SECTION HEADINGS (Roman numeral style from reference)
+   ============================================================ */
+section {
+  margin-bottom: 72px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 28px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+
+.section-number {
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 400;
+  color: var(--text);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.section-heading h2 {
+  font-family: var(--font-sans);
+  font-size: clamp(24px, 4vw, 34px);
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+section h3 {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: 700;
+  margin-top: 40px;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+p { margin-bottom: 12px; }
+
+strong { font-weight: 600; }
+em { font-style: italic; }
+
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { text-decoration-thickness: 2px; }
+
+/* ============================================================
+   CALLOUT BOXES
+   ============================================================ */
+.callout {
+  background: var(--accent-light);
+  border-left: 4px solid var(--accent);
+  padding: 18px 22px;
+  margin: 28px 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 19px;
+  line-height: 1.5;
+}
+
+.callout.fun {
+  background: #FEF3C7;
+  border-left-color: var(--amber);
+}
+
+.callout.math-box {
+  background: #F0F9FF;
+  border-left-color: var(--blue);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+/* Figure captions (italic, centered, smaller, like reference) */
+.figure-caption {
+  text-align: center;
+  font-style: italic;
+  font-size: 17px;
+  color: var(--text-secondary);
+  margin-top: 12px;
+  margin-bottom: 20px;
+  line-height: 1.45;
+}
+
+/* ============================================================
+   DEMO / WIDGET CONTAINERS (matching reference gray boxes)
+   ============================================================ */
+.demo {
+  background: var(--demo-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin: 32px 0;
+  position: relative;
+}
+
+.demo-title {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+}
+
+.demo svg {
+  width: 100%;
+  display: block;
+}
+
+.demo svg text {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  fill: var(--text-secondary);
+}
+
+/* ============================================================
+   CONTROLS
+   ============================================================ */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.control-group label {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.control-group .value-display {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 50px;
+  text-align: right;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #D4D4D0;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.btn-primary:hover { background: #1D4ED8; }
+.btn-primary.playing { background: var(--red); }
+
+.btn-secondary {
+  background: white;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: #F5F5F0; }
+.btn-secondary.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.btn-group {
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.btn-group .btn-secondary {
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid var(--border);
+  font-size: 13px;
+  padding: 7px 14px;
+}
+.btn-group .btn-secondary:last-child { border-right: none; }
+
+/* ============================================================
+   BAR CHART (spectrum)
+   ============================================================ */
+.bar { transition: height 0.15s ease, y 0.15s ease; }
+
+/* ============================================================
+   SECTION REVEAL ANIMATION
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ============================================================
+   CORRELATION BAR
+   ============================================================ */
+.corr-bar-track {
+  width: 100%;
+  height: 28px;
+  background: #E5E7EB;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.corr-bar-fill {
+  height: 100%;
+  border-radius: 14px;
+  transition: width 0.15s ease, background 0.15s ease;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: white;
+  font-weight: 600;
+  min-width: 44px;
+}
+
+/* ============================================================
+   DUAL VIEW
+   ============================================================ */
+.dual-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.dual-pane {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+}
+.dual-pane h4 {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+/* ============================================================
+   PREDICTION CARDS
+   ============================================================ */
+.predict-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.predict-card .question {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 17px;
+  margin-bottom: 14px;
+}
+.predict-card .options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.predict-card .reveal-area {
+  display: none;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.predict-card.revealed .reveal-area { display: block; }
+
+/* ============================================================
+   COMPONENT COUNTER
+   ============================================================ */
+.component-counter {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ============================================================
+   CANVAS
+   ============================================================ */
+.draw-canvas {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  cursor: crosshair;
+  background: white;
+  touch-action: none;
+}
+
+/* ============================================================
+   THREE-PANEL LAYOUT
+   ============================================================ */
+.three-panel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.panel-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 2px;
+}
+
+/* ============================================================
+   EQUALIZER BANDS
+   ============================================================ */
+.eq-bands {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: center;
+  margin-top: 14px;
+}
+.eq-band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.eq-band input[type="range"] {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 6px;
+  height: 110px;
+  -webkit-appearance: slider-vertical;
+}
+.eq-band label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.eq-band .eq-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  min-height: 16px;
+}
+
+/* ============================================================
+   TABLE OF CONTENTS
+   ============================================================ */
+.toc {
+  max-width: var(--max-w);
+  margin: 0 auto 48px;
+  padding: 0 24px;
+}
+.toc h3 {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.toc ol {
+  list-style: none;
+  counter-reset: toc;
+  padding: 0;
+}
+.toc li {
+  font-family: var(--font-sans);
+  font-size: 17px;
+  padding: 6px 0;
+  color: var(--text);
+}
+.toc li::before {
+  counter-increment: toc;
+  content: counter(toc, upper-roman) ". ";
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-right: 8px;
+}
+.toc a {
+  text-decoration: none;
+  color: var(--text);
+}
+.toc a:hover { color: var(--accent); }
+
+/* ============================================================
+   FOOTNOTES
+   ============================================================ */
+.footnote {
+  font-size: 17px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  padding-top: 28px;
+  margin-top: 56px;
+  line-height: 1.5;
+}
+
+.katex-display { margin: 24px 0; overflow-x: auto; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  body { font-size: 19px; }
+  article { padding: 0 16px 80px; }
+  .hero { padding: 60px 20px 44px; }
+  .hero h1 { font-size: 36px; }
+  .demo { padding: 18px; }
+  .dual-view { grid-template-columns: 1fr; }
+  .controls { gap: 10px; }
+  .control-group { min-width: 120px; }
+  .section-heading { gap: 10px; }
+  .section-number { font-size: 24px; }
+}
+
+@media (max-width: 480px) {
+  .hero h1 { font-size: 30px; line-height: 1; }
+  .btn-group { flex-wrap: wrap; }
+  .btn-group .btn-secondary {
+    flex: 1;
+    min-width: 70px;
+    text-align: center;
+    justify-content: center;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HERO HEADER
+     ============================================================ -->
+<div class="hero reveal">
+  <div class="hero-inner">
+    <h1>How Does Shazam Know What Song is Playing?</h1>
+    <p class="subtitle">And how do JPEGs shrink photos? And how do noise-canceling headphones work? Etc.</p>
+  </div>
+</div>
+
+<!-- ============================================================
+     TABLE OF CONTENTS
+     ============================================================ -->
+<nav class="toc reveal">
+  <h3>Contents</h3>
+  <ol>
+    <li><a href="#sec-sound">What even IS a sound?</a></li>
+    <li><a href="#sec-sine">What's the simplest sound in the universe?</a></li>
+    <li><a href="#sec-mix">What happens when you mix two boring sounds?</a></li>
+    <li><a href="#sec-build">Can you really build anything from sine waves?</a></li>
+    <li><a href="#sec-how">But HOW does the transform actually work?</a></li>
+    <li><a href="#sec-dual">Two portraits of the same signal</a></li>
+    <li><a href="#sec-apps">Why should I care? (The killer apps)</a></li>
+    <li><a href="#sec-model">Building your model</a></li>
+    <li><a href="#sec-bigger">The bigger picture</a></li>
+  </ol>
+</nav>
+
+<article>
+
+<!-- ============================================================
+     INTRO / HOOK
+     ============================================================ -->
+<section id="intro" class="reveal">
+  <p>
+    You're in a coffee shop. Music is playing over the speakers, people are chattering, an espresso machine is screaming like a tiny jet engine. You hold up your phone, tap a button, and within seconds Shazam tells you: <em>"Fast Car &mdash; Tracy Chapman."</em>
+  </p>
+  <p>
+    How? Your phone's microphone doesn't hear individual instruments. It doesn't hear melody and harmony separately. It captures one single, messy, squiggly line &mdash; a record of air pressure changing over time. That's it. One number, changing really fast.
+  </p>
+  <p>
+    And yet, somehow, buried in that line is <em>everything</em>: the vocals, the bass, the guitar, the espresso machine, the person next to you explaining their crypto portfolio.
+  </p>
+  <p>
+    The tool that makes sense of this mess has a name: the <strong>Fourier Transform</strong>. It's the mathematical equivalent of a trained sommelier &mdash; hand it a complex blend, and it identifies every individual ingredient.
+  </p>
+  <p>
+    By the end of this article, you'll understand how it works. Not with hand-waving. Not with "trust us, the math checks out." You'll <em>see</em> it, <em>hear</em> it, and <em>play</em> with it until it clicks. Because here's the thesis:
+  </p>
+  <div class="callout">
+    <strong>Understanding = Decomposition.</strong> If you can take something apart and put it back together, you understand it. That's what the Fourier Transform does. That's what <em>we're</em> going to do.
+  </div>
+  <p>Let's start taking things apart.</p>
+</section>
+
+<!-- ============================================================
+     SECTION 1: What Even IS a Sound?
+     ============================================================ -->
+<section id="sec-sound" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">I.</span>
+    <h2>What Even IS a Sound?</h2>
+  </div>
+  <p>
+    Here's what sound actually is: air molecules bumping into each other. When a guitar string vibrates, it pushes the air molecules next to it, which push the ones next to <em>them</em>, which push the ones next to <em>them</em>, and so on, creating a wave of pressure that travels through the air until it hits your eardrum (or a microphone).
+  </p>
+  <p>
+    A microphone does essentially what your ear does &mdash; it sits there and records the air pressure at its location over time. Pressure up, pressure down, pressure up again. Plot that on a graph and you get a <strong>waveform</strong>: the squiggly line.
+  </p>
+  <p>
+    Think of it this way: a microphone is like someone standing in the ocean, writing down the water level every millisecond. They can tell you the water went up and down a lot, but they can't tell you whether it was one big wave or five small ones overlapping. All they have is one number per moment. That's the fundamental problem.
+  </p>
+
+  <!-- DEMO 1: Waveform Viewer -->
+  <div class="demo" id="demo-waveform">
+    <div class="demo-title">Demo 1 &middot; Waveform Viewer</div>
+    <div class="btn-group" id="waveform-selector">
+      <button class="btn btn-secondary active" data-type="pure">Pure Tone</button>
+      <button class="btn btn-secondary" data-type="chord">Chord</button>
+      <button class="btn btn-secondary" data-type="complex">Complex</button>
+      <button class="btn btn-secondary" data-type="noise">Noisy</button>
+    </div>
+    <svg id="waveform-svg" viewBox="0 0 632 160" preserveAspectRatio="none" style="margin-top:14px">
+      <path id="waveform-path" d="" fill="none" stroke="var(--blue)" stroke-width="2" />
+    </svg>
+    <div class="controls">
+      <button class="btn btn-primary" id="waveform-play">&#9654; Play</button>
+    </div>
+  </div>
+  <p class="figure-caption">
+    Toggle between signal types. Notice how the pure tone is smooth and predictable, while complex signals look like a tangled mess.
+  </p>
+
+  <p>
+    See the difference? The pure tone is clean and regular. The chord looks more complex. The "noisy" signal? A total mess. And yet &mdash; as we'll soon see &mdash; even the messiest-looking waveform is just a bunch of simple waves added together. Looking at a waveform is like looking at a smoothie: you can tell <em>something</em> is in there, but good luck figuring out whether it's strawberry or blueberry.
+  </p>
+  <p>We need a way to un-blend the smoothie.</p>
+</section>
+
+<!-- ============================================================
+     SECTION 2: Simplest Sound
+     ============================================================ -->
+<section id="sec-sine" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">II.</span>
+    <h2>What's the Simplest Sound in the Universe?</h2>
+  </div>
+  <p>
+    If sounds are smoothies, we need to figure out the "ingredients" &mdash; the most basic, indivisible flavors of sound. Meet the <strong>sine wave</strong>: the hydrogen atom of acoustics.
+  </p>
+  <p>
+    A sine wave is the sound you get when something vibrates back and forth at a perfectly steady rate. Nothing fancy, nothing complex. A tuning fork. An "oooo" from a supremely bored ghost. The most boring sound in the universe &mdash; and, as it turns out, the most important.
+  </p>
+  <p>
+    A sine wave is a kid on a swing: smooth, periodic, predictable, back and forth forever. And it's fully described by just <strong>three numbers</strong>:
+  </p>
+  <p>
+    <strong>Frequency</strong> &mdash; how fast it oscillates, measured in Hertz (cycles per second). Higher frequency = higher pitch. Concert A is 440 Hz. The lowest note on a piano is about 28 Hz. A dog whistle is above 20,000 Hz. Your range is somewhere in between.
+  </p>
+  <p>
+    <strong>Amplitude</strong> &mdash; how big the oscillation is. Higher amplitude = louder sound. Zero amplitude = silence (a flat line, the saddest wave).
+  </p>
+  <p>
+    <strong>Phase</strong> &mdash; where in its cycle the wave starts. This is the awkward third wheel of wave parameters. Nobody talks about phase at parties. Nobody puts "phase enthusiast" in their dating bio. And yet it matters more than you think. <em>We'll come back to it.</em>
+  </p>
+
+  <!-- DEMO 2: Sine Wave Playground -->
+  <div class="demo" id="demo-sine">
+    <div class="demo-title">Demo 2 &middot; Sine Wave Playground</div>
+    <svg id="sine-svg" viewBox="0 0 632 160" preserveAspectRatio="none">
+      <path id="sine-path" d="" fill="none" stroke="var(--blue)" stroke-width="2.5" />
+      <circle id="sine-dot" r="5" fill="var(--blue)" />
+    </svg>
+    <div class="controls">
+      <div class="control-group">
+        <div class="label-row"><label>Frequency</label><span class="value-display" id="sine-freq-val">2.0 Hz</span></div>
+        <input type="range" id="sine-freq" min="0.5" max="10" step="0.1" value="2">
+      </div>
+      <div class="control-group">
+        <div class="label-row"><label>Amplitude</label><span class="value-display" id="sine-amp-val">0.80</span></div>
+        <input type="range" id="sine-amp" min="0" max="1" step="0.01" value="0.8">
+      </div>
+      <div class="control-group">
+        <div class="label-row"><label>Phase</label><span class="value-display" id="sine-phase-val">0&deg;</span></div>
+        <input type="range" id="sine-phase" min="0" max="360" step="1" value="0">
+      </div>
+    </div>
+    <div class="controls" style="margin-top:10px">
+      <button class="btn btn-primary" id="sine-play">&#9654; Play</button>
+      <span style="font-family:var(--font-sans);font-size:13px;color:var(--text-secondary)">Audio: <span id="sine-audio-freq">440</span> Hz</span>
+    </div>
+  </div>
+  <p class="figure-caption">
+    Drag the sliders. Crank frequency up and hear the pitch rise. Boost amplitude and it gets louder. Shift phase and&hellip; the wave slides sideways. You'll barely hear the difference.
+  </p>
+
+  <p>
+    Phase is awkward because humans can barely perceive it in isolation. But it becomes critical when waves combine. Patience.
+  </p>
+  <div class="callout">
+    <strong>Key insight:</strong> Any sine wave is completely, 100%, described by just three numbers: frequency, amplitude, and phase. Remember this &mdash; it's going to be important in about 90 seconds.
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 3: Mixing Waves
+     ============================================================ -->
+<section id="sec-mix" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">III.</span>
+    <h2>What Happens When You Mix Two Boring Sounds?</h2>
+  </div>
+  <p>
+    Here's where it gets interesting. What happens when two sine waves play at the same time? They <strong>add up</strong>. At every point in time, the air pressure from wave A plus the air pressure from wave B gives you the total combined pressure. This is called <strong>superposition</strong>, which is a fancy word for "addition."
+  </p>
+  <p>
+    It's like mixing paint colors &mdash; except with one crucial, beautiful difference. With paint, once you mix red and blue, you get purple, and you can <em>never</em> get the red and blue back. With sound waves, <strong>you CAN un-mix them</strong>. You can recover the original ingredients perfectly. That's what makes the Fourier Transform so powerful: it's an un-blender.
+  </p>
+
+  <!-- DEMO 3: Wave Mixer -->
+  <div class="demo" id="demo-mixer">
+    <div class="demo-title">Demo 3 &middot; Wave Mixer &mdash; <em>This is the key demo</em></div>
+    <div style="display:grid;grid-template-columns:1fr 160px;gap:16px;align-items:start">
+      <div>
+        <svg id="mixer-waves-svg" viewBox="0 0 460 330" preserveAspectRatio="none">
+          <g id="mixer-individual-waves"></g>
+          <line x1="0" y1="252" x2="460" y2="252" stroke="var(--border)" stroke-width="1" />
+          <text x="4" y="265" fill="var(--purple)" font-weight="600" font-size="11">Sum</text>
+          <path id="mixer-sum-path" d="" fill="none" stroke="var(--purple)" stroke-width="2.5" />
+        </svg>
+      </div>
+      <div>
+        <svg id="mixer-spectrum-svg" viewBox="0 0 160 330" preserveAspectRatio="none">
+          <text x="80" y="15" text-anchor="middle" font-weight="700" fill="var(--text)" font-size="12">Spectrum</text>
+          <g id="mixer-bars"></g>
+        </svg>
+      </div>
+    </div>
+    <div class="controls" id="mixer-controls"></div>
+    <div class="controls" style="margin-top:10px">
+      <button class="btn btn-primary" id="mixer-play">&#9654; Play</button>
+    </div>
+  </div>
+  <p class="figure-caption">
+    Each colored wave is a single sine wave. The purple "sum" is what a microphone would actually record. The bar chart on the right shows how much of each frequency is present.
+  </p>
+
+  <p>
+    See that bar chart? The one that shows how much of each frequency is present? <strong>That IS the Fourier Transform.</strong> Seriously. That's it. The Fourier Transform takes a signal &mdash; any signal &mdash; and tells you "here are the frequencies that make it up, and here's how loud each one is."
+  </p>
+  <p>
+    "Yeah, yeah," I hear you saying. "Those frequencies were chosen by ME. I moved the sliders. Of <em>course</em> you can read them back off the bar chart. What about a <em>real</em> signal, where nobody told you the ingredients?"
+  </p>
+  <p>Fair point. Let's address that.</p>
+</section>
+
+<!-- ============================================================
+     SECTION 4: Build Anything From Sine Waves?
+     ============================================================ -->
+<section id="sec-build" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">IV.</span>
+    <h2>Can You <em>Really</em> Build Anything From Sine Waves?</h2>
+  </div>
+  <p>
+    In 1807, Joseph Fourier &mdash; a French mathematician who spent most of his career studying heat flow &mdash; made a bold claim: <strong>any periodic signal whatsoever</strong> can be broken down into a sum of sine waves. Any. All of them. A square wave. A triangle wave. A recording of your aunt's laugh. Anything periodic.
+  </p>
+  <p>
+    This claim was so outlandish that Joseph-Louis Lagrange &mdash; one of the greatest mathematicians in history &mdash; personally rejected Fourier's paper. Impossible, he said. The math doesn't work. Turns out Fourier was right and Lagrange was wrong, which is a nice reminder that even intellectual titans can be spectacularly mistaken when something is genuinely new.
+  </p>
+  <p>But don't take Fourier's word for it. Or Lagrange's. Let's watch it happen:</p>
+
+  <!-- DEMO 4: Shape Builder -->
+  <div class="demo" id="demo-builder">
+    <div class="demo-title">Demo 4 &middot; Shape Builder</div>
+    <div class="btn-group" id="shape-selector">
+      <button class="btn btn-secondary active" data-shape="square">Square</button>
+      <button class="btn btn-secondary" data-shape="triangle">Triangle</button>
+      <button class="btn btn-secondary" data-shape="sawtooth">Sawtooth</button>
+      <button class="btn btn-secondary" data-shape="custom">Draw Your Own</button>
+    </div>
+    <svg id="builder-svg" viewBox="0 0 632 200" preserveAspectRatio="none" style="margin-top:14px">
+      <path id="builder-target" d="" fill="none" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="6,4" />
+      <path id="builder-approx" d="" fill="none" stroke="var(--blue)" stroke-width="2.5" />
+    </svg>
+    <canvas id="builder-canvas" class="draw-canvas" width="632" height="200" style="display:none;margin-top:14px;width:100%;height:200px"></canvas>
+    <div class="controls">
+      <div class="control-group" style="flex:2">
+        <div class="label-row"><label>Number of sine wave components</label><span class="value-display" id="builder-n-val">1</span></div>
+        <input type="range" id="builder-n" min="1" max="50" step="1" value="1">
+      </div>
+      <button class="btn btn-primary" id="builder-play">&#9654; Play</button>
+    </div>
+  </div>
+  <p class="figure-caption">
+    The dashed line is the target shape. The blue line is the Fourier approximation. Drag the slider right to add more sine wave components and watch it converge.
+  </p>
+
+  <p>
+    Drag the slider to the right and watch sine waves assemble themselves into sharp corners and flat tops. With just 5 components, you get a rough version. With 20, it's recognizable. With 50, it's near-perfect. Notice the slight ringing at sharp corners &mdash; that's called the <strong>Gibbs phenomenon</strong>, and it's a real thing that signal processing engineers deal with daily. The sine waves try their hardest, but truly sharp corners require infinitely many components to reproduce exactly.
+  </p>
+  <div class="callout">
+    <strong>Fourier's theorem:</strong> This isn't a clever approximation trick. This is a <em>theorem</em>. Any periodic signal &mdash; no matter how jagged, noisy, or bizarre &mdash; has an exact, unique decomposition into sine waves. It's a fundamental truth about the mathematics of periodic functions. Fourier proved it. The universe has to obey it.
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 5: How Does It Work?
+     ============================================================ -->
+<section id="sec-how" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">V.</span>
+    <h2>But HOW Does the Transform Actually Work?</h2>
+  </div>
+  <p>
+    Okay, so we've established that any signal is made of sine waves, and the Fourier Transform tells us which ones and how much of each. But <em>how</em>? What's the actual mechanism? How does it "taste" the individual ingredients?
+  </p>
+  <p>
+    Imagine you have a mystery signal and you want to know: does it contain a component at 3 Hz? Here's the trick: <strong>multiply your mystery signal by a 3 Hz test wave, point by point, and add up all the products</strong>.
+  </p>
+  <p>
+    If the signal <em>does</em> contain a 3 Hz component, the two waves will be synchronized &mdash; their peaks line up, their troughs line up &mdash; and the product will be consistently positive. When you add everything up, you get a big number.
+  </p>
+  <p>
+    If the signal <em>doesn't</em> contain 3 Hz, the test wave and signal will be out of step. Sometimes the product is positive, sometimes negative, and when you add everything up, they cancel out. You get nearly zero.
+  </p>
+  <p>
+    It's like a metal detector sweeping a beach. At each position, you get a reading. When the detector is right over the buried treasure (= the matching frequency), it screams. At every other position, silence. The Fourier Transform sweeps through <em>every</em> frequency, one by one, and records how loud the detector screams for each.
+  </p>
+  <p>
+    The technical term for this "multiply and sum" operation is <strong>correlation</strong> (or equivalently, <strong>dot product</strong>). You're measuring how much two signals resemble each other. High correlation = the frequency is present. Low correlation = it's not.
+  </p>
+
+  <!-- DEMO 5: Frequency Detector -->
+  <div class="demo" id="demo-detector">
+    <div class="demo-title">Demo 5 &middot; Frequency Detector</div>
+    <div class="three-panel">
+      <div>
+        <div class="panel-label">Mystery Signal (contains 3 Hz + 7 Hz)</div>
+        <svg id="detect-signal-svg" viewBox="0 0 632 80" preserveAspectRatio="none">
+          <path id="detect-signal-path" d="" fill="none" stroke="var(--text)" stroke-width="1.5" />
+        </svg>
+      </div>
+      <div>
+        <div class="panel-label">Signal &times; Test Wave = Product</div>
+        <svg id="detect-product-svg" viewBox="0 0 632 80" preserveAspectRatio="none">
+          <path id="detect-test-path" d="" fill="none" stroke="var(--blue)" stroke-width="1" opacity="0.4" />
+          <path id="detect-product-path" d="" fill="none" stroke="var(--green)" stroke-width="1.5" />
+        </svg>
+      </div>
+      <div>
+        <div class="panel-label">Correlation Score</div>
+        <div class="corr-bar-track">
+          <div class="corr-bar-fill" id="detect-corr-bar" style="width:10%;background:var(--red)">0.0</div>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="control-group" style="flex:2">
+        <div class="label-row"><label>Test Frequency</label><span class="value-display" id="detect-freq-val">1.0 Hz</span></div>
+        <input type="range" id="detect-freq" min="0.5" max="10" step="0.1" value="1">
+      </div>
+    </div>
+  </div>
+  <p class="figure-caption">
+    Sweep the test frequency slider. Watch the correlation bar light up green when you hit 3 Hz or 7 Hz &mdash; the two frequencies hidden in the mystery signal.
+  </p>
+
+  <p>
+    Satisfying, isn't it? The correlation bar barely twitches for most frequencies, but it <em>jumps</em> when you hit 3 Hz or 7 Hz. The Fourier Transform is just doing this sweep for every possible frequency, all at once, and recording the correlation for each.
+  </p>
+
+  <div class="callout math-box">
+    <strong>The actual equation:</strong>
+    $$X(f) = \int_{-\infty}^{\infty} x(t) \cdot e^{-2\pi i f t} \, dt$$
+    Don't panic. Here's what each piece means:
+    <br>&bull; $x(t)$ is your signal &mdash; the squiggly line, measured over time
+    <br>&bull; $e^{-2\pi i f t}$ is a spinning test wave at frequency $f$ (it's a cosine + sine combo packed into one expression using Euler's formula)
+    <br>&bull; The integral ($\int$) means "multiply and add up everything" &mdash; it's the correlation we just saw
+    <br>&bull; $X(f)$ is the result &mdash; a complex number telling you how much frequency $f$ is present
+    <br><br>
+    Remember phase, the awkward third wheel? It finally shows up here. The output $X(f)$ is <em>complex</em> &mdash; its magnitude gives you the amplitude (how loud), and its angle gives you the phase (where in the cycle it starts). Phase was quietly important all along.
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 6: Two Portraits
+     ============================================================ -->
+<section id="sec-dual" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">VI.</span>
+    <h2>Two Portraits of the Same Signal</h2>
+  </div>
+  <p>
+    Here's a profound idea that takes a moment to really sink in: the waveform (pressure over time) and the frequency spectrum (which frequencies are present, and how much of each) are <strong>two completely equivalent descriptions of the exact same signal</strong>.
+  </p>
+  <p>
+    Neither one is "more real" than the other. Neither is the "original" with the other being some "derived view." They contain <em>exactly the same information</em>, just organized differently. You can convert between them perfectly, in both directions, without losing a single bit.
+  </p>
+  <p>
+    It's like describing a meal as "a ham sandwich" versus "287 calories, 24g protein, 31g carbs, 8g fat." Both descriptions are complete. Both are accurate. Both are the same sandwich. They're just different languages.
+  </p>
+  <p>
+    The Fourier Transform converts time &rarr; frequency. The <strong>Inverse Fourier Transform</strong> converts frequency &rarr; time. Round-trip, lossless, perfect.
+  </p>
+
+  <!-- DEMO 6: Dual View -->
+  <div class="demo" id="demo-dual">
+    <div class="demo-title">Demo 6 &middot; Dual View &mdash; Modify Either Side</div>
+    <div class="dual-view">
+      <div class="dual-pane">
+        <h4>Time Domain (Waveform)</h4>
+        <svg id="dual-time-svg" viewBox="0 0 300 130" preserveAspectRatio="none">
+          <path id="dual-time-path" d="" fill="none" stroke="var(--blue)" stroke-width="2" />
+        </svg>
+      </div>
+      <div class="dual-pane">
+        <h4>Frequency Domain (Spectrum)</h4>
+        <svg id="dual-freq-svg" viewBox="0 0 300 130" preserveAspectRatio="none">
+          <g id="dual-freq-bars"></g>
+        </svg>
+      </div>
+    </div>
+    <div class="controls" id="dual-controls"></div>
+  </div>
+  <p class="figure-caption">
+    Move the frequency sliders and watch both views update simultaneously. Change either side &mdash; the other follows.
+  </p>
+
+  <p>
+    This is <strong>duality</strong> &mdash; one of the deepest ideas in all of mathematics and physics. And it's not just beautiful; it's enormously practical. Because some problems are hard to solve in one domain but trivially easy in the other.
+  </p>
+</section>
+
+<!-- ============================================================
+     SECTION 7: Killer Apps
+     ============================================================ -->
+<section id="sec-apps" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">VII.</span>
+    <h2>Why Should I Care? (The Killer Apps)</h2>
+  </div>
+  <p>
+    "Cool math trick," you might be thinking. "But who cares in practice?" Oh, you should care. The Fourier Transform is the backbone of a truly absurd number of technologies you use every single day. Let me show you a few.
+  </p>
+
+  <h3>7a. The Equalizer &mdash; "Bass Boost Is Just Multiplication"</h3>
+  <p>
+    When you adjust the bass or treble on your music player, here's what's actually happening: the software takes the Fourier Transform of the audio, <strong>multiplies</strong> the bass frequencies by a bigger number (boost!) or a smaller number (cut), and transforms it back to a waveform. That's it. Equalization is just multiplication in the frequency domain.
+  </p>
+
+  <!-- DEMO 7: Equalizer -->
+  <div class="demo" id="demo-eq">
+    <div class="demo-title">Demo 7 &middot; Equalizer</div>
+    <svg id="eq-svg" viewBox="0 0 632 120" preserveAspectRatio="none">
+      <path id="eq-original-path" d="" fill="none" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4,3" />
+      <path id="eq-modified-path" d="" fill="none" stroke="var(--blue)" stroke-width="2" />
+    </svg>
+    <div class="eq-bands" id="eq-bands"></div>
+    <div class="controls" style="margin-top:14px">
+      <button class="btn btn-primary" id="eq-play">&#9654; Play</button>
+      <button class="btn btn-secondary" id="eq-reset">Reset</button>
+    </div>
+  </div>
+  <p class="figure-caption">
+    Dashed line = original signal. Blue line = equalized signal. Drag the band sliders to boost or cut different frequency ranges.
+  </p>
+
+  <h3>7b. Compression &mdash; "Throw Away What You Can't Hear"</h3>
+  <p>
+    How does a JPEG file make a photo 10x smaller? Or an MP3 shrink a song to a tenth of its size? The secret: take the Fourier Transform, look at all the frequency components, and <strong>throw away the ones that are too small to notice</strong>. Most real-world signals are "sparse" in the frequency domain &mdash; they have a few strong components and a ton of tiny, negligible ones. Drop the tiny ones and the signal barely changes, but the file gets dramatically smaller.
+  </p>
+
+  <!-- DEMO 8: Compressor -->
+  <div class="demo" id="demo-compress">
+    <div class="demo-title">Demo 8 &middot; Compression</div>
+    <svg id="compress-svg" viewBox="0 0 632 150" preserveAspectRatio="none">
+      <path id="compress-original" d="" fill="none" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="4,3" />
+      <path id="compress-approx" d="" fill="none" stroke="var(--blue)" stroke-width="2" />
+    </svg>
+    <div class="controls">
+      <div class="control-group" style="flex:2">
+        <div class="label-row"><label>Quality</label><span class="value-display" id="compress-val">100%</span></div>
+        <input type="range" id="compress-quality" min="1" max="100" step="1" value="100">
+      </div>
+      <span class="component-counter" id="compress-counter">128 / 128 components</span>
+    </div>
+    <div class="controls" style="margin-top:10px">
+      <button class="btn btn-primary" id="compress-play">&#9654; Play</button>
+    </div>
+  </div>
+  <p class="figure-caption">
+    Drag quality down and watch components get discarded. The signal stays recognizable surprisingly long &mdash; that's sparsity in action.
+  </p>
+
+  <h3>7c. Noise Cancellation &mdash; "Phase Saves the Day"</h3>
+  <p>
+    Noise-canceling headphones work on a beautifully simple principle: figure out the frequencies present in the ambient noise, generate a wave with those same frequencies but <strong>opposite phase</strong> (remember phase?), and play it through the speakers. The noise and anti-noise cancel out. Destructive interference. Silence. Phase, the awkward third wheel, turns out to be the hero of the story.
+  </p>
+
+  <h3>7d. Shazam &mdash; Coming Full Circle</h3>
+  <p>
+    And here we come back to the coffee shop. Shazam takes the Fourier Transform of the audio your phone captures, identifies the strongest frequencies at each moment in time, creates a "fingerprint" of those peaks, and matches the fingerprint against a database of millions of songs. The Fourier Transform is step one &mdash; and without it, none of the rest is possible.
+  </p>
+</section>
+
+<!-- ============================================================
+     SECTION 8: Building Your Model
+     ============================================================ -->
+<section id="sec-model" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">VIII.</span>
+    <h2>Building Your Model</h2>
+  </div>
+  <p>
+    Let's consolidate everything into three rules &mdash; a mental model you can carry around and apply anywhere:
+  </p>
+
+  <div class="callout">
+    <strong>Rule 1 &mdash; Decomposition:</strong> Any signal can be broken down into a sum of sine waves. Each sine wave is described by three numbers: frequency, amplitude, and phase. This decomposition is unique and exact.
+  </div>
+
+  <div class="callout">
+    <strong>Rule 2 &mdash; Duality:</strong> The time-domain view (waveform) and the frequency-domain view (spectrum) contain the <em>exact same information</em>. You can convert between them losslessly, in either direction. Some problems are easier in one domain than the other.
+  </div>
+
+  <div class="callout">
+    <strong>Rule 3 &mdash; Sparsity:</strong> Most real-world signals are <em>sparse</em> in the frequency domain &mdash; they have a few dominant frequencies and lots of negligible ones. This is why compression works, why noise cancellation works, why equalization works, and why Shazam works.
+  </div>
+
+  <p>
+    Now let's test your intuition. Can you predict what a signal's spectrum looks like just from eyeballing its waveform?
+  </p>
+
+  <!-- DEMO 9: Prediction Challenge -->
+  <div class="demo" id="demo-predict">
+    <div class="demo-title">Demo 9 &middot; Prediction Challenge</div>
+
+    <div class="predict-card" id="predict-1">
+      <div class="question">Signal A: A smooth, gently undulating wave. How many dominant frequencies does it have?</div>
+      <svg class="predict-wave" viewBox="0 0 632 80" preserveAspectRatio="none"></svg>
+      <div class="options">
+        <button class="btn btn-secondary" data-answer="1">Just 1</button>
+        <button class="btn btn-secondary" data-answer="3">About 3</button>
+        <button class="btn btn-secondary" data-answer="many">Lots</button>
+      </div>
+      <div class="reveal-area">
+        <svg class="predict-spectrum" viewBox="0 0 632 60" preserveAspectRatio="none"></svg>
+        <p style="font-size:16px;color:var(--text-secondary);margin-top:10px"></p>
+      </div>
+    </div>
+
+    <div class="predict-card" id="predict-2">
+      <div class="question">Signal B: A harsh, buzzy-looking wave with sharp edges. How many dominant frequencies?</div>
+      <svg class="predict-wave" viewBox="0 0 632 80" preserveAspectRatio="none"></svg>
+      <div class="options">
+        <button class="btn btn-secondary" data-answer="1">Just 1</button>
+        <button class="btn btn-secondary" data-answer="5">About 5&ndash;8</button>
+        <button class="btn btn-secondary" data-answer="many">Lots</button>
+      </div>
+      <div class="reveal-area">
+        <svg class="predict-spectrum" viewBox="0 0 632 60" preserveAspectRatio="none"></svg>
+        <p style="font-size:16px;color:var(--text-secondary);margin-top:10px"></p>
+      </div>
+    </div>
+
+    <div class="predict-card" id="predict-3">
+      <div class="question">Signal C: Pure static (white noise). Does this signal compress well?</div>
+      <svg class="predict-wave" viewBox="0 0 632 80" preserveAspectRatio="none"></svg>
+      <div class="options">
+        <button class="btn btn-secondary" data-answer="yes">Yes, very well</button>
+        <button class="btn btn-secondary" data-answer="no">No, terribly</button>
+      </div>
+      <div class="reveal-area">
+        <svg class="predict-spectrum" viewBox="0 0 632 60" preserveAspectRatio="none"></svg>
+        <p style="font-size:16px;color:var(--text-secondary);margin-top:10px"></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 9: The Bigger Picture
+     ============================================================ -->
+<section id="sec-bigger" class="reveal">
+  <div class="section-heading">
+    <span class="section-number">IX.</span>
+    <h2>The Bigger Picture</h2>
+  </div>
+  <p>
+    We've been talking about sound, but the Fourier Transform doesn't care what your signal represents. It works on anything that varies over time &mdash; or space, or any other variable. It is, without exaggeration, one of the most widely used mathematical tools ever invented.
+  </p>
+  <p>
+    <strong>Medical imaging (MRI):</strong> An MRI machine measures radio signals emitted by hydrogen atoms in your body when placed in a magnetic field. The Fourier Transform converts those raw radio signals into the cross-sectional images your doctor examines. Without Fourier, no MRI. Without MRI, modern medicine looks very different.
+  </p>
+  <p>
+    <strong>Quantum mechanics:</strong> The position and momentum of a particle are Fourier Transform pairs &mdash; knowing one precisely determines the other. Heisenberg's famous uncertainty principle is a direct mathematical consequence: a signal can't be narrow in both time AND frequency simultaneously. Pinpoint a particle's position, and its momentum becomes uncertain. That's not philosophy. That's Fourier duality.
+  </p>
+  <p>
+    <strong>WiFi and cellular networks:</strong> Your phone sends and receives data by encoding it onto different frequencies using a technique called OFDM (orthogonal frequency-division multiplexing). The cell tower uses &mdash; you guessed it &mdash; the Fourier Transform to decode the data from the received radio signals. Every text message, every video call, every meme. Fourier.
+  </p>
+  <p>
+    <strong>DNA crystallography:</strong> Rosalind Franklin's famous X-ray diffraction image of DNA &mdash; Photo 51 &mdash; is essentially the Fourier Transform of DNA's physical structure. Watson and Crick used the inverse transform, mentally, to deduce the double helix. The structure of life itself, revealed by a French mathematician's heat equations.
+  </p>
+  <p>
+    <strong>Climate science:</strong> Scientists use Fourier analysis to identify cycles in temperature records &mdash; seasonal patterns, El Ni&ntilde;o oscillations, solar cycles, and long-term warming trends. Separating the signal from the noise (literally) is what Fourier does best.
+  </p>
+  <p>
+    Joseph Fourier had no idea. He was trying to understand how heat spreads through metal. He couldn't have imagined smartphones, MRI machines, MP3s, or noise-canceling headphones. And yet, his 200-year-old insight &mdash; that complicated periodic signals are made of simple sine waves &mdash; powers all of them.
+  </p>
+  <p>
+    The Fourier Transform is, at its heart, the mathematical embodiment of a simple, powerful idea: <strong>complicated things are made of simple things</strong>. You just need the right lens to see the pieces. And now you have that lens.
+  </p>
+  <p>
+    But at the very least, the next time you're in a coffee shop and Shazam identifies a song in three seconds flat &mdash; you'll know how.
+  </p>
+</section>
+
+<div class="footnote reveal">
+  <p>
+    <strong>Further reading:</strong>
+    "An Interactive Introduction to Fourier Transforms" by Jez Swanson &bull;
+    "But what is the Fourier Transform? A visual introduction" by 3Blue1Brown &bull;
+    <em>The Fourier Transform and Its Applications</em> by Ronald Bracewell
+  </p>
+</div>
+
+</article>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+// ============================================================
+// UTILITIES
+// ============================================================
+function buildWavePath(samples, svgWidth, svgHeight, yPad = 10) {
+  const n = samples.length;
+  const yMid = svgHeight / 2;
+  const yScale = (svgHeight / 2) - yPad;
+  let d = '';
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * svgWidth;
+    const y = yMid - samples[i] * yScale;
+    d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+  }
+  return d;
+}
+
+function generateSine(freq, amp, phase, n, periods) {
+  const samples = new Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * periods;
+    samples[i] = amp * Math.sin(2 * Math.PI * freq * t + phase);
+  }
+  return samples;
+}
+
+function addArrays(...arrs) {
+  const n = arrs[0].length;
+  const result = new Array(n).fill(0);
+  for (const arr of arrs) {
+    for (let i = 0; i < n; i++) result[i] += arr[i];
+  }
+  return result;
+}
+
+function clampArray(arr, maxAmp) {
+  const peak = Math.max(...arr.map(Math.abs)) || 1;
+  if (peak > maxAmp) {
+    const scale = maxAmp / peak;
+    return arr.map(v => v * scale);
+  }
+  return arr;
+}
+
+// DFT: returns array of {re, im, amp, phase, freq}
+function dft(samples) {
+  const N = samples.length;
+  const result = [];
+  for (let k = 0; k < N; k++) {
+    let re = 0, im = 0;
+    for (let n = 0; n < N; n++) {
+      const angle = (2 * Math.PI * k * n) / N;
+      re += samples[n] * Math.cos(angle);
+      im -= samples[n] * Math.sin(angle);
+    }
+    re /= N;
+    im /= N;
+    result.push({
+      freq: k,
+      re, im,
+      amp: Math.sqrt(re * re + im * im),
+      phase: Math.atan2(im, re)
+    });
+  }
+  return result;
+}
+
+// Inverse DFT
+function idft(spectrum) {
+  const N = spectrum.length;
+  const samples = new Array(N).fill(0);
+  for (let n = 0; n < N; n++) {
+    for (let k = 0; k < N; k++) {
+      const angle = (2 * Math.PI * k * n) / N;
+      samples[n] += spectrum[k].re * Math.cos(angle) - spectrum[k].im * Math.sin(angle);
+    }
+  }
+  return samples;
+}
+
+// ============================================================
+// AUDIO ENGINE
+// ============================================================
+class AudioEngine {
+  constructor() {
+    this.ctx = null;
+    this.activeNodes = [];
+  }
+
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  }
+
+  stopAll() {
+    this.activeNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+    this.activeNodes = [];
+  }
+
+  playSine(freq, duration = 2, amp = 0.3) {
+    this.init();
+    this.stopAll();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.value = amp;
+    gain.gain.setValueAtTime(amp, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + duration);
+    this.activeNodes.push(osc);
+    return osc;
+  }
+
+  playFreqs(freqAmps, duration = 2) {
+    this.init();
+    this.stopAll();
+    const master = this.ctx.createGain();
+    master.gain.value = 0.3;
+    master.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    master.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+    master.connect(this.ctx.destination);
+    freqAmps.forEach(({freq, amp}) => {
+      if (amp < 0.01) return;
+      const osc = this.ctx.createOscillator();
+      const g = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      g.gain.value = amp;
+      osc.connect(g);
+      g.connect(master);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+      this.activeNodes.push(osc);
+    });
+  }
+
+  playSamples(samples, sampleRate = 8000, duration = 2) {
+    this.init();
+    this.stopAll();
+    const buf = this.ctx.createBuffer(1, samples.length, sampleRate);
+    const data = buf.getChannelData(0);
+    const peak = Math.max(...samples.map(Math.abs)) || 1;
+    for (let i = 0; i < samples.length; i++) data[i] = samples[i] / peak * 0.5;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const gain = this.ctx.createGain();
+    gain.gain.value = 0.5;
+    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + duration);
+    src.connect(gain);
+    gain.connect(this.ctx.destination);
+    src.start();
+    src.stop(this.ctx.currentTime + duration);
+    this.activeNodes.push(src);
+  }
+}
+
+const audio = new AudioEngine();
+
+// ============================================================
+// SCROLL REVEAL
+// ============================================================
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) e.target.classList.add('visible');
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ============================================================
+// PLAY BUTTON HELPER
+// ============================================================
+function setupPlayButton(btn, playFn) {
+  btn.addEventListener('click', () => {
+    if (btn.classList.contains('playing')) {
+      audio.stopAll();
+      btn.classList.remove('playing');
+      btn.innerHTML = '&#9654; Play';
+      return;
+    }
+    btn.classList.add('playing');
+    btn.innerHTML = '&#9632; Stop';
+    playFn();
+    setTimeout(() => {
+      btn.classList.remove('playing');
+      btn.innerHTML = '&#9654; Play';
+    }, 2100);
+  });
+}
+
+// ============================================================
+// DEMO 1: WAVEFORM VIEWER
+// ============================================================
+(function() {
+  const N = 512;
+  const path = document.getElementById('waveform-path');
+  const btns = document.querySelectorAll('#waveform-selector .btn-secondary');
+
+  function getSignal(type) {
+    const samples = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const t = i / N;
+      switch(type) {
+        case 'pure':
+          samples[i] = Math.sin(2 * Math.PI * 3 * t);
+          break;
+        case 'chord':
+          samples[i] = 0.5 * Math.sin(2*Math.PI*3*t) + 0.35 * Math.sin(2*Math.PI*5*t) + 0.25 * Math.sin(2*Math.PI*7*t);
+          break;
+        case 'complex':
+          samples[i] = 0.4*Math.sin(2*Math.PI*2*t) + 0.3*Math.sin(2*Math.PI*5*t+1) + 0.2*Math.sin(2*Math.PI*11*t+0.5) + 0.15*Math.sin(2*Math.PI*17*t+2) + 0.1*Math.sin(2*Math.PI*23*t);
+          break;
+        case 'noise':
+          samples[i] = 0.35*Math.sin(2*Math.PI*3*t) + 0.25*Math.sin(2*Math.PI*7*t) + 0.15*Math.sin(2*Math.PI*13*t) + (Math.random()-0.5)*0.5;
+          break;
+      }
+    }
+    return clampArray(samples, 0.95);
+  }
+
+  let currentType = 'pure';
+
+  function update() {
+    path.setAttribute('d', buildWavePath(getSignal(currentType), 632, 160));
+  }
+
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentType = btn.dataset.type;
+      update();
+    });
+  });
+
+  setupPlayButton(document.getElementById('waveform-play'), () => {
+    const freqMap = {
+      pure: [{freq:440,amp:1}],
+      chord: [{freq:330,amp:0.5},{freq:440,amp:0.35},{freq:550,amp:0.25}],
+      complex: [{freq:220,amp:0.4},{freq:440,amp:0.3},{freq:660,amp:0.2},{freq:880,amp:0.15}],
+      noise: [{freq:330,amp:0.35},{freq:550,amp:0.25},{freq:770,amp:0.15}]
+    };
+    audio.playFreqs(freqMap[currentType]);
+  });
+
+  update();
+})();
+
+// ============================================================
+// DEMO 2: SINE WAVE PLAYGROUND
+// ============================================================
+(function() {
+  const N = 512;
+  const path = document.getElementById('sine-path');
+  const dot = document.getElementById('sine-dot');
+  const freqSlider = document.getElementById('sine-freq');
+  const ampSlider = document.getElementById('sine-amp');
+  const phaseSlider = document.getElementById('sine-phase');
+  const freqVal = document.getElementById('sine-freq-val');
+  const ampVal = document.getElementById('sine-amp-val');
+  const phaseVal = document.getElementById('sine-phase-val');
+  const audioFreqEl = document.getElementById('sine-audio-freq');
+
+  let animFrame;
+  let startTime = performance.now();
+
+  function update() {
+    const freq = parseFloat(freqSlider.value);
+    const amp = parseFloat(ampSlider.value);
+    const phase = parseFloat(phaseSlider.value) * Math.PI / 180;
+    freqVal.textContent = freq.toFixed(1) + ' Hz';
+    ampVal.textContent = amp.toFixed(2);
+    phaseVal.textContent = Math.round(parseFloat(phaseSlider.value)) + '\u00B0';
+
+    const audioFreq = Math.round(freq * 110);
+    audioFreqEl.textContent = audioFreq;
+
+    const samples = generateSine(freq, amp, phase, N, 4);
+    path.setAttribute('d', buildWavePath(samples, 632, 160));
+
+    // Animate dot along wave
+    const elapsed = (performance.now() - startTime) / 1000;
+    const dotT = (elapsed * freq * 0.5) % 1;
+    const dotIdx = Math.floor(dotT * N);
+    const dotX = (dotIdx / (N - 1)) * 632;
+    const dotY = 80 - samples[dotIdx] * 70;
+    dot.setAttribute('cx', dotX);
+    dot.setAttribute('cy', dotY);
+
+    animFrame = requestAnimationFrame(update);
+  }
+
+  setupPlayButton(document.getElementById('sine-play'), () => {
+    const freq = parseFloat(freqSlider.value);
+    const amp = parseFloat(ampSlider.value);
+    audio.playSine(freq * 110, 2, amp * 0.3);
+  });
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { startTime = performance.now(); update(); }
+      else { cancelAnimationFrame(animFrame); }
+    });
+  }, { threshold: 0.1 });
+  observer.observe(document.getElementById('demo-sine'));
+})();
+
+// ============================================================
+// DEMO 3: WAVE MIXER
+// ============================================================
+(function() {
+  const colors = ['var(--blue)', 'var(--red)', 'var(--green)', 'var(--amber)', 'var(--pink)'];
+  const colorHex = ['#2563EB', '#DC2626', '#16A34A', '#D97706', '#DB2777'];
+  const freqs = [2, 3, 5, 7, 11];
+  const audioFreqs = [220, 330, 440, 550, 660];
+  const N = 512;
+  const PERIODS = 4;
+  const waveH = 40;
+  const waveGap = 8;
+  const svgW = 460;
+
+  const mixerControls = document.getElementById('mixer-controls');
+  const indivG = document.getElementById('mixer-individual-waves');
+  const sumPath = document.getElementById('mixer-sum-path');
+  const barsG = document.getElementById('mixer-bars');
+
+  const amps = [0.8, 0.5, 0.3, 0, 0];
+
+  freqs.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'control-group';
+    div.innerHTML = '<div class="label-row"><label style="color:' + colorHex[i] + '">' + f + ' Hz</label><span class="value-display" id="mix-val-' + i + '">' + amps[i].toFixed(2) + '</span></div><input type="range" min="0" max="1" step="0.01" value="' + amps[i] + '" id="mix-slider-' + i + '">';
+    mixerControls.appendChild(div);
+    div.querySelector('input').addEventListener('input', function() {
+      amps[i] = parseFloat(this.value);
+      document.getElementById('mix-val-' + i).textContent = amps[i].toFixed(2);
+      render();
+    });
+  });
+
+  function render() {
+    indivG.innerHTML = '';
+    freqs.forEach((f, i) => {
+      if (amps[i] < 0.01) return;
+      const yOff = 20 + i * (waveH + waveGap);
+      const samples = generateSine(f, amps[i], 0, N, PERIODS);
+      const pd = buildWavePath(samples, svgW, waveH, 2);
+      const shifted = pd.replace(/,([0-9.]+)/g, (_, y) => ',' + (parseFloat(y) + yOff - waveH/2).toFixed(1));
+
+      const el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      el.setAttribute('d', shifted);
+      el.setAttribute('fill', 'none');
+      el.setAttribute('stroke', colors[i]);
+      el.setAttribute('stroke-width', '1.5');
+      el.setAttribute('opacity', '0.8');
+      indivG.appendChild(el);
+
+      const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      txt.setAttribute('x', '4');
+      txt.setAttribute('y', yOff + 4);
+      txt.setAttribute('fill', colorHex[i]);
+      txt.setAttribute('font-size', '10');
+      txt.setAttribute('font-family', 'Figtree, sans-serif');
+      txt.textContent = f + ' Hz';
+      indivG.appendChild(txt);
+    });
+
+    const waves = freqs.map((f, i) => generateSine(f, amps[i], 0, N, PERIODS));
+    const sum = clampArray(addArrays(...waves), 0.95);
+    const sumD = buildWavePath(sum, svgW, 70, 4);
+    const shifted = sumD.replace(/,([0-9.]+)/g, (_, y) => ',' + (parseFloat(y) + 252).toFixed(1));
+    sumPath.setAttribute('d', shifted);
+
+    // Spectrum bars
+    barsG.innerHTML = '';
+    const barW = 20, barGap = 12, barXStart = 15, maxBarH = 200;
+    freqs.forEach((f, i) => {
+      const x = barXStart + i * (barW + barGap);
+      const h = amps[i] * maxBarH;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', 30 + maxBarH - h);
+      rect.setAttribute('width', barW);
+      rect.setAttribute('height', h);
+      rect.setAttribute('fill', colorHex[i]);
+      rect.setAttribute('rx', '3');
+      rect.setAttribute('class', 'bar');
+      rect.setAttribute('opacity', '0.85');
+      barsG.appendChild(rect);
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', x + barW/2);
+      label.setAttribute('y', 255);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', '10');
+      label.textContent = f + ' Hz';
+      barsG.appendChild(label);
+    });
+  }
+
+  setupPlayButton(document.getElementById('mixer-play'), () => {
+    audio.playFreqs(freqs.map((f, i) => ({freq: audioFreqs[i], amp: amps[i]})));
+  });
+
+  render();
+})();
+
+// ============================================================
+// DEMO 4: SHAPE BUILDER
+// ============================================================
+(function() {
+  const N = 512;
+  const targetPath = document.getElementById('builder-target');
+  const approxPath = document.getElementById('builder-approx');
+  const nSlider = document.getElementById('builder-n');
+  const nVal = document.getElementById('builder-n-val');
+  const btns = document.querySelectorAll('#shape-selector .btn-secondary');
+  const canvas = document.getElementById('builder-canvas');
+  const svgEl = document.getElementById('builder-svg');
+  const ctx = canvas.getContext('2d');
+
+  let currentShape = 'square';
+  let customSamples = null;
+  let isDrawing = false;
+
+  function getTarget(shape) {
+    const samples = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const t = (i / N) * 2 * Math.PI;
+      switch(shape) {
+        case 'square': samples[i] = Math.sin(t) >= 0 ? 0.8 : -0.8; break;
+        case 'triangle': samples[i] = (2/Math.PI) * Math.asin(Math.sin(t)) * 0.8; break;
+        case 'sawtooth': samples[i] = (t / Math.PI - 1) * 0.8; break;
+        case 'custom': samples[i] = customSamples ? customSamples[i] : 0; break;
+      }
+    }
+    return samples;
+  }
+
+  function fourierApprox(target, nComp) {
+    const spec = dft(target);
+    const filtered = spec.map((s, k) => {
+      if (k === 0 || k <= nComp || k >= spec.length - nComp) return s;
+      return { ...s, re: 0, im: 0, amp: 0 };
+    });
+    return idft(filtered);
+  }
+
+  function render() {
+    const nComp = parseInt(nSlider.value);
+    nVal.textContent = nComp;
+    const target = getTarget(currentShape);
+    const approx = fourierApprox(target, nComp);
+    targetPath.setAttribute('d', buildWavePath(target, 632, 200));
+    approxPath.setAttribute('d', buildWavePath(clampArray(approx, 0.95), 632, 200));
+  }
+
+  nSlider.addEventListener('input', () => {
+    if (currentShape === 'custom' && customSamples) drawCanvas();
+    else render();
+  });
+
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentShape = btn.dataset.shape;
+      if (currentShape === 'custom') {
+        canvas.style.display = 'block';
+        svgEl.style.display = 'none';
+        if (!customSamples) customSamples = new Array(N).fill(0);
+        drawCanvas();
+      } else {
+        canvas.style.display = 'none';
+        svgEl.style.display = 'block';
+        render();
+      }
+    });
+  });
+
+  function canvasDraw(e) {
+    if (!isDrawing) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX || e.touches[0].clientX) - rect.left;
+    const y = (e.clientY || e.touches[0].clientY) - rect.top;
+    const idx = Math.floor((x / rect.width) * N);
+    const val = 1 - (y / rect.height) * 2;
+    if (idx >= 0 && idx < N) {
+      for (let d = -3; d <= 3; d++) {
+        const j = idx + d;
+        if (j >= 0 && j < N) customSamples[j] = Math.max(-1, Math.min(1, val));
+      }
+    }
+    drawCanvas();
+  }
+
+  function drawCanvas() {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Draw center line
+    ctx.strokeStyle = '#E5E5E0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, h/2);
+    ctx.lineTo(w, h/2);
+    ctx.stroke();
+
+    // Draw custom signal
+    ctx.strokeStyle = '#CBD5E1';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const xp = (i / N) * w;
+      const yp = h/2 - customSamples[i] * h/2 * 0.9;
+      i === 0 ? ctx.moveTo(xp, yp) : ctx.lineTo(xp, yp);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Draw approximation
+    const nComp = parseInt(nSlider.value);
+    nVal.textContent = nComp;
+    const approx = fourierApprox(customSamples, nComp);
+    ctx.strokeStyle = '#2563EB';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const xp = (i / N) * w;
+      const yp = h/2 - Math.max(-1, Math.min(1, approx[i])) * h/2 * 0.9;
+      i === 0 ? ctx.moveTo(xp, yp) : ctx.lineTo(xp, yp);
+    }
+    ctx.stroke();
+  }
+
+  canvas.addEventListener('mousedown', (e) => { isDrawing = true; canvasDraw(e); });
+  canvas.addEventListener('mousemove', canvasDraw);
+  canvas.addEventListener('mouseup', () => { isDrawing = false; });
+  canvas.addEventListener('mouseleave', () => { isDrawing = false; });
+  canvas.addEventListener('touchstart', (e) => { isDrawing = true; canvasDraw(e); e.preventDefault(); });
+  canvas.addEventListener('touchmove', (e) => { canvasDraw(e); e.preventDefault(); });
+  canvas.addEventListener('touchend', () => { isDrawing = false; });
+
+  setupPlayButton(document.getElementById('builder-play'), () => {
+    const target = getTarget(currentShape);
+    const nComp = parseInt(nSlider.value);
+    audio.playSamples(fourierApprox(target, nComp), 8000, 2);
+  });
+
+  render();
+})();
+
+// ============================================================
+// DEMO 5: FREQUENCY DETECTOR
+// ============================================================
+(function() {
+  const N = 512;
+  const signalPath = document.getElementById('detect-signal-path');
+  const testPath = document.getElementById('detect-test-path');
+  const productPath = document.getElementById('detect-product-path');
+  const corrBar = document.getElementById('detect-corr-bar');
+  const freqSlider = document.getElementById('detect-freq');
+  const freqVal = document.getElementById('detect-freq-val');
+
+  const mysteryFreqs = [3, 7];
+  const mysteryAmps = [0.6, 0.4];
+
+  const signal = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * 4;
+    signal[i] = mysteryFreqs.reduce((sum, f, j) => sum + mysteryAmps[j] * Math.sin(2*Math.PI*f*t), 0);
+  }
+  signalPath.setAttribute('d', buildWavePath(clampArray(signal, 0.9), 632, 80));
+
+  function update() {
+    const testFreq = parseFloat(freqSlider.value);
+    freqVal.textContent = testFreq.toFixed(1) + ' Hz';
+
+    const testWave = new Array(N);
+    const product = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const t = (i / N) * 4;
+      testWave[i] = Math.sin(2 * Math.PI * testFreq * t);
+      product[i] = signal[i] * testWave[i];
+    }
+
+    testPath.setAttribute('d', buildWavePath(testWave, 632, 80));
+    productPath.setAttribute('d', buildWavePath(clampArray(product, 0.9), 632, 80));
+
+    const corr = product.reduce((a, b) => a + b, 0) / N;
+    const normCorr = Math.min(Math.abs(corr) * 4, 1);
+    corrBar.style.width = Math.max(5, normCorr * 100) + '%';
+    corrBar.style.background = normCorr > 0.5 ? 'var(--green)' : normCorr > 0.2 ? 'var(--amber)' : 'var(--red)';
+    corrBar.textContent = normCorr.toFixed(2);
+  }
+
+  freqSlider.addEventListener('input', update);
+  update();
+})();
+
+// ============================================================
+// DEMO 6: DUAL VIEW
+// ============================================================
+(function() {
+  const N = 8;
+  const amps = [0.5, 0.8, 0.3, 0.6, 0, 0, 0, 0];
+  const timePath = document.getElementById('dual-time-path');
+  const freqBarsG = document.getElementById('dual-freq-bars');
+  const dualControls = document.getElementById('dual-controls');
+
+  for (let i = 0; i < N; i++) {
+    const div = document.createElement('div');
+    div.className = 'control-group';
+    div.style.minWidth = '70px';
+    div.innerHTML = '<div class="label-row"><label>F' + (i+1) + '</label><span class="value-display" id="dual-val-' + i + '">' + amps[i].toFixed(1) + '</span></div><input type="range" min="0" max="1" step="0.05" value="' + amps[i] + '" id="dual-slider-' + i + '">';
+    dualControls.appendChild(div);
+    div.querySelector('input').addEventListener('input', function() {
+      amps[i] = parseFloat(this.value);
+      document.getElementById('dual-val-' + i).textContent = amps[i].toFixed(1);
+      render();
+    });
+  }
+
+  function render() {
+    const samples = new Array(256).fill(0);
+    for (let i = 0; i < N; i++) {
+      for (let j = 0; j < 256; j++) {
+        const t = (j / 256) * 4;
+        samples[j] += amps[i] * Math.sin(2 * Math.PI * (i + 1) * t);
+      }
+    }
+    timePath.setAttribute('d', buildWavePath(clampArray(samples, 0.9), 300, 130));
+
+    freqBarsG.innerHTML = '';
+    const barW = 25, gap = 8, maxH = 100;
+    for (let i = 0; i < N; i++) {
+      const x = 10 + i * (barW + gap);
+      const h = amps[i] * maxH;
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', 15 + maxH - h);
+      rect.setAttribute('width', barW);
+      rect.setAttribute('height', h);
+      rect.setAttribute('fill', 'var(--blue)');
+      rect.setAttribute('rx', '3');
+      rect.setAttribute('opacity', '0.7');
+      freqBarsG.appendChild(rect);
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', x + barW/2);
+      label.setAttribute('y', 125);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', '9');
+      label.textContent = 'F' + (i+1);
+      freqBarsG.appendChild(label);
+    }
+  }
+  render();
+})();
+
+// ============================================================
+// DEMO 7: EQUALIZER
+// ============================================================
+(function() {
+  const N = 512;
+  const bands = ['100', '300', '1k', '3k', '8k'];
+  const bandFreqs = [1, 3, 6, 12, 24];
+  const eqBandsEl = document.getElementById('eq-bands');
+  const origPath = document.getElementById('eq-original-path');
+  const modPath = document.getElementById('eq-modified-path');
+  const gains = [1, 1, 1, 1, 1];
+
+  const baseSignal = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * 4;
+    baseSignal[i] = 0;
+    bandFreqs.forEach(f => { baseSignal[i] += 0.3 * Math.sin(2 * Math.PI * f * t); });
+  }
+  origPath.setAttribute('d', buildWavePath(clampArray(baseSignal, 0.9), 632, 120));
+
+  bands.forEach((label, i) => {
+    const div = document.createElement('div');
+    div.className = 'eq-band';
+    div.innerHTML = '<span class="eq-val" id="eq-gv-' + i + '">0 dB</span><input type="range" min="0" max="2" step="0.05" value="1" id="eq-g-' + i + '" orient="vertical"><label>' + label + '</label>';
+    eqBandsEl.appendChild(div);
+    div.querySelector('input').addEventListener('input', function() {
+      gains[i] = parseFloat(this.value);
+      const db = ((gains[i] - 1) * 12).toFixed(0);
+      document.getElementById('eq-gv-' + i).textContent = (db >= 0 ? '+' : '') + db + ' dB';
+      render();
+    });
+  });
+
+  function render() {
+    const modified = new Array(N);
+    for (let i = 0; i < N; i++) {
+      const t = (i / N) * 4;
+      modified[i] = 0;
+      bandFreqs.forEach((f, j) => { modified[i] += 0.3 * gains[j] * Math.sin(2 * Math.PI * f * t); });
+    }
+    modPath.setAttribute('d', buildWavePath(clampArray(modified, 0.95), 632, 120));
+  }
+
+  setupPlayButton(document.getElementById('eq-play'), () => {
+    const sr = 16000, dur = 2, len = sr * dur;
+    const buf = new Array(len);
+    const audioFreqs = [100, 300, 600, 1200, 2400];
+    for (let i = 0; i < len; i++) {
+      const t = i / sr;
+      buf[i] = 0;
+      audioFreqs.forEach((f, j) => { buf[i] += 0.3 * gains[j] * Math.sin(2 * Math.PI * f * t); });
+    }
+    audio.playSamples(buf, sr, dur);
+  });
+
+  document.getElementById('eq-reset').addEventListener('click', () => {
+    gains.fill(1);
+    document.querySelectorAll('#eq-bands input').forEach((s, i) => {
+      s.value = 1;
+      document.getElementById('eq-gv-' + i).textContent = '0 dB';
+    });
+    render();
+  });
+
+  render();
+})();
+
+// ============================================================
+// DEMO 8: COMPRESSOR
+// ============================================================
+(function() {
+  const N = 256;
+  const origPathEl = document.getElementById('compress-original');
+  const approxPathEl = document.getElementById('compress-approx');
+  const qualitySlider = document.getElementById('compress-quality');
+  const qualityVal = document.getElementById('compress-val');
+  const counterEl = document.getElementById('compress-counter');
+
+  const signal = new Array(N);
+  const freqs = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
+  const amps = [0.4, 0.3, 0.25, 0.2, 0.15, 0.1, 0.08, 0.06, 0.04, 0.02];
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * 4;
+    signal[i] = freqs.reduce((s, f, j) => s + amps[j] * Math.sin(2*Math.PI*f*t + j*0.5), 0);
+  }
+  const clampedSignal = clampArray(signal, 0.9);
+  origPathEl.setAttribute('d', buildWavePath(clampedSignal, 632, 150));
+
+  const spectrum = dft(clampedSignal);
+
+  function update() {
+    const quality = parseInt(qualitySlider.value);
+    qualityVal.textContent = quality + '%';
+
+    const sorted = spectrum.map((s, i) => ({...s, idx: i})).sort((a, b) => b.amp - a.amp);
+    const keep = Math.max(1, Math.round(sorted.length * quality / 100));
+    counterEl.textContent = keep + ' / ' + N + ' components';
+
+    const filtered = spectrum.map(s => ({...s, re: 0, im: 0}));
+    for (let i = 0; i < keep; i++) {
+      const idx = sorted[i].idx;
+      filtered[idx] = spectrum[idx];
+    }
+
+    approxPathEl.setAttribute('d', buildWavePath(clampArray(idft(filtered), 0.95), 632, 150));
+  }
+
+  qualitySlider.addEventListener('input', update);
+
+  setupPlayButton(document.getElementById('compress-play'), () => {
+    const quality = parseInt(qualitySlider.value);
+    const sorted = spectrum.map((s, i) => ({...s, idx: i})).sort((a, b) => b.amp - a.amp);
+    const keep = Math.max(1, Math.round(sorted.length * quality / 100));
+    const filtered = spectrum.map(s => ({...s, re: 0, im: 0}));
+    for (let i = 0; i < keep; i++) filtered[sorted[i].idx] = spectrum[sorted[i].idx];
+    audio.playSamples(idft(filtered), 8000, 2);
+  });
+
+  update();
+})();
+
+// ============================================================
+// DEMO 9: PREDICTION CHALLENGE
+// ============================================================
+(function() {
+  const N = 512;
+
+  // Signal A: pure sine
+  const sigA = new Array(N);
+  for (let i = 0; i < N; i++) sigA[i] = 0.8 * Math.sin(2*Math.PI*3*(i/N)*4);
+
+  // Signal B: square-ish (many harmonics)
+  const sigB = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const t = (i / N) * 4;
+    sigB[i] = 0;
+    for (let h = 1; h <= 15; h += 2) sigB[i] += (0.8 / h) * Math.sin(2*Math.PI*h*t);
+  }
+
+  // Signal C: white noise (seeded)
+  let seed = 42;
+  function seededRand() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  const sigC = new Array(N);
+  for (let i = 0; i < N; i++) sigC[i] = (seededRand() - 0.5) * 1.6;
+
+  const specA = dft(sigA), specB = dft(sigB), specC = dft(sigC);
+
+  const signals = [
+    { id: 'predict-1', sig: sigA, spec: specA, correct: '1', msg: 'Just one tall spike! A smooth tone is a single sine wave \u2014 the simplest possible signal. Maximum compressibility.' },
+    { id: 'predict-2', sig: sigB, spec: specB, correct: '5', msg: 'Multiple harmonics! Harsh, buzzy sounds need many sine waves. A square wave has all the odd harmonics (1st, 3rd, 5th, 7th\u2026) of the fundamental frequency.' },
+    { id: 'predict-3', sig: sigC, spec: specC, correct: 'no', msg: 'Terribly! White noise has energy spread across ALL frequencies \u2014 nothing is negligible, so there\'s nothing to throw away. Noise is the enemy of compression.' }
+  ];
+
+  signals.forEach(({id, sig, spec, correct, msg}) => {
+    const card = document.getElementById(id);
+    const waveSvg = card.querySelector('.predict-wave');
+    const specSvg = card.querySelector('.predict-spectrum');
+    const msgEl = card.querySelector('.reveal-area p');
+
+    const wavePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    wavePath.setAttribute('d', buildWavePath(clampArray(sig, 0.9), 632, 80));
+    wavePath.setAttribute('fill', 'none');
+    wavePath.setAttribute('stroke', 'var(--text)');
+    wavePath.setAttribute('stroke-width', '1.5');
+    waveSvg.appendChild(wavePath);
+
+    function drawSpectrum() {
+      const maxAmp = Math.max(...spec.map(s => s.amp));
+      const halfN = Math.floor(N / 2);
+      const barW = Math.max(1, 632 / halfN);
+      for (let k = 0; k < halfN; k++) {
+        const h = (spec[k].amp / maxAmp) * 50;
+        if (h < 0.5) continue;
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', k * barW);
+        rect.setAttribute('y', 60 - h);
+        rect.setAttribute('width', Math.max(barW - 0.5, 1));
+        rect.setAttribute('height', h);
+        rect.setAttribute('fill', 'var(--accent)');
+        rect.setAttribute('opacity', '0.7');
+        specSvg.appendChild(rect);
+      }
+    }
+
+    card.querySelectorAll('.options .btn-secondary').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const answer = btn.dataset.answer;
+        card.querySelectorAll('.options .btn-secondary').forEach(b => {
+          b.disabled = true;
+          if (b.dataset.answer === correct) {
+            b.classList.add('active');
+            b.style.background = 'var(--green)';
+            b.style.color = 'white';
+            b.style.borderColor = 'var(--green)';
+          }
+          if (b === btn && answer !== correct) {
+            b.style.background = 'var(--red)';
+            b.style.color = 'white';
+            b.style.borderColor = 'var(--red)';
+          }
+        });
+        card.classList.add('revealed');
+        drawSpectrum();
+        msgEl.textContent = (answer === correct ? 'Correct! ' : 'Not quite. ') + msg;
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
