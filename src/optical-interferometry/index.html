@@ -1,0 +1,1984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optical Interferometry — An Interactive Explainer</title>
+<style>
+/* ===== CSS RESET & VARIABLES ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #faf9f7;
+  --text: #2d2d2d;
+  --text-light: #666;
+  --accent: #6C3CE0;
+  --accent-light: #e8dcff;
+  --red: #E8443A;
+  --cyan: #2AADCF;
+  --green: #34C759;
+  --widget-bg: #f5f5f5;
+  --border: #e0ddd8;
+  --content-width: 650px;
+  --wide-width: 740px;
+  --font-serif: Georgia, 'Times New Roman', Times, serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-serif);
+  font-size: 21px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== LAYOUT ===== */
+.content-width {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.wide-width {
+  max-width: var(--wide-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ===== HEADER / HERO ===== */
+.hero {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  margin: 12px auto 0;
+  max-width: 1100px;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 40px 48px;
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero-bg canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(108,60,224,0.85) 0%, rgba(42,173,207,0.8) 100%);
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.hero h1 {
+  font-family: var(--font-serif);
+  font-size: 64px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.0;
+  margin-bottom: 8px;
+}
+
+.hero h2 {
+  font-family: var(--font-sans);
+  font-size: 24px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.92);
+  line-height: 1.25;
+  max-width: 600px;
+}
+
+/* ===== NAV ===== */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px;
+}
+
+nav .logo {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--text);
+  text-decoration: none;
+}
+
+/* ===== NUTSHELL (intro italic block) ===== */
+.nutshell {
+  max-width: var(--content-width);
+  margin: 48px auto 0;
+  padding: 0 24px;
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+/* ===== TABLE OF CONTENTS ===== */
+.toc {
+  max-width: var(--content-width);
+  margin: 40px auto 0;
+  padding: 0 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.toc h4 {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.toc ol {
+  list-style: none;
+  counter-reset: toc-counter;
+  padding: 0;
+}
+
+.toc li {
+  counter-increment: toc-counter;
+  margin-bottom: 6px;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.toc li::before {
+  content: counter(toc-counter, upper-roman) ". ";
+  color: var(--text-light);
+  font-size: 13px;
+  display: inline-block;
+  width: 40px;
+}
+
+.toc a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.toc a:hover {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ===== SECTION HEADINGS ===== */
+.section-header {
+  max-width: 1100px;
+  margin: 120px auto 50px;
+  padding: 0 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.section-number {
+  font-family: var(--font-serif);
+  font-size: 42px;
+  font-weight: 300;
+  color: var(--text-light);
+  flex-shrink: 0;
+  min-width: 60px;
+  text-align: right;
+}
+
+.section-header h2 {
+  font-family: var(--font-sans);
+  font-size: 46px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.0;
+}
+
+/* ===== SUBSECTION HEADINGS ===== */
+.content-width h3 {
+  font-family: var(--font-sans);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 60px;
+  margin-bottom: 24px;
+}
+
+/* ===== PARAGRAPHS ===== */
+.content-width p {
+  margin-bottom: 16px;
+}
+
+.content-width p em {
+  font-style: italic;
+}
+
+.content-width p strong {
+  font-weight: 700;
+}
+
+/* ===== LINKS ===== */
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== FIGURES ===== */
+figure {
+  margin: 40px auto;
+  max-width: var(--wide-width);
+  padding: 0 24px;
+}
+
+figure svg, figure canvas, figure img {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+}
+
+figcaption {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--text-light);
+  text-align: center;
+  margin-top: 12px;
+  padding: 0 20px;
+}
+
+/* ===== WIDGETS (interactive demos) ===== */
+.widget {
+  max-width: var(--wide-width);
+  margin: 36px auto;
+  padding: 24px;
+  background: var(--widget-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.widget-title {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-light);
+  margin-bottom: 16px;
+}
+
+.widget canvas, .widget svg {
+  display: block;
+  width: 100%;
+  border-radius: 6px;
+}
+
+.widget .controls {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
+
+.widget label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.widget input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: #d0ccc5;
+  outline: none;
+  flex: 1;
+  min-width: 120px;
+}
+
+.widget input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.widget .value-display {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 60px;
+}
+
+.widget figcaption {
+  margin-top: 16px;
+  padding: 0;
+}
+
+/* ===== SIDENOTES ===== */
+.sidenote {
+  max-width: var(--content-width);
+  margin: 24px auto;
+  padding: 20px 24px;
+  background: var(--accent-light);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.sidenote-toggle {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.sidenote-toggle::before {
+  content: '▶';
+  font-size: 10px;
+  transition: transform 0.2s;
+}
+
+.sidenote-toggle.open::before {
+  transform: rotate(90deg);
+}
+
+.sidenote-content {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease;
+}
+
+.sidenote-content.open {
+  max-height: 2000px;
+}
+
+.sidenote-content p {
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  max-width: 1100px;
+  margin: 100px auto 0;
+  padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+footer p {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+
+footer .motto {
+  font-style: italic;
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .hero h1 { font-size: 40px; }
+  .hero h2 { font-size: 18px; }
+  .hero { padding: 24px; min-height: 200px; }
+  .section-header h2 { font-size: 32px; }
+  .section-number { font-size: 28px; min-width: 40px; }
+  .section-header { margin-top: 80px; margin-bottom: 30px; }
+  body { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">explainers.blog</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="hero-bg">
+    <canvas id="hero-canvas"></canvas>
+  </div>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <h1>Optical Interferometry</h1>
+    <h2>How splitting light and recombining it lets us measure distances smaller than an atom&mdash;and image black holes.</h2>
+  </div>
+</header>
+
+<!-- NUTSHELL -->
+<div class="nutshell content-width">
+  <p>The internet&rsquo;s default answer to &ldquo;how does an interferometer work?&rdquo; is &ldquo;wave superposition.&rdquo; And that&rsquo;s not wrong, but it&rsquo;s also not very useful. Simply knowing the name of something is very different from understanding it. But if names don&rsquo;t constitute understanding&hellip; what does? My answer: having a model that allows you to make predictions. If you can reliably predict what a change in an interferometer does, then you probably understand it. In this article, we&rsquo;ll explore interferometry from scratch&mdash;but we&rsquo;ll go deep enough that, by the time you finish, you can predict what happens when you tweak a real one.</p>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h4>Contents</h4>
+  <ol>
+    <li><a href="#waves">What even is a wave?</a></li>
+    <li><a href="#superposition">When waves meet: superposition</a></li>
+    <li><a href="#interference">Constructive &amp; destructive interference</a></li>
+    <li><a href="#double-slit">Young&rsquo;s double slit</a></li>
+    <li><a href="#michelson">The Michelson interferometer</a></li>
+    <li><a href="#measuring">Measuring impossibly small things</a></li>
+    <li><a href="#ligo">How LIGO detects gravitational waves</a></li>
+    <li><a href="#astronomy">Astronomical interferometry</a></li>
+    <li><a href="#coherence">Coherence: why lasers matter</a></li>
+    <li><a href="#wild">Where interferometry shows up in the wild</a></li>
+  </ol>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION I: WHAT EVEN IS A WAVE? -->
+<!-- ============================================================ -->
+<div class="section-header" id="waves">
+  <span class="section-number">I.</span>
+  <h2>What even is a wave?</h2>
+</div>
+
+<div class="content-width">
+  <p>Before we can understand interference, we need to get comfortable with waves. And I don&rsquo;t mean the vague &ldquo;light is a wave&rdquo; hand-wave you&rsquo;ve heard a thousand times. I mean: what does it actually <em>look like</em> when we say light is a wave?</p>
+
+  <p>Light is an electromagnetic wave&mdash;an oscillating electric field (and magnetic field) moving through space. At any point along the wave, the electric field value goes up, then down, then up again, in a smooth sinusoidal pattern. Maxwell figured this out in the 1860s: light is just electromagnetic radiation, the same stuff as radio waves and X-rays, just at frequencies our eyes happen to detect.</p>
+
+  <p>Three properties define the wave:</p>
+
+  <p><strong>Wavelength (λ)</strong> &mdash; the distance from one peak to the next. Visible light has wavelengths between about 400 nm (violet) and 700 nm (red). That&rsquo;s 0.0004 to 0.0007 millimeters. Tiny. To put that in perspective: a human hair is about 80,000 nm wide. You could line up roughly 150 wavelengths of green light across a single hair.</p>
+
+  <p><strong>Amplitude (A)</strong> &mdash; the height of the peaks. Bigger amplitude = brighter light. Technically, the <em>intensity</em> of light is proportional to the amplitude squared (I ∝ A²), which will matter when we talk about interference.</p>
+
+  <p><strong>Phase (φ)</strong> &mdash; where in its cycle the wave is at a given moment. Think of it like the position of a clock hand. Two clocks showing the same time are &ldquo;in phase.&rdquo; Two clocks that are six hours apart are &ldquo;out of phase&rdquo; by half a cycle. This is the star of our show. Interferometry is, at its core, the art of measuring phase differences.</p>
+
+  <p>There&rsquo;s also <strong>frequency (f)</strong>&mdash;how many oscillations per second. It&rsquo;s related to wavelength by a beautifully simple equation: <strong>c = λ · f</strong>, where c is the speed of light (about 3 × 10⁸ m/s). A shorter wavelength means a higher frequency, and vice versa. For visible light, frequencies are absurdly high: around 5 × 10¹⁴ Hz. That&rsquo;s 500 trillion oscillations per second. No detector can track individual oscillations at that speed, which is why measuring phase differences through interference is so valuable&mdash;it&rsquo;s an indirect way to access information encoded in the phase.</p>
+</div>
+
+<!-- Wave explorer widget -->
+<div class="widget wide-width" id="wave-widget">
+  <div class="widget-title">Interactive: Explore a wave</div>
+  <canvas id="wave-canvas" width="700" height="220"></canvas>
+  <div class="controls">
+    <label>Wavelength
+      <input type="range" id="wave-lambda" min="30" max="150" value="80">
+      <span class="value-display" id="wave-lambda-val">80 px</span>
+    </label>
+    <label>Amplitude
+      <input type="range" id="wave-amp" min="10" max="90" value="60">
+      <span class="value-display" id="wave-amp-val">60 px</span>
+    </label>
+    <label>Phase
+      <input type="range" id="wave-phase" min="0" max="628" value="0">
+      <span class="value-display" id="wave-phase-val">0.0 π</span>
+    </label>
+  </div>
+  <figcaption>Drag the sliders to see how wavelength, amplitude, and phase change the wave. In interferometry, it&rsquo;s the phase that matters most.</figcaption>
+</div>
+
+<div class="content-width">
+  <p>Notice how changing the phase just <em>shifts</em> the wave left or right? It doesn&rsquo;t change its shape. It changes <em>when</em> the peaks and troughs arrive. And that tiny difference&mdash;whether two waves&rsquo; peaks arrive at the same time or not&mdash;is the entire basis of interferometry.</p>
+
+  <p>One more thing: the wavelength of light determines its color. Red light ≈ 700 nm, green ≈ 550 nm, blue ≈ 450 nm. When we talk about &ldquo;laser light,&rdquo; we usually mean light of a single, precise wavelength. This matters enormously, as we&rsquo;ll see.</p>
+
+  <p>Now, you might wonder: if waves are just smooth oscillations, why should we care about them specifically? Because every method of measuring length or distance ultimately relies on comparing something to a reference. Rulers use atoms in a metal bar. GPS uses the travel time of radio waves. And interferometry uses the wavelength of light as its ruler&mdash;a ruler defined by atomic physics, reproducible anywhere in the universe, and precise to a shocking degree.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION II: WHEN WAVES MEET -->
+<!-- ============================================================ -->
+<div class="section-header" id="superposition">
+  <span class="section-number">II.</span>
+  <h2>When waves meet: superposition</h2>
+</div>
+
+<div class="content-width">
+  <p>OK so here&rsquo;s where it gets interesting.</p>
+
+  <p>What happens when two waves arrive at the same point? Do they fight each other? Ignore each other? Something else?</p>
+
+  <p>The answer is beautifully simple: <strong>their amplitudes add together.</strong> Peak meets peak? You get a taller peak. Peak meets trough? They cancel out. This is the <em>principle of superposition</em>, and it&rsquo;s one of the most fundamental ideas in wave physics.</p>
+
+  <p>Here&rsquo;s an analogy: imagine two people each holding one end of a jump rope, both shaking it up and down. Where the two wave patterns overlap, the rope&rsquo;s height at each point is just the <em>sum</em> of what each person&rsquo;s wave would have been on its own.</p>
+
+  <p>Or think of two speakers playing the same note. At some spots in the room, the sound is extra loud (peaks adding). At other spots, it gets eerily quiet (peaks canceling troughs). If you&rsquo;ve ever noticed &ldquo;dead spots&rdquo; in a concert hall, that&rsquo;s wave superposition in action.</p>
+
+  <p>Let&rsquo;s see this with light waves. Below, you can adjust the phase offset between two identical waves and watch them combine:</p>
+</div>
+
+<!-- Superposition widget -->
+<div class="widget wide-width" id="superposition-widget">
+  <div class="widget-title">Interactive: Wave superposition</div>
+  <canvas id="superposition-canvas" width="700" height="320"></canvas>
+  <div class="controls">
+    <label>Phase offset (Δφ)
+      <input type="range" id="super-phase" min="0" max="628" value="0">
+      <span class="value-display" id="super-phase-val">0.0 π</span>
+    </label>
+    <label>Wavelength
+      <input type="range" id="super-lambda" min="40" max="140" value="80">
+      <span class="value-display" id="super-lambda-val">80 px</span>
+    </label>
+  </div>
+  <figcaption>The top two waves (blue and orange) add together to form the purple result wave at the bottom. Try setting the phase offset to π (halfway) and watch the waves perfectly cancel!</figcaption>
+</div>
+
+<div class="content-width">
+  <p>This is the heart of interferometry. Two waves, from the same source, traveling slightly different paths, arriving at the same point. Their phase difference encodes the difference in how far they traveled. And that difference can be <em>measured</em>.</p>
+
+  <p>It&rsquo;s worth pausing to appreciate how strange and wonderful this is. You can&rsquo;t directly see the phase of a light wave&mdash;it oscillates far too fast. But by combining two copies of the wave, you make the <em>phase difference visible</em> as a change in brightness. It&rsquo;s like comparing two clocks that tick too fast to read: you can&rsquo;t see either one individually, but if you overlay their tick sounds, you can hear whether they&rsquo;re in sync or not. Beats in music are the same phenomenon&mdash;two slightly different frequencies creating a slow pulsation you <em>can</em> hear.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION III: CONSTRUCTIVE & DESTRUCTIVE INTERFERENCE -->
+<!-- ============================================================ -->
+<div class="section-header" id="interference">
+  <span class="section-number">III.</span>
+  <h2>Constructive &amp; destructive interference</h2>
+</div>
+
+<div class="content-width">
+  <p>Let&rsquo;s put labels on what we just saw.</p>
+
+  <p>When two waves arrive <strong>in phase</strong> (peaks aligned with peaks), they reinforce each other. The result wave is twice as tall. This is called <strong>constructive interference</strong>, and it produces a bright spot.</p>
+
+  <p>When two waves arrive exactly <strong>out of phase</strong> (peaks aligned with troughs), they cancel completely. Zero amplitude. Total darkness. This is <strong>destructive interference</strong>.</p>
+
+  <p>And everything in between? You get partial reinforcement or cancellation&mdash;some intermediate brightness.</p>
+
+  <p>Here&rsquo;s the key formula. For two equal-amplitude waves, the intensity of their combination depends on the phase difference Δφ:</p>
+
+  <p style="text-align:center; font-family: var(--font-sans); font-size: 20px; margin: 24px 0; color: var(--accent);"><strong>I = 4I₀ cos²(Δφ / 2)</strong></p>
+
+  <p>When Δφ = 0, cos² = 1, and we get maximum brightness (4× the individual intensity!). When Δφ = π, cos² = 0, and we get total darkness. The transition is smooth&mdash;a cosine-squared curve.</p>
+
+  <p>And how does the phase difference relate to the <em>path difference</em>? If one wave traveled a distance Δd farther than the other:</p>
+
+  <p style="text-align:center; font-family: var(--font-sans); font-size: 20px; margin: 24px 0; color: var(--accent);"><strong>Δφ = 2π · Δd / λ</strong></p>
+
+  <p>So a path difference of one full wavelength (Δd = λ) gives Δφ = 2π&mdash;which is the same as zero. The waves are in phase again. A path difference of half a wavelength (Δd = λ/2) gives Δφ = π&mdash;total destructive interference.</p>
+
+  <p>This is incredibly powerful. By watching whether you get bright spots or dark spots, you can determine path differences to a fraction of a wavelength. And visible light has wavelengths around 500 nm. That&rsquo;s how interferometers achieve nanometer-scale precision.</p>
+
+  <p>You might have already seen interference without realizing it. Those iridescent colors on a soap bubble? Thin-film interference. Light reflects off the front and back surfaces of the soap film, and the two reflections interfere. The film thickness determines which wavelengths constructively interfere (appear bright) and which destructively interfere (disappear). Different thicknesses produce different colors. The shimmering rainbow on an oil slick is the same physics&mdash;as is the anti-reflective coating on your eyeglasses, which is engineered to create destructive interference at the glass-air boundary so <em>less</em> light reflects back at you.</p>
+</div>
+
+<!-- Interference pattern visualization -->
+<div class="widget wide-width" id="interference-widget">
+  <div class="widget-title">Interactive: Intensity vs. phase difference</div>
+  <canvas id="interference-canvas" width="700" height="280"></canvas>
+  <div class="controls">
+    <label>Phase difference (Δφ)
+      <input type="range" id="interf-phase" min="0" max="1256" value="0">
+      <span class="value-display" id="interf-phase-val">0.0 π</span>
+    </label>
+  </div>
+  <figcaption>The plot shows intensity as a function of phase difference (cos² curve). The colored bar below shows the brightness you&rsquo;d actually see. Drag to sweep from fully bright to fully dark and back.</figcaption>
+</div>
+
+<div class="content-width">
+  <p>So far, we&rsquo;ve been thinking about waves in one dimension&mdash;along a single line. But real light spreads out in space. Let&rsquo;s see what interference looks like in two dimensions. Below is a ripple tank&mdash;two point sources of waves, like dropping two pebbles in a pond. Where the ripples from both sources arrive in phase (crest meets crest), you get bright spots. Where they arrive out of phase (crest meets trough), you get darkness. The result is the mesmerizing interference pattern you see:</p>
+</div>
+
+<!-- Ripple tank visualization -->
+<figure class="wide-width">
+  <canvas id="ripple-canvas" width="700" height="350"></canvas>
+  <figcaption>A ripple tank with two point sources. Bright bands show constructive interference (waves reinforcing); dark bands show destructive interference (waves canceling). The spacing of the pattern depends on the wavelength and source separation.</figcaption>
+</figure>
+
+<div class="content-width">
+  <p>But where do we actually <em>see</em> interference patterns in real life? The most famous example is Thomas Young&rsquo;s double-slit experiment.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION IV: YOUNG'S DOUBLE SLIT -->
+<!-- ============================================================ -->
+<div class="section-header" id="double-slit">
+  <span class="section-number">IV.</span>
+  <h2>Young&rsquo;s double slit</h2>
+</div>
+
+<div class="content-width">
+  <p>In 1801, Thomas Young performed one of the most beautiful experiments in physics. He shone light through two narrow slits and observed a pattern of bright and dark bands on a screen behind them.</p>
+
+  <p>The significance is hard to overstate. For over a century, Newton&rsquo;s corpuscular theory of light&mdash;that light consists of tiny particles&mdash;had dominated physics. Newton&rsquo;s authority was so immense that few dared challenge him. Young did. And the double-slit experiment provided some of the strongest evidence that light behaves as a wave.</p>
+
+  <p>The reasoning is elegant: if light were purely a stream of particles, you&rsquo;d see two bright patches behind the two slits&mdash;particles going through one slit or the other, nothing more. Instead, Young saw many alternating bright and dark stripes&mdash;an <em>interference pattern</em>. Dark bands meant light from one slit was <em>canceling</em> light from the other. Particles can&rsquo;t cancel. Only waves can.</p>
+
+  <p>Here&rsquo;s why it works: light from each slit travels a slightly different distance to reach any given point on the screen. At points where the path difference is a whole number of wavelengths (0, λ, 2λ, ...), you get constructive interference&mdash;bright fringes. At points where the path difference is a half-wavelength (λ/2, 3λ/2, ...), you get destructive interference&mdash;dark fringes.</p>
+
+  <p>The spacing between fringes on the screen is:</p>
+
+  <p style="text-align:center; font-family: var(--font-sans); font-size: 20px; margin: 24px 0; color: var(--accent);"><strong>Δy = λ · L / d</strong></p>
+
+  <p>where λ is the wavelength, L is the distance to the screen, and d is the slit spacing.</p>
+
+  <p>This simple formula reveals something remarkable: by measuring the fringe spacing on the screen, you can calculate the wavelength of the light. This is interferometry in its simplest form&mdash;turning a hard-to-measure quantity (wavelength) into an easy-to-measure one (distance between bright bands).</p>
+
+  <p>Notice the pattern: smaller slit spacing (d) means wider fringes. Longer wavelength (λ) also means wider fringes. And the farther the screen (L), the more spread out the pattern becomes. Play with the sliders below to build your intuition for these relationships.</p>
+</div>
+
+<!-- Double slit widget -->
+<div class="widget wide-width" id="double-slit-widget">
+  <div class="widget-title">Interactive: Young&rsquo;s double-slit experiment</div>
+  <canvas id="doubleslit-canvas" width="700" height="350"></canvas>
+  <div class="controls">
+    <label>Wavelength (λ)
+      <input type="range" id="ds-lambda" min="380" max="750" value="550">
+      <span class="value-display" id="ds-lambda-val">550 nm</span>
+    </label>
+    <label>Slit spacing (d)
+      <input type="range" id="ds-spacing" min="2" max="20" value="8">
+      <span class="value-display" id="ds-spacing-val">8 μm</span>
+    </label>
+  </div>
+  <figcaption>Light enters from the left. Each slit acts as a new wave source. On the screen at right, you see the interference pattern. Try increasing the slit spacing&mdash;the fringes get closer together. Try shorter wavelengths&mdash;same effect.</figcaption>
+</div>
+
+<div class="content-width">
+  <p>Young&rsquo;s experiment was groundbreaking, but it was just the beginning. As an interferometer, the double slit has a major limitation: the two &ldquo;paths&rdquo; (through each slit) are very close together and hard to control independently. What if you want to compare two paths that are meters&mdash;or kilometers&mdash;apart? For that, you need a different design. The real workhorse of modern interferometry is a device invented 80 years later by Albert Michelson.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION V: THE MICHELSON INTERFEROMETER -->
+<!-- ============================================================ -->
+<div class="section-header" id="michelson">
+  <span class="section-number">V.</span>
+  <h2>The Michelson interferometer</h2>
+</div>
+
+<div class="content-width">
+  <p>The Michelson interferometer is the single most important design in the history of precision measurement. It&rsquo;s the engine behind everything from LIGO to semiconductor fabrication. And it&rsquo;s elegant in its simplicity.</p>
+
+  <p>Here&rsquo;s how it works:</p>
+
+  <p><strong>1.</strong> A laser beam hits a <em>beam splitter</em>&mdash;a half-silvered mirror that transmits half the light straight through and reflects the other half at 90°.</p>
+
+  <p><strong>2.</strong> Each half-beam travels down its own <em>arm</em> to a mirror at the end, bounces back, and returns to the beam splitter.</p>
+
+  <p><strong>3.</strong> The two returning beams <em>recombine</em> at the beam splitter. Some light heads toward a detector.</p>
+
+  <p><strong>4.</strong> If both arms are exactly the same length, the two beams arrive in phase&mdash;constructive interference&mdash;bright at the detector. But if one mirror is displaced even slightly, the path difference changes, and you see the brightness shift.</p>
+
+  <p>The crucial insight: because the light travels <em>down and back</em>, a mirror displacement of Δx changes the optical path by <strong>2Δx</strong> (it&rsquo;s a round trip!). So moving a mirror by just λ/4 changes the path by λ/2, flipping from bright to dark. Move it λ/2, and the path changes by λ&mdash;one full fringe cycle, back to bright again.</p>
+
+  <p>Here&rsquo;s an analogy: imagine two runners on a track. One track is slightly longer than the other. When they start at the same time and run at the same speed, they&rsquo;ll arrive at the finish line at slightly different times. The time difference tells you the track length difference. In a Michelson interferometer, the &ldquo;time difference&rdquo; is a <em>phase difference</em>, and it shows up as bright or dark fringes.</p>
+</div>
+
+<!-- Michelson interferometer widget -->
+<div class="widget wide-width" id="michelson-widget">
+  <div class="widget-title">Interactive: Michelson interferometer</div>
+  <svg id="michelson-svg" viewBox="0 0 700 420" width="700" height="420"></svg>
+  <div class="controls">
+    <label>Mirror displacement
+      <input type="range" id="mich-mirror" min="0" max="1000" value="0">
+      <span class="value-display" id="mich-mirror-val">0.0 nm</span>
+    </label>
+    <label>Wavelength
+      <input type="range" id="mich-lambda" min="380" max="750" value="633">
+      <span class="value-display" id="mich-lambda-val">633 nm</span>
+    </label>
+  </div>
+  <figcaption>Move the mirror by tiny fractions of a wavelength and watch the detector brightness change. A displacement of λ/4 creates a path difference of λ/2 (halfway through one cycle), giving total darkness. A displacement of λ/2 completes a full fringe cycle back to bright.</figcaption>
+</div>
+
+<div class="content-width">
+  <p>Michelson first used this device in 1887 (with Edward Morley) to try to detect the &ldquo;luminiferous ether&rdquo;&mdash;a hypothetical medium through which light was supposed to propagate. The idea was that if Earth moves through the ether, light should travel faster in one direction than another (like swimming with vs. against a current). The interferometer would detect this as a fringe shift when rotated.</p>
+
+  <p>The result? No fringe shift. None. The speed of light was the same in every direction, regardless of Earth&rsquo;s motion. This &ldquo;null result&rdquo; was one of the most important failed experiments in history&mdash;it demolished the ether hypothesis and paved the way for Einstein&rsquo;s theory of special relativity eighteen years later.</p>
+
+  <p>But the Michelson interferometer&rsquo;s real superpower is <em>sensitivity</em>. Let&rsquo;s see just how far that goes.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION VI: MEASURING IMPOSSIBLY SMALL THINGS -->
+<!-- ============================================================ -->
+<div class="section-header" id="measuring">
+  <span class="section-number">VI.</span>
+  <h2>Measuring impossibly small things</h2>
+</div>
+
+<div class="content-width">
+  <p>Let&rsquo;s get quantitative about how precise interferometry can be.</p>
+
+  <p>One full fringe shift corresponds to a mirror displacement of λ/2. For a red helium-neon laser (λ = 633 nm), that&rsquo;s about 316 nm&mdash;less than the width of a bacteria.</p>
+
+  <p>But we can do much better than &ldquo;one fringe.&rdquo; Modern detectors can measure fractional fringe shifts&mdash;say, 1/1000th of a fringe. That gives us:</p>
+
+  <p style="text-align:center; font-family: var(--font-sans); font-size: 20px; margin: 24px 0; color: var(--accent);"><strong>316 nm × 1/1000 ≈ 0.3 nm = 3 Å</strong></p>
+
+  <p>That&rsquo;s about the diameter of a single water molecule.</p>
+
+  <p>And with more sophisticated techniques&mdash;multiple reflections, frequency stabilization, heterodyne detection&mdash;we can push to <em>picometer</em> (10⁻¹² m) precision. That&rsquo;s a thousandth of a nanometer. Smaller than an atom.</p>
+
+  <p>This is what makes interferometry so powerful: it converts a <em>length</em> measurement into a <em>counting</em> problem. You count fringes (or fractions of fringes). Each fringe is a ruler tick-mark spaced at exactly λ/2. And because wavelength is fixed by atomic physics, it&rsquo;s an incredibly precise ruler.</p>
+
+  <p>Let&rsquo;s play with this idea. Try to measure a displacement by watching the fringes:</p>
+</div>
+
+<!-- Measurement game widget -->
+<div class="widget wide-width" id="measure-widget">
+  <div class="widget-title">Interactive: The fringe-counting measurement game</div>
+  <canvas id="measure-canvas" width="700" height="200"></canvas>
+  <div class="controls">
+    <label>Displace mirror
+      <input type="range" id="measure-disp" min="0" max="5000" value="0">
+      <span class="value-display" id="measure-disp-val">0.0 nm</span>
+    </label>
+    <label style="font-family: var(--font-mono); font-size: 14px;">
+      Fringes shifted: <span id="fringe-count" style="color: var(--accent); font-weight: 700;">0.00</span>
+    </label>
+  </div>
+  <figcaption>As you displace the mirror, the intensity oscillates. Each bright→dark→bright cycle is one fringe. The fringe count tells you the displacement in units of λ/2 (≈ 316 nm for a HeNe laser).</figcaption>
+</div>
+
+<div class="content-width">
+  <p>In the real world, this technique is used everywhere:</p>
+
+  <p><strong>Semiconductor lithography:</strong> To make a modern computer chip, you need to position photomasks with nanometer accuracy. Laser interferometers track the position of the wafer stage in real time, ensuring each of the dozens of layers in a chip aligns with the ones below. Without interferometry, the 3 nm transistors in your phone would be impossible.</p>
+
+  <p><strong>Surface metrology:</strong> How flat is &ldquo;flat&rdquo;? For a telescope mirror, &ldquo;flat&rdquo; means deviations of less than λ/20 across the entire surface. Interferometers can map the topography of a mirror to within a few nanometers, revealing bumps that are a thousand times smaller than a grain of pollen.</p>
+
+  <p><strong>Precision machining:</strong> CNC machines in aerospace and automotive manufacturing use interferometric feedback to position cutting tools with sub-micrometer precision. The same applies to coordinate measuring machines that inspect finished parts.</p>
+
+  <p>But the most astonishing application of interferometric measurement is detecting ripples in the fabric of spacetime itself.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION VII: LIGO -->
+<!-- ============================================================ -->
+<div class="section-header" id="ligo">
+  <span class="section-number">VII.</span>
+  <h2>How LIGO detects gravitational waves</h2>
+</div>
+
+<div class="content-width">
+  <p>LIGO&mdash;the Laser Interferometer Gravitational-Wave Observatory&mdash;is, in a very real sense, just a very large, very precise Michelson interferometer. Its two arms are each <strong>4 kilometers</strong> long.</p>
+
+  <p>When a gravitational wave passes through Earth, it stretches space in one direction and compresses it in the perpendicular direction. LIGO&rsquo;s two arms are perpendicular, so one arm gets slightly longer while the other gets slightly shorter. This difference shows up as a fringe shift at the detector.</p>
+
+  <p>&ldquo;Slightly&rdquo; is an understatement. LIGO measures a <strong>strain of ~10⁻²¹</strong>. For 4 km arms, that corresponds to a length change of about:</p>
+
+  <p style="text-align:center; font-family: var(--font-sans); font-size: 20px; margin: 24px 0; color: var(--accent);"><strong>ΔL ≈ 4 × 10⁻¹⁸ m</strong></p>
+
+  <p>That&rsquo;s about 1/10,000th the diameter of a proton. Let that sink in. LIGO can detect a change in arm length that is thousands of times smaller than a <em>proton</em>.</p>
+
+  <p>How is this possible? Several tricks:</p>
+
+  <p><strong>Fabry-P&eacute;rot cavities:</strong> The laser bounces back and forth between mirrors about 280 times before exiting. This effectively multiplies the arm length by 280, making the interferometer act like it has 1,120 km arms.</p>
+
+  <p><strong>Power recycling:</strong> Most light bounces back toward the laser. A mirror sends it back in, building up enormous power (~750 kW circulating).</p>
+
+  <p><strong>Seismic isolation:</strong> The mirrors hang from multi-stage pendulums that filter out ground vibrations.</p>
+
+  <p><strong>Quantum techniques:</strong> Squeezed light states reduce quantum noise below the standard quantum limit.</p>
+
+  <p>On September 14, 2015, LIGO made its first detection: the merger of two black holes about 1.3 billion light-years away. The two black holes&mdash;36 and 29 times the mass of our Sun&mdash;spiraled into each other, producing a &ldquo;chirp&rdquo; of gravitational waves that swept upward in frequency from 35 Hz to 250 Hz in a fraction of a second.</p>
+
+  <p>The gravitational wave signal matched general relativity predictions perfectly. Three solar masses of energy were radiated as gravitational waves in that final instant&mdash;briefly outshining the entire observable universe in gravitational wave power. And LIGO detected it as a change in arm length smaller than a proton. It was interferometry&rsquo;s greatest triumph, and it earned Kip Thorne, Rainer Weiss, and Barry Barish the 2017 Nobel Prize in Physics.</p>
+
+  <p>Since then, LIGO (and its European counterpart Virgo) have detected dozens of gravitational wave events: binary black hole mergers, neutron star collisions, and even black hole-neutron star mergers. A new window on the universe, opened by an interferometer.</p>
+</div>
+
+<!-- LIGO widget -->
+<div class="widget wide-width" id="ligo-widget">
+  <div class="widget-title">Interactive: LIGO &mdash; Gravitational wave detection</div>
+  <canvas id="ligo-canvas" width="700" height="380"></canvas>
+  <div class="controls">
+    <label>Wave strength (strain)
+      <input type="range" id="ligo-strain" min="0" max="100" value="50">
+      <span class="value-display" id="ligo-strain-val">5.0 × 10⁻²¹</span>
+    </label>
+    <label>Wave frequency
+      <input type="range" id="ligo-freq" min="10" max="100" value="35">
+      <span class="value-display" id="ligo-freq-val">35 Hz</span>
+    </label>
+  </div>
+  <figcaption>A gravitational wave alternately stretches one arm and compresses the other. The detector signal (bottom) shows the resulting intensity oscillation. In reality the strain is absurdly tiny, but the pattern is the same.</figcaption>
+</div>
+
+<div class="content-width">
+  <p>LIGO uses interferometry to probe the most extreme events in the universe&mdash;colliding black holes, merging neutron stars. But interferometry also lets us <em>see</em> things that would otherwise be invisible.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION VIII: ASTRONOMICAL INTERFEROMETRY -->
+<!-- ============================================================ -->
+<div class="section-header" id="astronomy">
+  <span class="section-number">VIII.</span>
+  <h2>Astronomical interferometry: imaging the unseeable</h2>
+</div>
+
+<div class="content-width">
+  <p>Here&rsquo;s a problem: if you want to see finer detail through a telescope, you need a bigger aperture (mirror/lens). The angular resolution of a telescope is limited by diffraction to roughly:</p>
+
+  <p style="text-align:center; font-family: var(--font-sans); font-size: 20px; margin: 24px 0; color: var(--accent);"><strong>θ ≈ λ / D</strong></p>
+
+  <p>where D is the aperture diameter. To image, say, the shadow of a black hole, you&rsquo;d need a telescope the size of the Earth.</p>
+
+  <p>You can&rsquo;t build that. But you <em>can</em> fake it with interferometry.</p>
+
+  <p>If you place two telescopes far apart and combine their signals, the pair has the angular resolution of a telescope whose diameter equals the distance between them&mdash;the <em>baseline</em>. You don&rsquo;t get the light-collecting power of a giant dish, but you get its sharpness.</p>
+
+  <p>This is the core idea of <strong>very long baseline interferometry</strong> (VLBI). Multiple telescopes, spread across a wide area, each recording light from the same celestial source. By carefully measuring the <em>phase differences</em> between the signals at each telescope, you can reconstruct an image with extraordinary resolution.</p>
+
+  <p>The Event Horizon Telescope (EHT) took this to the extreme: it linked radio telescopes across the globe&mdash;from Hawaii to Spain to the South Pole&mdash;creating an Earth-sized virtual telescope. Each telescope recorded petabytes of data onto hard drives, which were then physically shipped (yes, shipped by plane) to central processing centers. Atomic clocks at each site synchronized the recordings to within picoseconds, allowing the data to be correlated after the fact.</p>
+
+  <p>In 2019, the EHT produced the first image of a black hole&rsquo;s shadow&mdash;the supermassive black hole at the center of galaxy M87, 55 million light-years away, with a mass of 6.5 billion Suns. The bright ring of hot plasma orbiting the black hole, and the dark shadow where light falls past the event horizon, looked exactly as general relativity predicted.</p>
+
+  <p>The resolution? About 20 microarcseconds. That&rsquo;s equivalent to reading a newspaper in New York from a caf&eacute; in Paris. Or seeing a donut on the surface of the Moon from Earth.</p>
+
+  <p>In 2022, the EHT followed up with an image of Sagittarius A*, the black hole at the center of our own Milky Way galaxy. This was technically harder&mdash;Sgr A* is much smaller and its appearance changes on timescales of minutes, compared to weeks for M87&rsquo;s behemoth. The success cemented interferometry&rsquo;s role as astronomy&rsquo;s most powerful tool for high-resolution imaging.</p>
+</div>
+
+<!-- Baseline resolution widget -->
+<div class="widget wide-width" id="baseline-widget">
+  <div class="widget-title">Interactive: Baseline &amp; angular resolution</div>
+  <canvas id="baseline-canvas" width="700" height="300"></canvas>
+  <div class="controls">
+    <label>Baseline distance
+      <input type="range" id="base-dist" min="1" max="100" value="10">
+      <span class="value-display" id="base-dist-val">10 km</span>
+    </label>
+    <label>Wavelength
+      <input type="range" id="base-lambda" min="1" max="100" value="13">
+      <span class="value-display" id="base-lambda-val">1.3 mm</span>
+    </label>
+  </div>
+  <figcaption>Two telescopes separated by the baseline. The angular resolution (shown by the cone angle) improves as you increase the baseline or decrease the wavelength. The EHT used baselines up to 10,700 km at λ = 1.3 mm.</figcaption>
+</div>
+
+<div class="content-width">
+  <p>One important caveat: interferometry increases angular resolution, but <em>not</em> light-gathering power. The EHT can resolve fine details, but reconstructing a full image from sparse baseline measurements requires sophisticated algorithms (and months of computing). It&rsquo;s like trying to reconstruct a photograph from just a few Fourier coefficients&mdash;possible, but tricky.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION IX: COHERENCE -->
+<!-- ============================================================ -->
+<div class="section-header" id="coherence">
+  <span class="section-number">IX.</span>
+  <h2>Coherence: why lasers matter</h2>
+</div>
+
+<div class="content-width">
+  <p>We&rsquo;ve been blithely assuming our light source produces nice, clean, single-frequency waves. But in the real world, not all light sources are created equal. Why does interferometry demand <em>lasers</em> instead of, say, a flashlight?</p>
+
+  <p>The answer is <strong>coherence</strong>.</p>
+
+  <p><strong>Temporal coherence</strong> means the light maintains a consistent phase over time. A laser emits a very narrow range of wavelengths, so its wave trains are long and predictable. An incandescent bulb emits a broad spectrum&mdash;its &ldquo;waves&rdquo; are really a jumble of many frequencies, each randomly phased. Their interference patterns wash out almost immediately.</p>
+
+  <p>The <em>coherence length</em> is the distance over which the light maintains enough phase consistency to produce visible fringes. For a white LED, this is about 1 μm. For a stabilized HeNe laser, it can be hundreds of meters. For LIGO&rsquo;s laser, it&rsquo;s effectively infinite for the 4 km arm length.</p>
+
+  <p><strong>Spatial coherence</strong> means the wavefronts are uniform across space. A laser beam is highly spatially coherent&mdash;the phase is the same across the beam&rsquo;s cross-section. An extended source (like a light bulb) has poor spatial coherence because different parts of the filament emit independently.</p>
+
+  <p>Young actually achieved interference with sunlight by first passing it through a tiny pinhole (to improve spatial coherence) and then through the two slits. But the fringes were dim and hard to see. Lasers changed everything.</p>
+
+  <p>The invention of the laser in 1960 was a watershed moment for interferometry. Suddenly, you had a source that was both temporally and spatially coherent: a single, stable frequency emitted in a tight, uniform beam. Fringes became sharp, bright, and stable. Experiments that once required heroic efforts with filtered sunlight became routine with a simple HeNe laser.</p>
+
+  <p>In fact, you can think of coherence as the <em>prerequisite</em> for interference. If your light source has poor coherence, the interference pattern washes out&mdash;the fringes blur into a uniform glow. This is why you don&rsquo;t see interference patterns from a flashlight: the light is a chaotic mix of frequencies and phases, and all the constructive and destructive contributions average out. Coherence is what makes the pattern <em>visible</em>.</p>
+</div>
+
+<div class="sidenote content-width">
+  <button class="sidenote-toggle" onclick="this.classList.toggle('open'); this.nextElementSibling.classList.toggle('open');">Technical detail: coherence length formula</button>
+  <div class="sidenote-content">
+    <p>The coherence length is approximately: <strong>L_c ≈ λ² / Δλ</strong>, where Δλ is the spectral bandwidth. A source with very narrow bandwidth (small Δλ) has a very long coherence length. This is why single-mode lasers, which emit an extremely narrow line, are ideal for interferometry.</p>
+    <p>For the EHT (radio interferometry), coherence is maintained differently: each telescope records the signal with a precise atomic clock timestamp, and correlation is done computationally after the fact. This is possible because radio wavelengths are long enough to digitize directly.</p>
+  </div>
+</div>
+
+<div class="content-width">
+  <p>Coherence requirements also explain why interferometry works differently at different wavelengths. Optical interferometry demands extremely stable, narrow-linewidth lasers and carefully controlled path lengths. Radio interferometry is more forgiving because the longer wavelengths tolerate larger path variations.</p>
+
+  <p>There&rsquo;s one more requirement we should mention: <strong>polarization</strong>. For two beams to interfere, their electric fields need to oscillate in the same direction. If one beam is horizontally polarized and the other vertically, they won&rsquo;t interfere at all. Most interferometers use polarized laser light to ensure this condition is met.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION X: IN THE WILD -->
+<!-- ============================================================ -->
+<div class="section-header" id="wild">
+  <span class="section-number">X.</span>
+  <h2>Where interferometry shows up in the wild</h2>
+</div>
+
+<div class="content-width">
+  <p>Interferometry isn&rsquo;t just for physicists in clean rooms. It&rsquo;s woven into technology you encounter (indirectly) every day:</p>
+
+  <p><strong>Semiconductor manufacturing:</strong> Every modern chip is made with lithographic masks positioned by laser interferometers. The transistors on your phone&rsquo;s processor are about 3 nm apart&mdash;and interferometry is what ensures each layer lines up with sub-nanometer accuracy.</p>
+
+  <p><strong>Medical imaging:</strong> Optical Coherence Tomography (OCT) uses low-coherence interferometry to image the retina in cross-section, with micrometer resolution. If you&rsquo;ve had an eye exam recently, your ophthalmologist likely used OCT. It can detect retinal diseases before symptoms appear.</p>
+
+  <p><strong>Fiber optic gyroscopes:</strong> The Sagnac effect (interference in a rotating loop) is used in navigation systems for aircraft, submarines, and spacecraft. Two beams travel in opposite directions around a fiber coil; rotation causes a measurable phase difference proportional to the rotation rate. Ring laser gyroscopes are in every modern airliner. They have no moving parts (unlike mechanical gyroscopes), making them incredibly reliable.</p>
+
+  <p><strong>Gravitational wave astronomy:</strong> Beyond LIGO, there&rsquo;s Virgo (Italy), KAGRA (Japan), and the planned LIGO India. Looking further ahead, the space-based LISA mission (Laser Interferometer Space Antenna) will have arms <em>2.5 million kilometers</em> long, enabling detection of low-frequency gravitational waves from supermassive black hole mergers and the early universe. The Einstein Telescope, proposed for Europe, would be an underground, triangular detector ten times more sensitive than current LIGO.</p>
+
+  <p><strong>Exoplanet detection:</strong> Stellar interferometry can measure tiny wobbles in a star&rsquo;s position caused by orbiting planets, using baselines of tens of meters. The VLTI (Very Large Telescope Interferometer) in Chile combines four 8.2-meter telescopes to measure stellar diameters and binary star orbits with unprecedented precision.</p>
+
+  <p><strong>Medical imaging:</strong> We mentioned OCT earlier, but it&rsquo;s worth emphasizing how transformative it has been. By scanning a low-coherence beam across tissue and measuring the interference of reflections from different depths, OCT can image the layers of the retina, the interior of arteries, and even developing embryos&mdash;all non-invasively, with micrometer resolution.</p>
+
+  <p><strong>Materials science:</strong> Interference patterns reveal stress, strain, and surface defects in materials. Newton&rsquo;s rings (circular interference fringes between a lens and flat surface) have been used for centuries to test optical quality. Modern digital holographic interferometry can measure vibrations, deformations, and thermal expansion with nanometer sensitivity across an entire surface simultaneously.</p>
+
+  <p><strong>Quantum computing:</strong> Photonic quantum computers use interferometers as their fundamental logic gates. A photon&rsquo;s path through a network of beam splitters and phase shifters implements quantum operations. Boson sampling&mdash;a problem that may demonstrate quantum computational advantage&mdash;is fundamentally an interference experiment with many photons.</p>
+
+  <p><strong>Atomic clocks:</strong> The most precise clocks in the world are atomic fountain clocks and optical lattice clocks, which use Ramsey interferometry&mdash;a form of atom interferometry where atoms are put into a superposition of states and allowed to evolve, then recombined to measure the frequency of atomic transitions. These clocks are so precise they would gain or lose less than one second over the age of the universe.</p>
+</div>
+
+<!-- Closing remarks -->
+<div class="content-width" style="margin-top: 40px;">
+  <p>The unifying theme across all these applications is the same simple idea we started with: when two waves meet, they add. And the pattern of that addition&mdash;constructive here, destructive there&mdash;encodes information about the difference in their paths. Whether that path difference was caused by a mirror shifting a nanometer, spacetime stretching by a millionth of a proton width, or a photon traveling an extra fraction of a wavelength through a rotating fiber coil, the physics is the same.</p>
+
+  <p>Interferometry transforms the invisible into the visible. It takes a phase difference&mdash;something too fast, too small, too subtle to detect directly&mdash;and converts it into a brightness pattern you can see, photograph, and measure. That&rsquo;s its magic: it makes the unmeasurable measurable.</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- FURTHER RESOURCES -->
+<!-- ============================================================ -->
+<div class="section-header" id="further-resources">
+  <span class="section-number"></span>
+  <h2>Further resources</h2>
+</div>
+
+<div class="content-width">
+  <p>If you want to go deeper:</p>
+
+  <ul style="margin: 16px 0 16px 24px; font-size: 19px; line-height: 1.6;">
+    <li style="margin-bottom: 8px;"><strong>Feynman Lectures on Physics, Vol. I, Ch. 26-29:</strong> Feynman&rsquo;s treatment of optics and interference is characteristically brilliant and accessible. Available free online.</li>
+    <li style="margin-bottom: 8px;"><strong>LIGO Scientific Collaboration papers:</strong> The original detection paper (Abbott et al., 2016, &ldquo;Observation of Gravitational Waves from a Binary Black Hole Merger&rdquo;) is surprisingly readable.</li>
+    <li style="margin-bottom: 8px;"><strong>Event Horizon Telescope papers:</strong> The M87 imaging papers (2019) and Sgr A* papers (2022) describe the interferometric reconstruction process in detail.</li>
+    <li style="margin-bottom: 8px;"><strong>&ldquo;Optics&rdquo; by Eugene Hecht:</strong> The standard undergraduate textbook, thorough on interference and interferometry.</li>
+    <li style="margin-bottom: 8px;"><strong>&ldquo;Principles of Optics&rdquo; by Born &amp; Wolf:</strong> The bible of optics. Dense but definitive. Chapter 7 on interference is a masterpiece.</li>
+    <li style="margin-bottom: 8px;"><strong>MIT OpenCourseWare 8.03:</strong> Walter Lewin&rsquo;s lectures on waves and vibrations include stunning demonstrations of optical interference.</li>
+  </ul>
+
+  <p class="credits" style="font-style: italic; color: var(--text-light); font-size: 17px; margin-top: 32px;">All interactive diagrams are schematic illustrations designed to build intuition, not precise simulations. Physics is correct in principle; quantitative details are simplified for clarity.</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p class="motto">You don&rsquo;t understand it until you can predict it.</p>
+  <p>&copy; 2026 &middot; An interactive explainer on optical interferometry</p>
+</footer>
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT -->
+<!-- ============================================================ -->
+<script>
+// ===== UTILITY FUNCTIONS =====
+function wavelengthToColor(nm) {
+  // Convert wavelength in nm to RGB
+  let r, g, b;
+  if (nm >= 380 && nm < 440) {
+    r = -(nm - 440) / (440 - 380); g = 0; b = 1;
+  } else if (nm >= 440 && nm < 490) {
+    r = 0; g = (nm - 440) / (490 - 440); b = 1;
+  } else if (nm >= 490 && nm < 510) {
+    r = 0; g = 1; b = -(nm - 510) / (510 - 490);
+  } else if (nm >= 510 && nm < 580) {
+    r = (nm - 510) / (580 - 510); g = 1; b = 0;
+  } else if (nm >= 580 && nm < 645) {
+    r = 1; g = -(nm - 645) / (645 - 580); b = 0;
+  } else if (nm >= 645 && nm <= 780) {
+    r = 1; g = 0; b = 0;
+  } else {
+    r = 0; g = 0; b = 0;
+  }
+  // Intensity adjustment at edges
+  let factor;
+  if (nm >= 380 && nm < 420) factor = 0.3 + 0.7 * (nm - 380) / (420 - 380);
+  else if (nm >= 420 && nm <= 700) factor = 1;
+  else if (nm > 700 && nm <= 780) factor = 0.3 + 0.7 * (780 - nm) / (780 - 700);
+  else factor = 0;
+  return [Math.round(r * factor * 255), Math.round(g * factor * 255), Math.round(b * factor * 255)];
+}
+
+// ===== HERO CANVAS - animated interference pattern =====
+(function() {
+  const canvas = document.getElementById('hero-canvas');
+  const ctx = canvas.getContext('2d');
+  let time = 0;
+
+  function resize() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width * 2;
+    canvas.height = rect.height * 2;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+  }
+
+  function draw() {
+    resize();
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Two-source interference pattern
+    const s1x = w * 0.3, s1y = h * 0.5;
+    const s2x = w * 0.7, s2y = h * 0.5;
+    const lambda = 40;
+
+    const imageData = ctx.createImageData(w, h);
+    const data = imageData.data;
+
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        const d1 = Math.sqrt((x - s1x) ** 2 + (y - s1y) ** 2);
+        const d2 = Math.sqrt((x - s2x) ** 2 + (y - s2y) ** 2);
+        const phase1 = (d1 / lambda - time * 0.03) * 2 * Math.PI;
+        const phase2 = (d2 / lambda - time * 0.03) * 2 * Math.PI;
+        const val = Math.cos(phase1) + Math.cos(phase2);
+        const intensity = (val + 2) / 4; // 0 to 1
+
+        const r = Math.round(100 + intensity * 155);
+        const g = Math.round(50 + intensity * 120);
+        const b = Math.round(200 + intensity * 55);
+
+        for (let dy = 0; dy < 2 && y + dy < h; dy++) {
+          for (let dx = 0; dx < 2 && x + dx < w; dx++) {
+            const idx = ((y + dy) * w + (x + dx)) * 4;
+            data[idx] = r;
+            data[idx + 1] = g;
+            data[idx + 2] = b;
+            data[idx + 3] = 255;
+          }
+        }
+      }
+    }
+    ctx.putImageData(imageData, 0, 0);
+    time++;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+
+// ===== SECTION I: Wave Explorer =====
+(function() {
+  const canvas = document.getElementById('wave-canvas');
+  const ctx = canvas.getContext('2d');
+  const lambdaSlider = document.getElementById('wave-lambda');
+  const ampSlider = document.getElementById('wave-amp');
+  const phaseSlider = document.getElementById('wave-phase');
+  const lambdaVal = document.getElementById('wave-lambda-val');
+  const ampVal = document.getElementById('wave-amp-val');
+  const phaseVal = document.getElementById('wave-phase-val');
+
+  let time = 0;
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const lambda = +lambdaSlider.value;
+    const amp = +ampSlider.value;
+    const phase = +phaseSlider.value / 100;
+    const mid = h / 2;
+
+    lambdaVal.textContent = lambda + ' px';
+    ampVal.textContent = amp + ' px';
+    phaseVal.textContent = (phase / Math.PI).toFixed(1) + ' π';
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#e0ddd8';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, mid); ctx.lineTo(w, mid);
+    ctx.stroke();
+
+    // Wavelength markers
+    const k = 2 * Math.PI / lambda;
+    ctx.strokeStyle = 'rgba(108, 60, 224, 0.15)';
+    for (let x = (phase / k) % lambda; x < w; x += lambda) {
+      if (x > 0) {
+        ctx.beginPath();
+        ctx.moveTo(x, mid - amp - 10);
+        ctx.lineTo(x, mid + amp + 10);
+        ctx.stroke();
+      }
+    }
+
+    // Wave
+    ctx.beginPath();
+    ctx.strokeStyle = '#6C3CE0';
+    ctx.lineWidth = 3;
+    for (let x = 0; x < w; x++) {
+      const y = mid - amp * Math.sin(k * x - time * 0.05 + phase);
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // λ label
+    const labelX = 50;
+    const labelY1 = mid - amp * Math.sin(k * labelX - time * 0.05 + phase);
+    ctx.fillStyle = '#6C3CE0';
+    ctx.font = '16px ' + getComputedStyle(document.body).getPropertyValue('--font-sans');
+    ctx.fillText('λ', lambda / 2 + 5, mid - amp - 15);
+
+    // Draw arrow for wavelength
+    const arrowY = mid - amp - 8;
+    ctx.strokeStyle = '#6C3CE0';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(2, arrowY);
+    ctx.lineTo(lambda, arrowY);
+    ctx.stroke();
+    // Arrow heads
+    ctx.beginPath();
+    ctx.moveTo(2, arrowY - 4); ctx.lineTo(2, arrowY + 4);
+    ctx.moveTo(lambda, arrowY - 4); ctx.lineTo(lambda, arrowY + 4);
+    ctx.stroke();
+
+    time++;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+
+// ===== SECTION II: Wave Superposition =====
+(function() {
+  const canvas = document.getElementById('superposition-canvas');
+  const ctx = canvas.getContext('2d');
+  const phaseSlider = document.getElementById('super-phase');
+  const lambdaSlider = document.getElementById('super-lambda');
+  const phaseVal = document.getElementById('super-phase-val');
+  const lambdaVal = document.getElementById('super-lambda-val');
+
+  let time = 0;
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const phase = +phaseSlider.value / 100;
+    const lambda = +lambdaSlider.value;
+    const k = 2 * Math.PI / lambda;
+    const amp = 35;
+
+    phaseVal.textContent = (phase / Math.PI).toFixed(1) + ' π';
+    lambdaVal.textContent = lambda + ' px';
+
+    ctx.clearRect(0, 0, w, h);
+
+    const zones = [
+      { y: 55, color: '#3b82f6', label: 'Wave 1', phaseOffset: 0 },
+      { y: 145, color: '#f59e0b', label: 'Wave 2', phaseOffset: phase },
+      { y: 255, color: '#8b5cf6', label: 'Sum', isSum: true }
+    ];
+
+    zones.forEach(z => {
+      // Center line
+      ctx.strokeStyle = '#e0ddd8';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, z.y); ctx.lineTo(w, z.y);
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = z.color;
+      ctx.font = 'bold 13px ' + getComputedStyle(document.body).getPropertyValue('--font-sans');
+      ctx.fillText(z.label, 8, z.y - amp - 6);
+
+      // Wave
+      ctx.beginPath();
+      ctx.strokeStyle = z.color;
+      ctx.lineWidth = 2.5;
+      for (let x = 0; x < w; x++) {
+        let y;
+        if (z.isSum) {
+          const v1 = amp * Math.sin(k * x - time * 0.04);
+          const v2 = amp * Math.sin(k * x - time * 0.04 + phase);
+          y = z.y - (v1 + v2);
+        } else {
+          y = z.y - amp * Math.sin(k * x - time * 0.04 + (z.phaseOffset || 0));
+        }
+        x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+
+    // Sum amplitude indicator
+    const sumAmp = 2 * amp * Math.abs(Math.cos(phase / 2));
+    const pct = Math.round(sumAmp / (2 * amp) * 100);
+    ctx.fillStyle = '#8b5cf6';
+    ctx.font = 'bold 14px ' + getComputedStyle(document.body).getPropertyValue('--font-sans');
+    ctx.fillText(`Amplitude: ${pct}%`, w - 130, 255 - amp - 6);
+
+    time++;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+
+// ===== SECTION III: Intensity vs Phase =====
+(function() {
+  const canvas = document.getElementById('interference-canvas');
+  const ctx = canvas.getContext('2d');
+  const phaseSlider = document.getElementById('interf-phase');
+  const phaseVal = document.getElementById('interf-phase-val');
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const phase = +phaseSlider.value / 100;
+
+    phaseVal.textContent = (phase / Math.PI).toFixed(1) + ' π';
+
+    ctx.clearRect(0, 0, w, h);
+
+    const plotH = 180;
+    const plotY = 20;
+    const plotX = 60;
+    const plotW = w - 80;
+    const barY = plotY + plotH + 20;
+    const barH = 40;
+
+    // Axes
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(plotX, plotY);
+    ctx.lineTo(plotX, plotY + plotH);
+    ctx.lineTo(plotX + plotW, plotY + plotH);
+    ctx.stroke();
+
+    // Y-axis label
+    ctx.fillStyle = '#999';
+    ctx.font = '12px ' + getComputedStyle(document.body).getPropertyValue('--font-sans');
+    ctx.save();
+    ctx.translate(15, plotY + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('Intensity', 0, 0);
+    ctx.restore();
+
+    // X-axis labels
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 4; i++) {
+      const x = plotX + (i / 4) * plotW;
+      ctx.fillText(i + 'π', x, plotY + plotH + 16);
+      ctx.beginPath();
+      ctx.moveTo(x, plotY + plotH);
+      ctx.lineTo(x, plotY + plotH + 4);
+      ctx.stroke();
+    }
+
+    // cos² curve
+    ctx.beginPath();
+    ctx.strokeStyle = '#6C3CE0';
+    ctx.lineWidth = 2.5;
+    for (let px = 0; px <= plotW; px++) {
+      const phi = (px / plotW) * 4 * Math.PI;
+      const intensity = Math.cos(phi / 2) ** 2;
+      const x = plotX + px;
+      const y = plotY + plotH - intensity * plotH;
+      px === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Current position marker
+    const markerX = plotX + (phase / (4 * Math.PI)) * plotW;
+    const currentIntensity = Math.cos(phase / 2) ** 2;
+    const markerY = plotY + plotH - currentIntensity * plotH;
+
+    ctx.beginPath();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#E8443A';
+    ctx.lineWidth = 1.5;
+    ctx.moveTo(markerX, plotY + plotH);
+    ctx.lineTo(markerX, markerY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.fillStyle = '#E8443A';
+    ctx.arc(markerX, markerY, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Brightness bar
+    const brightness = Math.round(currentIntensity * 255);
+    ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
+    ctx.fillRect(plotX, barY, plotW, barH);
+    ctx.strokeStyle = '#ccc';
+    ctx.strokeRect(plotX, barY, plotW, barH);
+
+    // Bar label
+    ctx.fillStyle = brightness > 128 ? '#333' : '#fff';
+    ctx.font = 'bold 14px ' + getComputedStyle(document.body).getPropertyValue('--font-sans');
+    ctx.textAlign = 'center';
+    ctx.fillText(`Brightness: ${Math.round(currentIntensity * 100)}%`, plotX + plotW / 2, barY + barH / 2 + 5);
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+
+// ===== RIPPLE TANK =====
+(function() {
+  const canvas = document.getElementById('ripple-canvas');
+  const ctx = canvas.getContext('2d');
+  let time = 0;
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const s1x = w * 0.4, s1y = h * 0.5;
+    const s2x = w * 0.6, s2y = h * 0.5;
+    const lambda = 35;
+
+    const imageData = ctx.createImageData(w, h);
+    const data = imageData.data;
+
+    for (let y = 0; y < h; y += 2) {
+      for (let x = 0; x < w; x += 2) {
+        const d1 = Math.sqrt((x - s1x) ** 2 + (y - s1y) ** 2);
+        const d2 = Math.sqrt((x - s2x) ** 2 + (y - s2y) ** 2);
+        const wave1 = Math.cos(2 * Math.PI * d1 / lambda - time * 0.08);
+        const wave2 = Math.cos(2 * Math.PI * d2 / lambda - time * 0.08);
+        const val = (wave1 + wave2) / 2;
+        const intensity = (val + 1) / 2;
+
+        // Purple-cyan color scheme
+        const r = Math.round(40 + intensity * 80);
+        const g = Math.round(20 + intensity * 140);
+        const b = Math.round(80 + intensity * 175);
+
+        for (let dy = 0; dy < 2 && y + dy < h; dy++) {
+          for (let dx = 0; dx < 2 && x + dx < w; dx++) {
+            const idx = ((y + dy) * w + (x + dx)) * 4;
+            data[idx] = r;
+            data[idx + 1] = g;
+            data[idx + 2] = b;
+            data[idx + 3] = 255;
+          }
+        }
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    // Source markers
+    [{ x: s1x, y: s1y }, { x: s2x, y: s2y }].forEach(s => {
+      ctx.beginPath();
+      ctx.fillStyle = '#fff';
+      ctx.arc(s.x, s.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+
+    time++;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+
+// ===== SECTION IV: Double Slit =====
+(function() {
+  const canvas = document.getElementById('doubleslit-canvas');
+  const ctx = canvas.getContext('2d');
+  const lambdaSlider = document.getElementById('ds-lambda');
+  const spacingSlider = document.getElementById('ds-spacing');
+  const lambdaVal = document.getElementById('ds-lambda-val');
+  const spacingVal = document.getElementById('ds-spacing-val');
+
+  let time = 0;
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const lambdaNm = +lambdaSlider.value;
+    const slitD = +spacingSlider.value;
+
+    lambdaVal.textContent = lambdaNm + ' nm';
+    spacingVal.textContent = slitD + ' μm';
+
+    ctx.clearRect(0, 0, w, h);
+
+    const [r, g, b] = wavelengthToColor(lambdaNm);
+    const color = `rgb(${r},${g},${b})`;
+
+    // Background
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, w, h);
+
+    // Barrier with slits
+    const barrierX = 180;
+    const slitWidth = 4;
+    const slitGap = slitD * 8; // scale for display
+    const slit1Y = h / 2 - slitGap / 2;
+    const slit2Y = h / 2 + slitGap / 2;
+
+    ctx.fillStyle = '#444';
+    ctx.fillRect(barrierX - 3, 0, 6, slit1Y - slitWidth);
+    ctx.fillRect(barrierX - 3, slit1Y + slitWidth, 6, slit2Y - slitWidth - slit1Y - slitWidth);
+    ctx.fillRect(barrierX - 3, slit2Y + slitWidth, 6, h - slit2Y - slitWidth);
+
+    // Incoming wave fronts
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.3)`;
+    ctx.lineWidth = 1;
+    const incomingLambda = 20;
+    for (let xf = (time * 0.5) % incomingLambda; xf < barrierX; xf += incomingLambda) {
+      ctx.beginPath();
+      ctx.moveTo(barrierX - xf, 0);
+      ctx.lineTo(barrierX - xf, h);
+      ctx.stroke();
+    }
+
+    // Interference pattern on screen
+    const screenX = w - 60;
+    const screenW = 40;
+    const L = screenX - barrierX; // screen distance in pixels
+    const lambdaScaled = lambdaNm / 550 * 15; // scale wavelength for visual
+
+    // Draw pattern on screen
+    for (let py = 0; py < h; py++) {
+      const y = py - h / 2;
+      const d1 = Math.sqrt((screenX - barrierX) ** 2 + (y - (slit1Y - h/2)) ** 2);
+      const d2 = Math.sqrt((screenX - barrierX) ** 2 + (y - (slit2Y - h/2)) ** 2);
+      const pathDiff = d2 - d1;
+      const phase = 2 * Math.PI * pathDiff / (lambdaScaled);
+      const intensity = Math.cos(phase / 2) ** 2;
+
+      ctx.fillStyle = `rgba(${r},${g},${b},${intensity})`;
+      ctx.fillRect(screenX - screenW / 2, py, screenW, 1);
+    }
+
+    // Circular wave fronts from slits
+    ctx.globalAlpha = 0.15;
+    const maxR = L + 50;
+    for (let rad = (time * 0.8) % (incomingLambda); rad < maxR; rad += incomingLambda) {
+      if (rad < 5) continue;
+      // From slit 1
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.arc(barrierX, slit1Y, rad, -Math.PI / 2.5, Math.PI / 2.5);
+      ctx.stroke();
+      // From slit 2
+      ctx.beginPath();
+      ctx.arc(barrierX, slit2Y, rad, -Math.PI / 2.5, Math.PI / 2.5);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Labels
+    ctx.fillStyle = '#aaa';
+    ctx.font = '12px ' + getComputedStyle(document.body).getPropertyValue('--font-sans');
+    ctx.textAlign = 'center';
+    ctx.fillText('Light source', 60, 20);
+    ctx.fillText('Slits', barrierX, h - 10);
+    ctx.fillText('Screen', screenX, h - 10);
+
+    // Light source arrow
+    ctx.strokeStyle = `rgba(${r},${g},${b},0.5)`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(20, h / 2);
+    ctx.lineTo(barrierX - 10, h / 2);
+    ctx.stroke();
+
+    time++;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+
+// ===== SECTION V: Michelson Interferometer =====
+(function() {
+  const svg = document.getElementById('michelson-svg');
+  const mirrorSlider = document.getElementById('mich-mirror');
+  const lambdaSlider = document.getElementById('mich-lambda');
+  const mirrorVal = document.getElementById('mich-mirror-val');
+  const lambdaVal = document.getElementById('mich-lambda-val');
+
+  function update() {
+    const displacement = +mirrorSlider.value; // nm
+    const lambda = +lambdaSlider.value; // nm
+
+    mirrorVal.textContent = displacement.toFixed(1) + ' nm';
+    lambdaVal.textContent = lambda + ' nm';
+
+    const [r, g, b] = wavelengthToColor(lambda);
+    const color = `rgb(${r},${g},${b})`;
+
+    // Path difference = 2 * displacement (round trip)
+    const pathDiff = 2 * displacement;
+    const phase = (2 * Math.PI * pathDiff) / lambda;
+    const intensity = Math.cos(phase / 2) ** 2;
+
+    const detBrightness = Math.round(intensity * 255);
+
+    svg.innerHTML = `
+      <!-- Background -->
+      <rect x="0" y="0" width="700" height="420" fill="#fafafa" rx="8"/>
+
+      <!-- Labels -->
+      <text x="350" y="32" fill="#999" font-family="system-ui" font-size="12" text-anchor="middle" font-weight="600" letter-spacing="1">MIRROR 1</text>
+      <text x="${540 + displacement/10}" y="228" fill="#999" font-family="system-ui" font-size="12" text-anchor="middle" font-weight="600" letter-spacing="1">MIRROR 2 ↔</text>
+
+      <!-- Laser -->
+      <rect x="40" y="195" width="80" height="30" rx="4" fill="#555"/>
+      <text x="80" y="214" fill="#fff" font-family="system-ui" font-size="11" text-anchor="middle">LASER</text>
+
+      <!-- Beam: laser to splitter -->
+      <line x1="120" y1="210" x2="330" y2="210" stroke="${color}" stroke-width="4" opacity="0.8"/>
+
+      <!-- Beam splitter -->
+      <rect x="330" y="190" width="40" height="40" rx="2" fill="none" stroke="#888" stroke-width="2"/>
+      <line x1="330" y1="230" x2="370" y2="190" stroke="#888" stroke-width="1.5" stroke-dasharray="4"/>
+      <text x="350" y="218" fill="#666" font-family="system-ui" font-size="10" text-anchor="middle">BS</text>
+
+      <!-- Beam: splitter to mirror 1 (up) -->
+      <line x1="350" y1="190" x2="350" y2="55" stroke="${color}" stroke-width="3" opacity="0.6"/>
+      <!-- Mirror 1 -->
+      <rect x="330" y="40" width="40" height="10" rx="2" fill="#aaa" stroke="#777"/>
+      <!-- Beam: mirror 1 back to splitter -->
+      <line x1="350" y1="55" x2="350" y2="190" stroke="${color}" stroke-width="2" opacity="0.4" stroke-dasharray="6,3"/>
+
+      <!-- Beam: splitter to mirror 2 (right) -->
+      <line x1="370" y1="210" x2="${520 + displacement/10}" y2="210" stroke="${color}" stroke-width="3" opacity="0.6"/>
+      <!-- Mirror 2 (movable) -->
+      <rect x="${520 + displacement/10}" y="195" width="10" height="30" rx="2" fill="#aaa" stroke="#777"/>
+      <!-- Beam: mirror 2 back to splitter -->
+      <line x1="${520 + displacement/10}" y1="210" x2="370" y2="210" stroke="${color}" stroke-width="2" opacity="0.4" stroke-dasharray="6,3"/>
+
+      <!-- Beam: splitter to detector (down) -->
+      <line x1="350" y1="230" x2="350" y2="265" stroke="${color}" stroke-width="3" opacity="${intensity}"/>
+
+      <!-- Detector -->
+      <rect x="325" y="265" width="50" height="26" rx="6" fill="rgb(${detBrightness},${detBrightness},${detBrightness})" stroke="#888" stroke-width="1.5"/>
+      <text x="350" y="282" fill="${detBrightness > 128 ? '#333' : '#fff'}" font-family="system-ui" font-size="10" text-anchor="middle" font-weight="600">${Math.round(intensity * 100)}%</text>
+      <text x="350" y="306" fill="#999" font-family="system-ui" font-size="11" text-anchor="middle">Detector</text>
+
+      <!-- Path difference annotation -->
+      <text x="580" y="60" fill="#6C3CE0" font-family="system-ui" font-size="13" font-weight="600">Path diff: ${pathDiff.toFixed(1)} nm</text>
+      <text x="580" y="80" fill="#6C3CE0" font-family="system-ui" font-size="13">Δφ = ${(phase / Math.PI).toFixed(2)}π</text>
+      <text x="580" y="100" fill="${intensity > 0.5 ? '#34C759' : '#E8443A'}" font-family="system-ui" font-size="13" font-weight="600">Intensity: ${Math.round(intensity * 100)}%</text>
+
+      <!-- Fringe ring visualization -->
+      <circle cx="350" cy="365" r="20" fill="rgb(${detBrightness},${detBrightness},${detBrightness})" stroke="#ddd"/>
+      ${[1,2,3,4].map(i => {
+        const ri = 20 + i * 7;
+        const fi = Math.cos((phase + i * 0.8) / 2) ** 2;
+        const fb = Math.round(fi * 255);
+        return `<circle cx="350" cy="365" r="${ri}" fill="none" stroke="rgb(${fb},${fb},${fb})" stroke-width="5"/>`;
+      }).join('')}
+      <text x="350" y="410" fill="#999" font-family="system-ui" font-size="11" text-anchor="middle">Fringe pattern</text>
+    `;
+
+    requestAnimationFrame(update);
+  }
+
+  update();
+})();
+
+// ===== SECTION VI: Measurement Game =====
+(function() {
+  const canvas = document.getElementById('measure-canvas');
+  const ctx = canvas.getContext('2d');
+  const dispSlider = document.getElementById('measure-disp');
+  const dispVal = document.getElementById('measure-disp-val');
+  const fringeCountEl = document.getElementById('fringe-count');
+
+  const lambda = 633; // HeNe laser
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const disp = +dispSlider.value; // nm
+
+    dispVal.textContent = disp.toFixed(1) + ' nm';
+
+    const pathDiff = 2 * disp;
+    const fringes = pathDiff / lambda;
+    fringeCountEl.textContent = fringes.toFixed(2);
+
+    const phase = (2 * Math.PI * pathDiff) / lambda;
+    const intensity = Math.cos(phase / 2) ** 2;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Intensity trace (history-like)
+    ctx.fillStyle = '#fafafa';
+    ctx.fillRect(0, 0, w, h);
+
+    // Draw intensity vs displacement graph
+    const graphH = h - 40;
+    const graphY = 20;
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#6C3CE0';
+    ctx.lineWidth = 2;
+    for (let px = 0; px < w; px++) {
+      const d = (px / w) * 5000;
+      const pd = 2 * d;
+      const ph = (2 * Math.PI * pd) / lambda;
+      const inten = Math.cos(ph / 2) ** 2;
+      const y = graphY + graphH - inten * graphH;
+      px === 0 ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
+    }
+    ctx.stroke();
+
+    // Current position marker
+    const markerX = (disp / 5000) * w;
+    ctx.beginPath();
+    ctx.strokeStyle = '#E8443A';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    ctx.moveTo(markerX, graphY);
+    ctx.lineTo(markerX, graphY + graphH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Brightness indicator
+    const brightness = Math.round(intensity * 255);
+    ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
+    ctx.fillRect(w - 50, graphY, 40, graphH);
+    ctx.strokeStyle = '#ccc';
+    ctx.strokeRect(w - 50, graphY, 40, graphH);
+
+    // Labels
+    ctx.fillStyle = '#999';
+    ctx.font = '11px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('0 nm', 0, h - 5);
+    ctx.fillText('5000 nm', w - 60, h - 5);
+    ctx.fillText('Bright', w - 30, graphY - 5);
+  }
+
+  dispSlider.addEventListener('input', draw);
+  draw();
+})();
+
+// ===== SECTION VII: LIGO =====
+(function() {
+  const canvas = document.getElementById('ligo-canvas');
+  const ctx = canvas.getContext('2d');
+  const strainSlider = document.getElementById('ligo-strain');
+  const freqSlider = document.getElementById('ligo-freq');
+  const strainVal = document.getElementById('ligo-strain-val');
+  const freqVal = document.getElementById('ligo-freq-val');
+
+  let time = 0;
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const strain = +strainSlider.value / 10;
+    const freq = +freqSlider.value;
+
+    strainVal.textContent = strain.toFixed(1) + ' × 10⁻²¹';
+    freqVal.textContent = freq + ' Hz';
+
+    ctx.clearRect(0, 0, w, h);
+
+    // LIGO schematic (top half)
+    const schematicH = 200;
+    const cx = 200, cy = 110;
+    const armLen = 140;
+
+    // GW effect
+    const gwPhase = time * freq * 0.002;
+    const stretch = strain * 3 * Math.sin(gwPhase); // exaggerated
+
+    // Arms
+    ctx.strokeStyle = '#E8443A';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + armLen + stretch, cy); // horizontal arm
+    ctx.stroke();
+
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx, cy - armLen - stretch); // vertical arm (opposite stretch)
+    ctx.stroke();
+
+    // Beam splitter
+    ctx.fillStyle = '#888';
+    ctx.fillRect(cx - 8, cy - 8, 16, 16);
+
+    // Mirrors
+    ctx.fillStyle = '#aaa';
+    ctx.fillRect(cx + armLen + stretch - 4, cy - 10, 8, 20);
+    ctx.fillRect(cx - 10, cy - armLen - stretch - 4, 20, 8);
+
+    // Laser
+    ctx.fillStyle = '#555';
+    ctx.fillRect(cx - 80, cy - 10, 60, 20);
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('LASER', cx - 50, cy + 4);
+
+    // Detector
+    ctx.fillStyle = '#555';
+    ctx.beginPath();
+    ctx.arc(cx, cy + 50, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '8px system-ui';
+    ctx.fillText('DET', cx, cy + 53);
+
+    // Labels
+    ctx.fillStyle = '#E8443A';
+    ctx.font = 'bold 12px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Arm 1 (4 km)', cx + armLen / 2, cy + 25);
+    ctx.fillStyle = '#3b82f6';
+    ctx.fillText('Arm 2 (4 km)', cx + 50, cy - armLen / 2);
+
+    // Gravitational wave indicator
+    ctx.fillStyle = '#6C3CE0';
+    ctx.font = '11px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText('← GW stretches space →', cx + armLen + 30, cy - 10);
+    ctx.fillText('↕ compresses ↕', cx + armLen + 30, cy + 5);
+
+    // Signal plot (bottom half)
+    const plotY = schematicH + 30;
+    const plotH = h - plotY - 30;
+    const plotW = w - 80;
+    const plotX = 60;
+
+    // Axes
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(plotX, plotY);
+    ctx.lineTo(plotX, plotY + plotH);
+    ctx.lineTo(plotX + plotW, plotY + plotH);
+    ctx.stroke();
+
+    // Labels
+    ctx.fillStyle = '#999';
+    ctx.font = '11px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('Time →', plotX + plotW / 2, plotY + plotH + 20);
+    ctx.save();
+    ctx.translate(15, plotY + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Detector Signal', 0, 0);
+    ctx.restore();
+
+    // Clip region for signal plot
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(plotX, plotY, plotW, plotH);
+    ctx.clip();
+
+    // Signal trace - scrolling sinusoid
+    ctx.beginPath();
+    ctx.strokeStyle = '#6C3CE0';
+    ctx.lineWidth = 2.5;
+    const mid = plotY + plotH / 2;
+    for (let px = 0; px < plotW; px++) {
+      const t = (px / plotW) * 2 * Math.PI * (freq / 10) + time * 0.04;
+      const signal = strain * Math.sin(t);
+      const y = mid - signal * (plotH / 2.5);
+      px === 0 ? ctx.moveTo(plotX + px, y) : ctx.lineTo(plotX + px, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // Zero line
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(plotX, mid);
+    ctx.lineTo(plotX + plotW, mid);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    time++;
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+})();
+
+// ===== SECTION VIII: Baseline Resolution =====
+(function() {
+  const canvas = document.getElementById('baseline-canvas');
+  const ctx = canvas.getContext('2d');
+  const distSlider = document.getElementById('base-dist');
+  const lambdaSlider = document.getElementById('base-lambda');
+  const distVal = document.getElementById('base-dist-val');
+  const lambdaVal = document.getElementById('base-lambda-val');
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    const baseline = +distSlider.value; // km
+    const lambdaMm = +lambdaSlider.value / 10; // mm
+
+    // For display, scale: 1-50 = km, 51-100 = ×100 km
+    const actualBaselineKm = baseline <= 50 ? baseline : (baseline - 50) * 200;
+    distVal.textContent = actualBaselineKm.toLocaleString() + ' km';
+    lambdaVal.textContent = lambdaMm.toFixed(1) + ' mm';
+
+    ctx.clearRect(0, 0, w, h);
+
+    const groundY = h - 60;
+
+    // Sky
+    ctx.fillStyle = '#0d1b2a';
+    ctx.fillRect(0, 0, w, groundY);
+
+    // Ground
+    ctx.fillStyle = '#2d5016';
+    ctx.fillRect(0, groundY, w, h - groundY);
+
+    // Telescopes - visual spread capped for display
+    const visualSpread = Math.min(baseline * 3, w / 2 - 30);
+    const t1x = w / 2 - visualSpread;
+    const t2x = w / 2 + visualSpread;
+
+    // Draw telescopes
+    [t1x, t2x].forEach(tx => {
+      ctx.fillStyle = '#888';
+      ctx.beginPath();
+      ctx.moveTo(tx - 12, groundY);
+      ctx.lineTo(tx + 12, groundY);
+      ctx.lineTo(tx + 8, groundY - 35);
+      ctx.lineTo(tx - 8, groundY - 35);
+      ctx.closePath();
+      ctx.fill();
+
+      // Dish
+      ctx.beginPath();
+      ctx.strokeStyle = '#aaa';
+      ctx.lineWidth = 3;
+      ctx.arc(tx, groundY - 40, 15, Math.PI + 0.5, -0.5);
+      ctx.stroke();
+    });
+
+    // Resolution cone from target
+    const targetY = 30;
+    const targetX = w / 2;
+    const resolution = (lambdaMm * 0.001) / (actualBaselineKm * 1000); // radians (approximate)
+    const resArcSec = resolution * 206265; // convert to arcseconds
+
+    // Draw cone
+    const coneSpread = Math.min(Math.max(resArcSec * 5, 5), 200);
+    ctx.fillStyle = 'rgba(108, 60, 224, 0.15)';
+    ctx.beginPath();
+    ctx.moveTo(targetX, targetY);
+    ctx.lineTo(targetX - coneSpread, groundY - 50);
+    ctx.lineTo(targetX + coneSpread, groundY - 50);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(108, 60, 224, 0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(targetX, targetY);
+    ctx.lineTo(targetX - coneSpread, groundY - 50);
+    ctx.moveTo(targetX, targetY);
+    ctx.lineTo(targetX + coneSpread, groundY - 50);
+    ctx.stroke();
+
+    // Star/target
+    ctx.beginPath();
+    ctx.fillStyle = '#fff';
+    ctx.arc(targetX, targetY, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(targetX, targetY, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Baseline arrow
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(t1x, groundY + 15);
+    ctx.lineTo(t2x, groundY + 15);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Labels
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Baseline: ${actualBaselineKm.toLocaleString()} km`, w / 2, groundY + 30);
+
+    ctx.fillStyle = '#6C3CE0';
+    ctx.font = 'bold 14px system-ui';
+    let resText;
+    if (resArcSec > 60) {
+      resText = `Resolution: ${(resArcSec / 60).toFixed(1)} arcmin`;
+    } else if (resArcSec > 1) {
+      resText = `Resolution: ${resArcSec.toFixed(1)} arcsec`;
+    } else if (resArcSec > 0.001) {
+      resText = `Resolution: ${(resArcSec * 1000).toFixed(1)} mas`;
+    } else {
+      resText = `Resolution: ${(resArcSec * 1e6).toFixed(1)} μas`;
+    }
+    ctx.fillText(resText, w / 2, groundY + 50);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.font = '11px system-ui';
+    ctx.fillText('Target', targetX, targetY - 10);
+  }
+
+  distSlider.addEventListener('input', draw);
+  lambdaSlider.addEventListener('input', draw);
+  draw();
+})();
+
+// ===== Sidenote toggles =====
+document.querySelectorAll('.sidenote-toggle').forEach(btn => {
+  btn.addEventListener('click', function() {
+    this.classList.toggle('open');
+    this.nextElementSibling.classList.toggle('open');
+  });
+});
+</script>
+
+</body>
+</html>
