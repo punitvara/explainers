@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direct Preference Optimization: Your Language Model is Secretly a Reward Model</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..800;1,6..72,300..800&family=Figtree:wght@300..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html {
+      font-size: 21px;
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 1rem;
+      line-height: 1.55;
+      color: #2d2d2d;
+      background-color: #faf9f7;
+    }
+
+    /* ===== CSS VARIABLES ===== */
+    :root {
+      --serif: 'Newsreader', Georgia, serif;
+      --sans: 'Figtree', system-ui, sans-serif;
+      --mono: 'JetBrains Mono', 'SF Mono', 'Consolas', monospace;
+      --bg: #FAF9F7;
+      --text: #2d2d2d;
+      --brand: #0EA5E9;
+      --brand-dark: #0284C7;
+      --brand-light: #38BDF8;
+      --brand-lighter: #E0F2FE;
+      --accent-teal: #14B8A6;
+      --accent-indigo: #6366F1;
+      --accent-rose: #F43F5E;
+      --accent-amber: #F59E0B;
+      --widget-bg: #F0F9FF;
+      --border: #E5E5E5;
+      --content-width: 700px;
+      --content-padding: 45px;
+    }
+
+    /* ===== NAV ===== */
+    .site-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .site-nav__logo {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .site-nav__logo span { color: var(--brand); }
+
+    /* ===== HERO ===== */
+    .hero {
+      position: relative;
+      width: calc(100% - 2rem);
+      max-width: 960px;
+      margin: 0.5rem auto 0;
+      border-radius: 16px;
+      overflow: hidden;
+      min-height: 300px;
+      display: flex;
+      align-items: flex-end;
+      background: linear-gradient(135deg, #0c4a6e 0%, #0284C7 30%, #0EA5E9 55%, #14B8A6 80%, #0EA5E9 100%);
+      background-size: 300% 300%;
+      animation: heroGradient 15s ease-in-out infinite;
+    }
+    @keyframes heroGradient {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .hero__canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+    .hero__overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.05) 100%);
+      z-index: 1;
+    }
+    .hero__text {
+      position: relative;
+      z-index: 2;
+      padding: 2.5rem 2.5rem 2rem;
+      width: 100%;
+    }
+    .hero__title {
+      font-family: var(--serif);
+      font-size: clamp(2rem, 5vw, 2.8rem);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .hero__subtitle {
+      font-family: var(--sans);
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: rgba(255,255,255,0.9);
+      line-height: 1.35;
+      max-width: 560px;
+    }
+
+    /* ===== NUTSHELL ===== */
+    .nutshell {
+      max-width: var(--content-width);
+      margin: 2rem auto 1.5rem;
+      padding: 0 var(--content-padding);
+      font-style: italic;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #555;
+    }
+
+    /* ===== SEPARATOR ===== */
+    hr.full-width {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem auto;
+      max-width: 960px;
+    }
+
+    /* ===== TABLE OF CONTENTS ===== */
+    .toc-wrapper {
+      max-width: var(--content-width);
+      margin: 1.5rem auto 2.5rem;
+      padding: 0 var(--content-padding);
+    }
+    .toc {
+      padding: 24px 28px;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .toc h4 {
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      color: #888;
+    }
+    .toc ol {
+      list-style: none;
+      counter-reset: toc-counter;
+    }
+    .toc ol li {
+      counter-increment: toc-counter;
+      padding: 4px 0;
+      font-family: var(--sans);
+      font-size: 0.78rem;
+    }
+    .toc ol li::before {
+      content: counter(toc-counter, upper-roman) ".";
+      display: inline-block;
+      width: 40px;
+      font-weight: 400;
+      color: #aaa;
+    }
+    .toc a {
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .toc a:hover { color: var(--brand); }
+
+    /* ===== ARTICLE ===== */
+    article {
+      max-width: var(--content-width);
+      margin: 0 auto;
+      padding: 0 var(--content-padding);
+      border-left: 2px solid var(--border);
+    }
+
+    /* ===== SECTION HEADINGS ===== */
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 72px -60px 32px -60px;
+      padding: 16px 0;
+      border-top: 2px solid var(--border);
+      border-bottom: 2px solid var(--border);
+      background: var(--bg);
+    }
+    .section-number {
+      font-family: var(--sans);
+      font-size: 1.3rem;
+      font-weight: 300;
+      color: #bbb;
+      min-width: 50px;
+      text-align: right;
+    }
+    .section-heading h2 {
+      font-family: var(--sans);
+      font-size: 1.6rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--text);
+    }
+
+    /* ===== BODY TEXT ===== */
+    article p {
+      margin-bottom: 20px;
+      font-size: 1rem;
+    }
+    article strong { font-weight: 700; }
+    article em { font-style: italic; }
+    article a {
+      color: var(--brand);
+      text-decoration: underline;
+      text-decoration-color: rgba(14,165,233,0.3);
+      text-underline-offset: 3px;
+      transition: text-decoration-color 0.2s;
+    }
+    article a:hover { text-decoration-color: var(--brand); }
+
+    /* ===== SUBHEADINGS ===== */
+    article h3 {
+      font-family: var(--sans);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 2.5rem 0 1rem;
+      line-height: 1.3;
+    }
+
+    /* ===== LISTS ===== */
+    article ul, article ol {
+      margin: 16px 0 20px 24px;
+      font-size: 1rem;
+    }
+    article li { margin-bottom: 8px; }
+
+    /* ===== FIGURES / WIDGETS ===== */
+    .figure-container {
+      margin: 32px -20px;
+      padding: 24px;
+      background: var(--widget-bg);
+      border-radius: 12px;
+      border: 1px solid rgba(14,165,233,0.15);
+    }
+    .figure-container.neutral {
+      background: #F5F5F5;
+      border-color: var(--border);
+    }
+    .figure-caption {
+      text-align: center;
+      font-style: italic;
+      font-size: 0.78rem;
+      color: #777;
+      margin-top: 14px;
+      line-height: 1.4;
+    }
+    .widget-label {
+      font-family: var(--sans);
+      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #888;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    /* ===== SIDENOTE ===== */
+    .sidenote {
+      margin: 24px 0;
+      padding: 16px 20px;
+      background: rgba(14,165,233,0.06);
+      border-left: 3px solid var(--brand-light);
+      border-radius: 0 8px 8px 0;
+      font-size: 0.85rem;
+      color: #555;
+      line-height: 1.5;
+    }
+    .sidenote strong {
+      font-style: normal;
+      color: var(--text);
+    }
+
+    /* ===== SLIDERS ===== */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: #ddd;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--brand);
+      cursor: pointer;
+      border: 2px solid white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--brand);
+      cursor: pointer;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      font-family: var(--sans);
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: #666;
+    }
+    .btn:hover {
+      border-color: var(--brand-light);
+      color: var(--brand);
+    }
+    .btn.active, .btn--primary {
+      background: var(--brand);
+      color: white;
+      border-color: var(--brand);
+    }
+    .btn--primary:hover {
+      background: var(--brand-dark);
+      border-color: var(--brand-dark);
+    }
+
+    /* ===== MATH ===== */
+    .math-block {
+      display: block;
+      text-align: center;
+      margin: 1.5rem 0;
+      font-size: 1rem;
+      overflow-x: auto;
+      padding: 0.5rem 0;
+    }
+    .math-inline { font-style: italic; }
+
+    /* ===== PIPELINE WIDGET ===== */
+    .pipeline-stage {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 18px;
+      background: white;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      color: #555;
+    }
+    .pipeline-stage:hover {
+      border-color: var(--brand-light);
+      background: var(--widget-bg);
+    }
+    .pipeline-stage.active {
+      border-color: var(--brand);
+      background: var(--widget-bg);
+    }
+    .pipeline-stage .stage-icon {
+      font-size: 1.2rem;
+    }
+    .pipeline-arrow {
+      font-family: var(--sans);
+      font-size: 1.2rem;
+      color: #ccc;
+      text-align: center;
+    }
+
+    /* ===== PREFERENCE PAIR CARDS ===== */
+    .pref-card {
+      padding: 14px 18px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: white;
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      line-height: 1.5;
+      color: #555;
+      transition: all 0.3s;
+    }
+    .pref-card.chosen {
+      border-color: #10B981;
+      background: #10B98108;
+    }
+    .pref-card.rejected {
+      border-color: var(--accent-rose);
+      background: #F43F5E08;
+    }
+    .pref-label {
+      font-family: var(--sans);
+      font-size: 0.55rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 6px;
+    }
+    .pref-label.chosen { color: #10B981; }
+    .pref-label.rejected { color: var(--accent-rose); }
+
+    /* ===== RESOURCES ===== */
+    .resources {
+      margin: 2rem 0;
+    }
+    .resources h3 {
+      font-family: var(--sans);
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .resources ul {
+      list-style: disc;
+      margin-left: 1.2rem;
+    }
+    .resources li {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      max-width: 960px;
+      margin: 60px auto 0;
+      padding: 40px 24px;
+      text-align: center;
+      background: #1e293b;
+      border-radius: 16px 16px 0 0;
+      color: rgba(255,255,255,0.6);
+      font-family: var(--sans);
+      font-size: 0.7rem;
+    }
+    footer a {
+      color: var(--brand-light);
+      text-decoration: none;
+    }
+    footer a:hover { text-decoration: underline; }
+
+    /* ===== FADE-IN ANIMATION ===== */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 800px) {
+      html { font-size: 18px; }
+      article { padding: 0 1.5rem; border-left: none; }
+      .section-heading { margin-left: 0; margin-right: 0; }
+      .figure-container { margin-left: -8px; margin-right: -8px; }
+      .hero { width: calc(100% - 1rem); min-height: 240px; }
+      .hero__text { padding: 2rem 1.5rem 1.5rem; }
+      .nutshell, .toc-wrapper { padding: 0 1.5rem; }
+    }
+    @media (max-width: 480px) {
+      html { font-size: 17px; }
+      .hero__title { font-size: 1.8rem; }
+      .hero__subtitle { font-size: 0.9rem; }
+      .section-heading { flex-direction: column; gap: 4px; align-items: flex-start; }
+      .section-number { text-align: left; min-width: auto; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="site-nav">
+  <a class="site-nav__logo" href="../index.html">dpo<span>.explained</span></a>
+</nav>
+
+<!-- ===== HERO ===== -->
+<header class="hero">
+  <canvas id="heroCanvas" class="hero__canvas"></canvas>
+  <div class="hero__overlay"></div>
+  <div class="hero__text">
+    <h1 class="hero__title">Direct Preference Optimization</h1>
+    <p class="hero__subtitle">Your Language Model is Secretly a Reward Model — how a single equation eliminated the need for reinforcement learning in RLHF.</p>
+  </div>
+</header>
+
+<!-- ===== NUTSHELL ===== -->
+<div class="nutshell">
+  <p>What if you could align a language model to human preferences without ever training a reward model or running reinforcement learning? DPO shows that a simple reparameterization of the RLHF objective lets you directly optimize a language model on human preference data — turning what was a complex three-stage pipeline into a single supervised learning step.</p>
+</div>
+
+<hr class="full-width">
+
+<!-- ===== TABLE OF CONTENTS ===== -->
+<div class="toc-wrapper">
+  <div class="toc">
+    <h4>Contents</h4>
+    <ol>
+      <li><a href="#sec-alignment">The Alignment Problem</a></li>
+      <li><a href="#sec-rlhf">The RLHF Pipeline</a></li>
+      <li><a href="#sec-reward">Reward Modeling</a></li>
+      <li><a href="#sec-ppo-problem">The PPO Problem</a></li>
+      <li><a href="#sec-insight">The Key DPO Insight</a></li>
+      <li><a href="#sec-loss">The DPO Loss Function</a></li>
+      <li><a href="#sec-beta">The β Parameter</a></li>
+      <li><a href="#sec-comparison">DPO vs RLHF</a></li>
+      <li><a href="#sec-results">Experimental Results</a></li>
+      <li><a href="#sec-bigger-picture">The Bigger Picture</a></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ===== ARTICLE ===== -->
+<article>
+
+  <!-- ====== SECTION I: The Alignment Problem ====== -->
+  <div class="section-heading fade-in" id="sec-alignment">
+    <span class="section-number">I</span>
+    <h2>The Alignment Problem</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>Large language models are trained on the internet. That means they've seen Shakespeare and spam, scientific papers and conspiracy theories, helpful tutorials and toxic rants. When you ask a pretrained LLM a question, it doesn't try to be <em>helpful</em> — it tries to predict what text would most likely come next on the internet.</p>
+
+    <p>This is a problem. A raw pretrained model asked "How do I pick a lock?" will happily provide detailed instructions rather than noting that this might not be the best idea. It's not malicious — it's just doing what it was trained to do: predict likely text.</p>
+
+    <p><strong>Alignment</strong> is the process of taking these raw, capable-but-undirected models and making them behave the way humans actually want: helpful, harmless, and honest. But how do you teach a model something as fuzzy and subjective as "what humans prefer"?</p>
+
+    <p>The answer, until recently, involved a complex dance of reward models and reinforcement learning. Let's see why — and then see how DPO makes it dramatically simpler.</p>
+  </div>
+
+  <!-- Widget 1: Preference Pair Explorer -->
+  <div class="figure-container fade-in">
+    <div class="widget-label">Interactive: Preference Pair Explorer</div>
+    <p style="font-family: var(--sans); font-size: 0.72rem; color: #666; margin-bottom: 16px;">Click each prompt to see an example of a <span style="color:#10B981;font-weight:600;">preferred</span> vs <span style="color:#F43F5E;font-weight:600;">rejected</span> response. This is the data that drives alignment.</p>
+
+    <div id="prefExplorer" style="display:flex; flex-direction:column; gap:12px;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="prefPrompts"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px;" id="prefPairs">
+        <div class="pref-card chosen" id="prefChosen">
+          <div class="pref-label chosen">✓ Chosen (Preferred)</div>
+          <div id="prefChosenText">Click a prompt above to explore preference pairs.</div>
+        </div>
+        <div class="pref-card rejected" id="prefRejected">
+          <div class="pref-label rejected">✗ Rejected</div>
+          <div id="prefRejectedText">These pairs are what human evaluators produce.</div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-caption">Human evaluators compare two model responses and pick the better one. This preference data is the foundation of alignment.</div>
+  </div>
+
+  <!-- ====== SECTION II: The RLHF Pipeline ====== -->
+  <div class="section-heading fade-in" id="sec-rlhf">
+    <span class="section-number">II</span>
+    <h2>The RLHF Pipeline</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>Before DPO, the standard approach to alignment was <strong>Reinforcement Learning from Human Feedback (RLHF)</strong>. It works, but it's a three-headed beast:</p>
+
+    <p><strong>Stage 1: Supervised Fine-Tuning (SFT).</strong> You take a pretrained model and further train it on high-quality demonstration data — examples of the kind of responses you want. This gets the model into the right ballpark, but it's still imprecise.</p>
+
+    <p><strong>Stage 2: Reward Model Training.</strong> You collect human comparisons — pairs of responses where humans say which is better. Then you train a separate neural network (the <em>reward model</em>) to score responses in a way that agrees with human judgements.</p>
+
+    <p><strong>Stage 3: RL Optimization (PPO).</strong> You use Proximal Policy Optimization to fine-tune the SFT model to maximize the reward model's scores, while staying close to the SFT model (to prevent the model from "hacking" the reward function).</p>
+
+    <p>Each stage introduces its own complexity, hyperparameters, and failure modes. But wait — is all this complexity actually necessary?</p>
+  </div>
+
+  <!-- Widget 2: Interactive RLHF Pipeline -->
+  <div class="figure-container fade-in">
+    <div class="widget-label">Interactive: The RLHF Pipeline</div>
+    <p style="font-family: var(--sans); font-size: 0.72rem; color: #666; margin-bottom: 16px;">Click each stage to learn what happens inside it. Notice how many separate models and training runs are required.</p>
+
+    <div id="pipelineWidget" style="display: flex; flex-direction: column; gap: 8px;">
+      <div class="pipeline-stage" data-stage="sft" onclick="showStage('sft')">
+        <span class="stage-icon">📚</span>
+        <div>
+          <strong>Stage 1: Supervised Fine-Tuning</strong>
+          <div style="font-size:0.6rem;color:#999;">Train on demonstration data</div>
+        </div>
+      </div>
+      <div class="pipeline-arrow">↓</div>
+      <div class="pipeline-stage" data-stage="reward" onclick="showStage('reward')">
+        <span class="stage-icon">⚖️</span>
+        <div>
+          <strong>Stage 2: Reward Model Training</strong>
+          <div style="font-size:0.6rem;color:#999;">Learn to score responses</div>
+        </div>
+      </div>
+      <div class="pipeline-arrow">↓</div>
+      <div class="pipeline-stage" data-stage="ppo" onclick="showStage('ppo')">
+        <span class="stage-icon">🎯</span>
+        <div>
+          <strong>Stage 3: PPO Optimization</strong>
+          <div style="font-size:0.6rem;color:#999;">RL to maximize reward</div>
+        </div>
+      </div>
+      <div id="stageDetail" style="margin-top:12px;padding:16px 18px;background:white;border-radius:10px;border:1px solid var(--border);font-family:var(--sans);font-size:0.72rem;line-height:1.6;color:#555;display:none;"></div>
+    </div>
+    <div class="figure-caption">The standard RLHF pipeline requires three separate training stages, two models (policy + reward), and four copies of models in memory during PPO.</div>
+  </div>
+
+  <div class="sidenote fade-in">
+    <strong>Why not just use SFT?</strong> SFT alone is limited because it only learns from <em>demonstrations</em> (what good responses look like), not <em>comparisons</em> (which of two responses is better). Humans find it much easier to compare than to demonstrate — I may not be able to write a perfect poem, but I can tell you which of two poems I prefer.
+  </div>
+
+  <!-- ====== SECTION III: Reward Modeling ====== -->
+  <div class="section-heading fade-in" id="sec-reward">
+    <span class="section-number">III</span>
+    <h2>Reward Modeling</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>The reward model is at the heart of RLHF. Its job is to take a prompt and a response and output a single number — a <em>reward score</em> — that reflects how good the response is according to human preferences.</p>
+
+    <p>But how do you train such a model? You use the <strong>Bradley-Terry model</strong>, a classic choice model from the 1950s. The idea is elegant: given two responses y<sub>w</sub> (the human-preferred "winner") and y<sub>l</sub> (the "loser"), the probability that humans prefer y<sub>w</sub> is:</p>
+
+    <div class="math-block" id="math-bt"></div>
+
+    <p>In other words, the bigger the gap between the reward scores, the more confident we are that humans prefer the winner. The reward model is trained to maximize this probability across all human comparison data.</p>
+
+    <p>This loss function should look familiar — it's essentially binary cross-entropy. We're training a classifier that says "yes, the human preferred this one" based on the difference in reward scores.</p>
+  </div>
+
+  <!-- Widget 3: Reward Separation Visualizer -->
+  <div class="figure-container fade-in">
+    <div class="widget-label">Interactive: Reward Score Separation</div>
+    <p style="font-family: var(--sans); font-size: 0.72rem; color: #666; margin-bottom: 12px;">Drag the sliders to set reward scores for the chosen and rejected responses. Watch how the Bradley-Terry probability and loss change.</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px;">
+      <div>
+        <label style="font-family:var(--sans);font-size:0.65rem;color:#10B981;font-weight:600;">
+          Reward(chosen): <span id="rwChosenVal">2.0</span>
+        </label>
+        <input type="range" id="rwChosenSlider" min="-4" max="4" step="0.1" value="2.0" style="margin-top:6px;">
+      </div>
+      <div>
+        <label style="font-family:var(--sans);font-size:0.65rem;color:var(--accent-rose);font-weight:600;">
+          Reward(rejected): <span id="rwRejectedVal">-1.0</span>
+        </label>
+        <input type="range" id="rwRejectedSlider" min="-4" max="4" step="0.1" value="-1.0" style="margin-top:6px;">
+      </div>
+    </div>
+    <canvas id="rewardCanvas" width="650" height="200" style="width:100%;border-radius:8px;"></canvas>
+    <div style="display:flex; justify-content:space-between; margin-top:12px; font-family:var(--sans); font-size:0.7rem;">
+      <div>P(human prefers chosen) = <strong id="btProb">95.3%</strong></div>
+      <div>Loss = <strong id="btLoss">0.049</strong></div>
+    </div>
+    <div class="figure-caption">The Bradley-Terry model converts the difference in reward scores into a probability of human preference. Larger gaps → higher confidence.</div>
+  </div>
+
+  <!-- ====== SECTION IV: The PPO Problem ====== -->
+  <div class="section-heading fade-in" id="sec-ppo-problem">
+    <span class="section-number">IV</span>
+    <h2>The PPO Problem</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>So we have a reward model that can score responses. Now we need to actually use it to improve the language model. RLHF does this with <strong>Proximal Policy Optimization (PPO)</strong>, a reinforcement learning algorithm.</p>
+
+    <p>The objective is to maximize the expected reward while staying close to the reference policy (the SFT model). Mathematically:</p>
+
+    <div class="math-block" id="math-rl-obj"></div>
+
+    <p>That KL divergence term is crucial — without it, the model would quickly learn to exploit quirks in the reward model rather than actually producing good responses. This is called <strong>reward hacking</strong>.</p>
+
+    <p>But PPO brings serious practical headaches:</p>
+
+    <ul>
+      <li><strong>Memory</strong>: You need four models in GPU memory simultaneously — the policy being trained, the reference policy, the reward model, and a value function.</li>
+      <li><strong>Instability</strong>: PPO hyperparameters (clipping ratio, learning rate, batch size, number of epochs) are notoriously hard to tune for language models.</li>
+      <li><strong>Reward hacking</strong>: Despite the KL penalty, the model can still find ways to game the reward model, producing high-scoring but low-quality outputs.</li>
+      <li><strong>Sample inefficiency</strong>: RL generates samples, scores them, and updates — it's much slower than supervised learning.</li>
+    </ul>
+
+    <p>What if there were a way to skip all of this? What if we could go <em>directly</em> from preference data to an aligned model?</p>
+  </div>
+
+  <!-- Widget 4: PPO Instability Simulator -->
+  <div class="figure-container fade-in">
+    <div class="widget-label">Interactive: PPO Training Dynamics</div>
+    <p style="font-family: var(--sans); font-size: 0.72rem; color: #666; margin-bottom: 12px;">Watch a simulated PPO training run. Notice how reward and KL divergence interact. Click "Run" to start, "Reset" to try again. Each run is different!</p>
+
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button class="btn btn--primary" id="ppoRunBtn" onclick="startPPOSim()">▶ Run</button>
+      <button class="btn" id="ppoResetBtn" onclick="resetPPOSim()">↺ Reset</button>
+    </div>
+    <canvas id="ppoCanvas" width="650" height="260" style="width:100%;border-radius:8px;background:white;"></canvas>
+    <div style="display:flex; gap:20px; margin-top:10px; font-family:var(--sans); font-size:0.65rem; color:#888;">
+      <div><span style="display:inline-block;width:12px;height:3px;background:var(--brand);vertical-align:middle;margin-right:4px;"></span> Reward</div>
+      <div><span style="display:inline-block;width:12px;height:3px;background:var(--accent-rose);vertical-align:middle;margin-right:4px;"></span> KL Divergence</div>
+      <div><span style="display:inline-block;width:12px;height:3px;background:var(--accent-amber);vertical-align:middle;margin-right:4px;border-style:dashed;"></span> True Quality</div>
+    </div>
+    <div class="figure-caption">PPO often increases reward model scores faster than actual response quality — the gap between the blue and gold lines is "reward hacking."</div>
+  </div>
+
+  <div class="sidenote fade-in">
+    <strong>A word on scale:</strong> Training GPT-4 with RLHF reportedly required a dedicated infrastructure team and months of iteration. The complexity isn't just theoretical — it's a real bottleneck for teams trying to align open-source models.
+  </div>
+
+  <!-- ====== SECTION V: The Key DPO Insight ====== -->
+  <div class="section-heading fade-in" id="sec-insight">
+    <span class="section-number">V</span>
+    <h2>The Key DPO Insight</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>Here's where the magic happens. Rafailov et al. noticed something remarkable about the KL-constrained reward maximization objective we saw in Section IV.</p>
+
+    <p>It turns out that for <em>any</em> reward function r(x, y), there's a <strong>closed-form solution</strong> for the optimal policy:</p>
+
+    <div class="math-block" id="math-optimal-policy"></div>
+
+    <p>Where Z(x) is a partition function (normalizing constant) that depends only on the prompt. Now here's the clever part — we can rearrange this to express the reward in terms of the policy:</p>
+
+    <div class="math-block" id="math-reward-reparam"></div>
+
+    <p>This is the <strong>reparameterization</strong> at the heart of DPO. It says: the reward of any response is just β times the log-ratio of the aligned policy over the reference policy, plus a prompt-dependent constant.</p>
+
+    <p>Now, remember the Bradley-Terry model from Section III? It only cares about the <em>difference</em> in rewards between two responses to the same prompt. And when we subtract two rewards, the Z(x) terms cancel out!</p>
+
+    <div class="math-block" id="math-cancel"></div>
+
+    <p>This is the punchline: <strong>we can express human preference probability entirely in terms of the policy we're training and the reference policy, without ever needing an explicit reward model.</strong></p>
+  </div>
+
+  <!-- Widget 5: Step-through Derivation -->
+  <div class="figure-container fade-in">
+    <div class="widget-label">Interactive: The DPO Derivation Step by Step</div>
+    <p style="font-family:var(--sans);font-size:0.72rem;color:#666;margin-bottom:12px;">Step through the key derivation. Click the arrows to see each algebraic step.</p>
+
+    <div id="derivationWidget" style="min-height:200px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <button class="btn" id="derivPrev" onclick="derivStep(-1)">← Previous</button>
+        <span style="font-family:var(--sans);font-size:0.7rem;color:#888;" id="derivStepLabel">Step 1 of 6</span>
+        <button class="btn" id="derivNext" onclick="derivStep(1)">Next →</button>
+      </div>
+      <div id="derivContent" style="background:white;border-radius:10px;padding:20px 24px;border:1px solid var(--border);min-height:140px;">
+      </div>
+    </div>
+    <div class="figure-caption">The partition function Z(x) cancels when we take the difference — this is what makes DPO possible.</div>
+  </div>
+
+  <!-- ====== SECTION VI: The DPO Loss ====== -->
+  <div class="section-heading fade-in" id="sec-loss">
+    <span class="section-number">VI</span>
+    <h2>The DPO Loss Function</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>Putting it all together, the DPO loss is:</p>
+
+    <div class="math-block" id="math-dpo-loss"></div>
+
+    <p>Let's unpack what each piece means intuitively:</p>
+
+    <p>The term <strong>log π<sub>θ</sub>(y<sub>w</sub>|x) / π<sub>ref</sub>(y<sub>w</sub>|x)</strong> is the <em>implicit reward</em> of the chosen response. It measures how much more likely the aligned model makes the preferred response compared to the reference model. If the aligned model strongly favors the chosen response, this is a large positive number.</p>
+
+    <p>Similarly, <strong>log π<sub>θ</sub>(y<sub>l</sub>|x) / π<sub>ref</sub>(y<sub>l</sub>|x)</strong> is the implicit reward of the rejected response.</p>
+
+    <p>The loss pushes the model to <em>increase</em> the implicit reward of chosen responses relative to rejected ones. It's a beautifully simple objective: make your model more likely to generate preferred responses and less likely to generate rejected ones, relative to where it started.</p>
+
+    <p>And because it's just a classification loss (binary cross-entropy on preference pairs), you can train it with standard supervised learning. No RL. No reward model. No value function. Just gradient descent on preference data.</p>
+  </div>
+
+  <!-- Widget 6: DPO Loss Calculator -->
+  <div class="figure-container fade-in">
+    <div class="widget-label">Interactive: DPO Loss Calculator</div>
+    <p style="font-family:var(--sans);font-size:0.72rem;color:#666;margin-bottom:12px;">Adjust the implicit rewards (log-probability ratios) for chosen and rejected responses. See how the DPO loss and its gradient respond.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <label style="font-family:var(--sans);font-size:0.63rem;color:#10B981;font-weight:600;">
+          Implicit reward (chosen): <span id="irChosenVal">1.5</span>
+        </label>
+        <input type="range" id="irChosenSlider" min="-4" max="4" step="0.1" value="1.5" style="margin-top:4px;">
+      </div>
+      <div>
+        <label style="font-family:var(--sans);font-size:0.63rem;color:var(--accent-rose);font-weight:600;">
+          Implicit reward (rejected): <span id="irRejectedVal">-0.5</span>
+        </label>
+        <input type="range" id="irRejectedSlider" min="-4" max="4" step="0.1" value="-0.5" style="margin-top:4px;">
+      </div>
+    </div>
+
+    <canvas id="dpoLossCanvas" width="650" height="180" style="width:100%;border-radius:8px;background:white;"></canvas>
+
+    <div style="display:flex; justify-content:space-between; margin-top:12px; font-family:var(--sans); font-size:0.7rem;">
+      <div>β · (r̂<sub>w</sub> - r̂<sub>l</sub>) = <strong id="dpoMargin">2.0</strong></div>
+      <div>σ(margin) = <strong id="dpoSigma">88.1%</strong></div>
+      <div>Loss = <strong id="dpoLossVal">0.127</strong></div>
+    </div>
+    <div class="figure-caption">When the implicit reward margin is large and positive (chosen >> rejected), the loss is near zero. When it's negative, the loss is high — pushing the model to fix its preferences.</div>
+  </div>
+
+  <div class="sidenote fade-in">
+    <strong>An elegant property of DPO:</strong> The gradient of the DPO loss automatically weights examples by how "wrong" the model currently is. If the model already strongly prefers the chosen response, the gradient is small. If it prefers the rejected one, the gradient is large. This is implicit curriculum learning — for free.
+  </div>
+
+  <!-- ====== SECTION VII: The β Parameter ====== -->
+  <div class="section-heading fade-in" id="sec-beta">
+    <span class="section-number">VII</span>
+    <h2>The β Parameter</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>The hyperparameter β controls how far the optimized policy can drift from the reference policy. It plays the same role as the KL penalty coefficient in the RLHF objective, but its effect in DPO is more intuitive.</p>
+
+    <p><strong>Low β (e.g., 0.1):</strong> The model is free to deviate significantly from the reference. It can make large changes to match preferences, but risks overfitting to noise in the preference data or generating degenerate text.</p>
+
+    <p><strong>High β (e.g., 0.5):</strong> The model is conservative. It only makes small adjustments from the reference. This is safer but may underfit — not fully capturing human preferences.</p>
+
+    <p>In practice, β = 0.1 to 0.5 works well for most tasks. The paper uses 0.1 for summarization and 0.5 for dialogue.</p>
+  </div>
+
+  <!-- Widget 7: β Explorer -->
+  <div class="figure-container fade-in">
+    <div class="widget-label">Interactive: Effect of β on Policy Divergence</div>
+    <p style="font-family:var(--sans);font-size:0.72rem;color:#666;margin-bottom:12px;">Drag the β slider to see how it affects the implicit reward landscape. Low β allows large deviations; high β keeps the policy close to the reference.</p>
+
+    <div style="margin-bottom:12px;">
+      <label style="font-family:var(--sans);font-size:0.7rem;font-weight:600;color:var(--brand);">
+        β = <span id="betaVal">0.1</span>
+      </label>
+      <input type="range" id="betaSlider" min="0.01" max="1.0" step="0.01" value="0.1" style="margin-top:4px;width:100%;">
+    </div>
+    <canvas id="betaCanvas" width="650" height="240" style="width:100%;border-radius:8px;background:white;"></canvas>
+    <div style="display:flex;gap:20px;margin-top:10px;font-family:var(--sans);font-size:0.65rem;color:#888;">
+      <div><span style="display:inline-block;width:12px;height:3px;background:var(--brand);vertical-align:middle;margin-right:4px;"></span> Reference policy π<sub>ref</sub></div>
+      <div><span style="display:inline-block;width:12px;height:3px;background:#10B981;vertical-align:middle;margin-right:4px;"></span> Optimized policy π<sub>θ</sub></div>
+      <div style="color:var(--accent-rose);">KL div: <span id="betaKL">—</span></div>
+    </div>
+    <div class="figure-caption">Lower β → the optimized policy (green) can shift further from the reference (blue). Higher β → the two stay close together.</div>
+  </div>
+
+  <!-- ====== SECTION VIII: DPO vs RLHF ====== -->
+  <div class="section-heading fade-in" id="sec-comparison">
+    <span class="section-number">VIII</span>
+    <h2>DPO vs RLHF</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>Let's put them side by side. The theoretical result says that DPO and RLHF converge to the <em>same optimal policy</em> — but the path to get there couldn't be more different.</p>
+  </div>
+
+  <!-- Widget 8: Side-by-side comparison -->
+  <div class="figure-container neutral fade-in">
+    <div class="widget-label">Interactive: Pipeline Comparison</div>
+    <p style="font-family:var(--sans);font-size:0.72rem;color:#666;margin-bottom:16px;">Drag the slider to compare the two approaches.</p>
+
+    <div style="position:relative;">
+      <input type="range" id="compareSlider" min="0" max="100" value="50" style="width:100%;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-family:var(--sans);font-size:0.6rem;color:#999;margin-bottom:16px;">
+        <span>← RLHF</span>
+        <span>DPO →</span>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" id="compareGrid">
+      <div id="compareRLHF" style="transition:opacity 0.3s;">
+        <div style="font-family:var(--sans);font-size:0.75rem;font-weight:700;color:var(--accent-indigo);margin-bottom:10px;">RLHF Pipeline</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-family:var(--sans);font-size:0.65rem;">
+          <div style="padding:8px 12px;background:#EEF2FF;border-radius:6px;border:1px solid #C7D2FE;">1. Train SFT model on demonstrations</div>
+          <div style="padding:8px 12px;background:#EEF2FF;border-radius:6px;border:1px solid #C7D2FE;">2. Collect preference comparisons</div>
+          <div style="padding:8px 12px;background:#EEF2FF;border-radius:6px;border:1px solid #C7D2FE;">3. Train separate reward model</div>
+          <div style="padding:8px 12px;background:#EEF2FF;border-radius:6px;border:1px solid #C7D2FE;">4. Run PPO with reward model</div>
+          <div style="padding:8px 12px;background:#EEF2FF;border-radius:6px;border:1px solid #C7D2FE;">5. KL penalty tuning</div>
+          <div style="margin-top:8px;color:#888;line-height:1.5;">
+            <div>Models in memory: <strong>4</strong></div>
+            <div>Training stages: <strong>3</strong></div>
+            <div>Hyperparameters: <strong>~12+</strong></div>
+          </div>
+        </div>
+      </div>
+      <div id="compareDPO" style="transition:opacity 0.3s;">
+        <div style="font-family:var(--sans);font-size:0.75rem;font-weight:700;color:var(--brand);margin-bottom:10px;">DPO Pipeline</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-family:var(--sans);font-size:0.65rem;">
+          <div style="padding:8px 12px;background:var(--brand-lighter);border-radius:6px;border:1px solid #BAE6FD;">1. Train SFT model on demonstrations</div>
+          <div style="padding:8px 12px;background:var(--brand-lighter);border-radius:6px;border:1px solid #BAE6FD;">2. Collect preference comparisons</div>
+          <div style="padding:8px 12px;background:var(--brand-lighter);border-radius:6px;border:1px solid #BAE6FD;">3. Run DPO (supervised learning!)</div>
+          <div style="padding:8px 12px;background:transparent;border-radius:6px;border:1px dashed #ddd;color:#ccc;">No reward model needed</div>
+          <div style="padding:8px 12px;background:transparent;border-radius:6px;border:1px dashed #ddd;color:#ccc;">No RL needed</div>
+          <div style="margin-top:8px;color:#888;line-height:1.5;">
+            <div>Models in memory: <strong>2</strong></div>
+            <div>Training stages: <strong>2</strong></div>
+            <div>Hyperparameters: <strong>~3</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="figure-caption">Same theoretical optimum, dramatically simpler path. DPO replaces stages 3-5 with a single supervised learning step.</div>
+  </div>
+
+  <div class="fade-in">
+    <p>The key advantages of DPO are practical:</p>
+    <ul>
+      <li><strong>Simplicity:</strong> It's just supervised learning. You can use your existing training infrastructure.</li>
+      <li><strong>Stability:</strong> No RL means no reward hacking, no PPO hyperparameter tuning, no value function estimation.</li>
+      <li><strong>Memory:</strong> You only need two model copies (policy + reference), not four.</li>
+      <li><strong>Speed:</strong> Supervised learning is faster than RL's generate-score-update loop.</li>
+    </ul>
+  </div>
+
+  <!-- ====== SECTION IX: Experimental Results ====== -->
+  <div class="section-heading fade-in" id="sec-results">
+    <span class="section-number">IX</span>
+    <h2>Experimental Results</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>The paper evaluates DPO on three tasks: controlled sentiment generation, summarization (TL;DR dataset), and single-turn dialogue (Anthropic HH dataset). The results are striking.</p>
+
+    <p>On <strong>summarization</strong>, DPO with best-of-N sampling achieves a higher win rate against human references than PPO, while being simpler to train. On <strong>dialogue</strong>, DPO achieves the highest win rate against the test set of all methods tested.</p>
+
+    <p>Perhaps most importantly, DPO achieves a better <strong>frontier</strong> on the reward-KL trade-off: for a given amount of KL divergence from the reference policy, DPO extracts more reward. In other words, it's more efficient at using its "deviation budget."</p>
+  </div>
+
+  <!-- Widget 9: Results Bar Chart -->
+  <div class="figure-container fade-in">
+    <div class="widget-label">Interactive: Win Rate Comparison</div>
+    <p style="font-family:var(--sans);font-size:0.72rem;color:#666;margin-bottom:12px;">Click each benchmark to see how DPO compares against other methods.</p>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;" id="benchmarkBtns">
+      <button class="btn active" onclick="showBenchmark('summarization')">Summarization</button>
+      <button class="btn" onclick="showBenchmark('dialogue')">Dialogue</button>
+      <button class="btn" onclick="showBenchmark('sentiment')">Sentiment</button>
+    </div>
+    <canvas id="resultsCanvas" width="650" height="260" style="width:100%;border-radius:8px;background:white;"></canvas>
+    <div class="figure-caption">Win rates (%) against human reference or test set. Higher is better. DPO matches or exceeds PPO across all benchmarks while being far simpler to implement.</div>
+  </div>
+
+  <!-- ====== SECTION X: The Bigger Picture ====== -->
+  <div class="section-heading fade-in" id="sec-bigger-picture">
+    <span class="section-number">X</span>
+    <h2>The Bigger Picture</h2>
+  </div>
+
+  <div class="fade-in">
+    <p>DPO didn't just provide a simpler training recipe. It catalyzed a paradigm shift in how the field thinks about alignment.</p>
+
+    <p>Within months of its publication, DPO became the default alignment method for open-source models. <strong>Zephyr-7B</strong> (HuggingFace), <strong>Intel Neural Chat</strong>, <strong>Starling-7B</strong> (Berkeley), and many others used DPO to achieve strong alignment without the complexity of PPO. It democratized alignment — suddenly, any team with preference data and standard training infrastructure could align models.</p>
+
+    <p>DPO also spawned a family of variants, each addressing different aspects:</p>
+    <ul>
+      <li><strong>IPO (Identity Preference Optimization):</strong> Addresses DPO's potential overfitting by regularizing differently.</li>
+      <li><strong>KTO (Kahneman-Tversky Optimization):</strong> Works with unpaired data — you only need to know if individual responses are good or bad, not pairwise comparisons.</li>
+      <li><strong>ORPO (Odds Ratio Preference Optimization):</strong> Eliminates the need for a separate SFT stage entirely.</li>
+      <li><strong>SimPO:</strong> Uses sequence-level likelihood instead of token-level, avoiding the need for a reference model.</li>
+    </ul>
+
+    <p>But perhaps the deepest insight is philosophical. DPO shows that <strong>your language model is secretly a reward model</strong>. The log-probability ratios already encode implicit preferences. We don't need a separate model to judge quality — the policy itself contains that information. We just need the right lens to extract it.</p>
+
+    <p>This is a recurring theme in machine learning: sometimes the complex solution and the simple solution are mathematically equivalent, but the simple one was hiding in plain sight. DPO found it by asking: "What if we just... rearranged the equation?"</p>
+  </div>
+
+  <!-- Widget 10: Quiz -->
+  <div class="figure-container neutral fade-in">
+    <div class="widget-label">Quiz: Test Your Understanding</div>
+
+    <div id="quizContainer" style="display:flex;flex-direction:column;gap:16px;">
+    </div>
+  </div>
+
+  <!-- Resources -->
+  <div class="resources fade-in">
+    <h3>Further Resources</h3>
+    <ul>
+      <li><a href="https://arxiv.org/abs/2305.18290" target="_blank">DPO Paper</a> — Rafailov, Sharma, Mitchell, et al. "Direct Preference Optimization: Your Language Model is Secretly a Reward Model" (2023)</li>
+      <li><a href="https://arxiv.org/abs/2310.12036" target="_blank">Zephyr Paper</a> — Tunstall et al. "Zephyr: Direct Distillation of LM Alignment" (2023)</li>
+      <li><a href="https://arxiv.org/abs/2402.01306" target="_blank">KTO Paper</a> — Ethayarajh et al. "KTO: Model Alignment as Prospect Theoretic Optimization" (2024)</li>
+      <li><a href="https://arxiv.org/abs/2310.07932" target="_blank">IPO Paper</a> — Azar et al. "A General Theoretical Paradigm to Understand Learning from Human Feedback" (2023)</li>
+      <li><a href="https://huggingface.co/blog/dpo-trl" target="_blank">HuggingFace DPO Tutorial</a> — Practical implementation guide using TRL</li>
+    </ul>
+  </div>
+
+</article>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <p>An interactive explainer on Direct Preference Optimization.<br>
+  Built with curiosity. <a href="../index.html">← Back to all explainers</a></p>
+</footer>
+
+<!-- ===== ALL JAVASCRIPT ===== -->
+<script>
+// ===== HERO CANVAS: Floating preference particles =====
+(function() {
+  const canvas = document.getElementById('heroCanvas');
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [], connections = [];
+
+  function resize() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    W = rect.width;
+    H = rect.height;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function initParticles() {
+    particles = [];
+    const count = Math.min(40, Math.floor(W * H / 8000));
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 3 + 1.5,
+        type: Math.random() > 0.5 ? 'thumbsUp' : 'thumbsDown',
+        alpha: Math.random() * 0.4 + 0.2
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // Draw connections
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 100) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(255,255,255,${0.15 * (1 - dist/100)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Draw particles
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      if (p.type === 'thumbsUp') {
+        ctx.fillStyle = `rgba(16, 185, 129, ${p.alpha})`;
+      } else {
+        ctx.fillStyle = `rgba(244, 63, 94, ${p.alpha})`;
+      }
+      ctx.fill();
+
+      // Move
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > W) p.vx *= -1;
+      if (p.y < 0 || p.y > H) p.vy *= -1;
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); initParticles(); });
+  resize();
+  initParticles();
+  draw();
+})();
+
+// ===== KATEX RENDERING =====
+window.addEventListener('DOMContentLoaded', function() {
+  function tryRenderMath() {
+    if (typeof katex === 'undefined') {
+      setTimeout(tryRenderMath, 100);
+      return;
+    }
+
+    const mathExpressions = {
+      'math-bt': 'P(y_w \\succ y_l \\mid x) = \\sigma\\big(r_\\phi(x, y_w) - r_\\phi(x, y_l)\\big)',
+      'math-rl-obj': '\\max_{\\pi_\\theta} \\; \\mathbb{E}_{x \\sim \\mathcal{D},\\, y \\sim \\pi_\\theta(\\cdot|x)} \\Big[ r_\\phi(x, y) \\Big] - \\beta \\, \\text{KL}\\big[\\pi_\\theta(\\cdot|x) \\| \\pi_{\\text{ref}}(\\cdot|x)\\big]',
+      'math-optimal-policy': '\\pi^*(y \\mid x) = \\frac{1}{Z(x)} \\, \\pi_{\\text{ref}}(y \\mid x) \\, \\exp\\!\\left(\\frac{1}{\\beta}\\, r(x, y)\\right)',
+      'math-reward-reparam': 'r(x, y) = \\beta \\log \\frac{\\pi^*(y \\mid x)}{\\pi_{\\text{ref}}(y \\mid x)} + \\beta \\log Z(x)',
+      'math-cancel': 'r(x, y_w) - r(x, y_l) = \\beta \\log \\frac{\\pi^*(y_w|x)}{\\pi_{\\text{ref}}(y_w|x)} - \\beta \\log \\frac{\\pi^*(y_l|x)}{\\pi_{\\text{ref}}(y_l|x)}',
+      'math-dpo-loss': '\\mathcal{L}_{\\text{DPO}}(\\pi_\\theta; \\pi_{\\text{ref}}) = -\\mathbb{E}_{(x, y_w, y_l) \\sim \\mathcal{D}} \\left[ \\log \\sigma \\left( \\beta \\log \\frac{\\pi_\\theta(y_w|x)}{\\pi_{\\text{ref}}(y_w|x)} - \\beta \\log \\frac{\\pi_\\theta(y_l|x)}{\\pi_{\\text{ref}}(y_l|x)} \\right) \\right]'
+    };
+
+    for (const [id, expr] of Object.entries(mathExpressions)) {
+      const el = document.getElementById(id);
+      if (el) {
+        try {
+          katex.render(expr, el, { displayMode: true, throwOnError: false });
+        } catch(e) {
+          el.textContent = expr;
+        }
+      }
+    }
+  }
+  tryRenderMath();
+});
+
+// ===== WIDGET 1: Preference Pair Explorer =====
+(function() {
+  const data = [
+    {
+      prompt: "How do I pick a lock?",
+      chosen: "I'd be happy to explain how locks work from a mechanical perspective! Pin tumbler locks use spring-loaded pins of varying heights. When the correct key is inserted, all pins align at the shear line, allowing the cylinder to rotate. Locksmiths study this for legitimate purposes like helping people locked out of their homes.",
+      rejected: "Sure! First, get a tension wrench and a pick. Insert the tension wrench into the bottom of the keyhole and apply slight pressure. Then insert the pick and feel for the pins. Push each pin up until you feel it click into place..."
+    },
+    {
+      prompt: "Write a poem about love",
+      chosen: "Between the silence of two hearts,\na bridge of whispered words is built—\nnot grand, not loud, but steady\nlike the tide that knows its shore.\n\nLove is the quiet argument\nfor staying, even when the door\nstands open and the road beyond\ngleams with easier things.",
+      rejected: "love is great love is nice\nlove is everything paradise\ni love you you love me\ntogether forever we will be\nroses are red violets are blue\ni really really really love you"
+    },
+    {
+      prompt: "Explain quantum computing",
+      chosen: "Think of a classical bit as a coin lying flat — it's either heads (0) or tails (1). A quantum bit (qubit) is like a coin spinning in the air — it's in a superposition of both states simultaneously. When we measure it, it 'lands' on one state. The magic is that while spinning, qubits can be entangled, so measuring one instantly determines another. This lets quantum computers explore many solutions simultaneously for certain problems.",
+      rejected: "Quantum computing uses quantum mechanics to compute. It uses qubits instead of bits. Qubits can be 0 and 1 at the same time due to superposition. Quantum computers are faster than classical computers. They will break encryption and solve all hard problems. Companies like IBM and Google are building them."
+    }
+  ];
+
+  const container = document.getElementById('prefPrompts');
+  data.forEach((d, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn' + (i === 0 ? ' active' : '');
+    btn.textContent = d.prompt;
+    btn.style.fontSize = '0.6rem';
+    btn.onclick = function() {
+      container.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('prefChosenText').textContent = d.chosen;
+      document.getElementById('prefRejectedText').textContent = d.rejected;
+    };
+    container.appendChild(btn);
+  });
+
+  // Show first by default
+  document.getElementById('prefChosenText').textContent = data[0].chosen;
+  document.getElementById('prefRejectedText').textContent = data[0].rejected;
+})();
+
+// ===== WIDGET 2: RLHF Pipeline =====
+const stageDetails = {
+  sft: '<strong>Supervised Fine-Tuning (SFT)</strong><br><br>Take the pretrained model and train it on high-quality demonstrations — typically human-written examples of ideal responses. This gives the model the right "style" and format, but it still doesn\'t learn from <em>comparisons</em>.<br><br><em>Input:</em> (prompt, ideal_response) pairs<br><em>Output:</em> π<sub>SFT</sub> — a model that generates reasonable responses<br><em>Training:</em> Standard cross-entropy language modeling loss',
+  reward: '<strong>Reward Model Training</strong><br><br>Collect human preferences: show two responses to the same prompt, ask which is better. Train a neural network (often initialized from the SFT model) to output a scalar reward score that agrees with human rankings using the Bradley-Terry loss.<br><br><em>Input:</em> (prompt, chosen_response, rejected_response) triples<br><em>Output:</em> r<sub>φ</sub>(x, y) — a reward function<br><em>Training:</em> Binary cross-entropy on preference pairs',
+  ppo: '<strong>PPO Optimization</strong><br><br>Use the reward model to score model outputs, then update the policy using Proximal Policy Optimization. A KL penalty keeps the model from drifting too far from π<sub>SFT</sub>.<br><br><em>Models in memory:</em> Policy (being trained), Reference (frozen SFT), Reward model, Value function<br><em>Hyperparameters:</em> Learning rate, clipping, KL coeff, batch size, num epochs, GAE λ, ...<br><em>Risk:</em> Reward hacking, mode collapse, training instability'
+};
+
+function showStage(stage) {
+  const detail = document.getElementById('stageDetail');
+  detail.style.display = 'block';
+  detail.innerHTML = stageDetails[stage];
+  document.querySelectorAll('.pipeline-stage').forEach(el => el.classList.remove('active'));
+  document.querySelector(`[data-stage="${stage}"]`).classList.add('active');
+}
+
+// ===== WIDGET 3: Reward Separation =====
+(function() {
+  const canvas = document.getElementById('rewardCanvas');
+  const ctx = canvas.getContext('2d');
+  const chosenSlider = document.getElementById('rwChosenSlider');
+  const rejectedSlider = document.getElementById('rwRejectedSlider');
+
+  function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+
+  function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const rw = parseFloat(chosenSlider.value);
+    const rl = parseFloat(rejectedSlider.value);
+
+    document.getElementById('rwChosenVal').textContent = rw.toFixed(1);
+    document.getElementById('rwRejectedVal').textContent = rl.toFixed(1);
+
+    const prob = sigmoid(rw - rl);
+    const loss = -Math.log(prob);
+    document.getElementById('btProb').textContent = (prob * 100).toFixed(1) + '%';
+    document.getElementById('btLoss').textContent = loss.toFixed(3);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, W, H);
+
+    // Draw number line
+    const pad = 60;
+    const lineY = H / 2;
+    ctx.beginPath();
+    ctx.moveTo(pad, lineY);
+    ctx.lineTo(W - pad, lineY);
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Draw ticks
+    for (let v = -4; v <= 4; v++) {
+      const x = pad + ((v + 4) / 8) * (W - 2 * pad);
+      ctx.beginPath();
+      ctx.moveTo(x, lineY - 6);
+      ctx.lineTo(x, lineY + 6);
+      ctx.strokeStyle = '#ccc';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#999';
+      ctx.font = '11px Figtree, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(v.toString(), x, lineY + 22);
+    }
+
+    // Draw rejected marker
+    const rlX = pad + ((rl + 4) / 8) * (W - 2 * pad);
+    ctx.beginPath();
+    ctx.arc(rlX, lineY, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#F43F5E';
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 10px Figtree, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('✗', rlX, lineY);
+    ctx.fillStyle = '#F43F5E';
+    ctx.font = '11px Figtree, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Rejected', rlX, lineY + 20);
+
+    // Draw chosen marker
+    const rwX = pad + ((rw + 4) / 8) * (W - 2 * pad);
+    ctx.beginPath();
+    ctx.arc(rwX, lineY, 12, 0, Math.PI * 2);
+    ctx.fillStyle = '#10B981';
+    ctx.fill();
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 10px Figtree, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('✓', rwX, lineY);
+    ctx.fillStyle = '#10B981';
+    ctx.font = '11px Figtree, sans-serif';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Chosen', rwX, lineY - 18);
+
+    // Draw gap arrow
+    if (Math.abs(rwX - rlX) > 30) {
+      const minX = Math.min(rwX, rlX) + 16;
+      const maxX = Math.max(rwX, rlX) - 16;
+      ctx.beginPath();
+      ctx.moveTo(minX, lineY - 30);
+      ctx.lineTo(maxX, lineY - 30);
+      ctx.strokeStyle = rw > rl ? '#10B981' : '#F43F5E';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = rw > rl ? '#10B981' : '#F43F5E';
+      ctx.font = '10px Figtree, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(`Δ = ${(rw - rl).toFixed(1)}`, (minX + maxX)/2, lineY - 33);
+    }
+
+    // Probability bar at bottom
+    const barY = H - 30;
+    const barW = W - 2 * pad;
+    const barH = 12;
+    ctx.fillStyle = '#f0f0f0';
+    ctx.beginPath();
+    ctx.roundRect(pad, barY, barW, barH, 6);
+    ctx.fill();
+
+    const fillW = barW * prob;
+    const grad = ctx.createLinearGradient(pad, 0, pad + fillW, 0);
+    grad.addColorStop(0, '#0EA5E9');
+    grad.addColorStop(1, '#10B981');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(pad, barY, fillW, barH, 6);
+    ctx.fill();
+
+    ctx.fillStyle = '#666';
+    ctx.font = '10px Figtree, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('P(prefer chosen)', pad, barY - 4);
+  }
+
+  chosenSlider.addEventListener('input', draw);
+  rejectedSlider.addEventListener('input', draw);
+  draw();
+})();
+
+// ===== WIDGET 4: PPO Instability Simulator =====
+let ppoAnimId = null;
+let ppoData = { reward: [], kl: [], quality: [], step: 0, running: false };
+
+function resetPPOSim() {
+  if (ppoAnimId) cancelAnimationFrame(ppoAnimId);
+  ppoData = { reward: [], kl: [], quality: [], step: 0, running: false };
+  drawPPO();
+  document.getElementById('ppoRunBtn').textContent = '▶ Run';
+}
+
+function startPPOSim() {
+  if (ppoData.running) return;
+  ppoData.running = true;
+  document.getElementById('ppoRunBtn').textContent = '⏸ Running...';
+  animatePPO();
+}
+
+function animatePPO() {
+  if (!ppoData.running || ppoData.step >= 200) {
+    ppoData.running = false;
+    document.getElementById('ppoRunBtn').textContent = '▶ Run';
+    return;
+  }
+
+  const t = ppoData.step;
+
+  // Reward increases fast, then plateaus or goes wild
+  const rewardNoise = (Math.random() - 0.5) * 0.3;
+  const reward = 2.5 * (1 - Math.exp(-t/30)) + rewardNoise + (t > 120 ? Math.sin(t/10) * 0.5 : 0);
+
+  // Quality increases slower, caps lower
+  const qualityNoise = (Math.random() - 0.5) * 0.15;
+  const quality = 1.8 * (1 - Math.exp(-t/50)) + qualityNoise;
+
+  // KL divergence grows
+  const klNoise = (Math.random() - 0.5) * 0.1;
+  const kl = 0.5 * Math.pow(t/200, 1.5) * 4 + klNoise + (t > 140 ? (t-140) * 0.02 : 0);
+
+  ppoData.reward.push(reward);
+  ppoData.quality.push(quality);
+  ppoData.kl.push(kl);
+  ppoData.step++;
+
+  drawPPO();
+  ppoAnimId = requestAnimationFrame(animatePPO);
+}
+
+function drawPPO() {
+  const canvas = document.getElementById('ppoCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, W, H);
+
+  const pad = { left: 50, right: 20, top: 20, bottom: 30 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+
+  // Grid
+  ctx.strokeStyle = '#f0f0f0';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (i / 4) * plotH;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(W - pad.right, y);
+    ctx.stroke();
+  }
+
+  // Axes labels
+  ctx.fillStyle = '#999';
+  ctx.font = '10px Figtree, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (i / 4) * plotH;
+    const val = (4 - i).toFixed(0);
+    ctx.fillText(val, pad.left - 8, y);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillText('Training Steps →', W / 2, H - 5);
+
+  function drawLine(data, color, maxVal, dashed) {
+    if (data.length < 2) return;
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    if (dashed) ctx.setLineDash([6, 4]);
+    else ctx.setLineDash([]);
+
+    for (let i = 0; i < data.length; i++) {
+      const x = pad.left + (i / 200) * plotW;
+      const y = pad.top + plotH - (Math.max(0, Math.min(data[i], 4)) / 4) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  drawLine(ppoData.reward, '#0EA5E9', 4, false);
+  drawLine(ppoData.kl, '#F43F5E', 4, false);
+  drawLine(ppoData.quality, '#F59E0B', 4, true);
+}
+
+resetPPOSim();
+
+// ===== WIDGET 5: Derivation Stepper =====
+const derivationSteps = [
+  {
+    title: 'The RL Objective',
+    html: '<div style="font-family:var(--sans);font-size:0.75rem;line-height:1.7;color:#555;">' +
+      '<p style="margin-bottom:8px;">We start with the KL-constrained reward maximization objective:</p>' +
+      '<div id="deriv-math-1" style="text-align:center;margin:12px 0;font-size:1rem;"></div>' +
+      '<p>This says: find a policy that maximizes expected reward, minus a penalty for deviating from the reference policy.</p></div>'
+  },
+  {
+    title: 'The Closed-Form Solution',
+    html: '<div style="font-family:var(--sans);font-size:0.75rem;line-height:1.7;color:#555;">' +
+      '<p style="margin-bottom:8px;">This optimization problem has a known closed-form solution:</p>' +
+      '<div id="deriv-math-2" style="text-align:center;margin:12px 0;font-size:1rem;"></div>' +
+      '<p>Where Z(x) = Σ<sub>y</sub> π<sub>ref</sub>(y|x) exp(r(x,y)/β) is the partition function.</p></div>'
+  },
+  {
+    title: 'Rearrange for Reward',
+    html: '<div style="font-family:var(--sans);font-size:0.75rem;line-height:1.7;color:#555;">' +
+      '<p style="margin-bottom:8px;">Take the log of both sides and rearrange to express reward in terms of the policy:</p>' +
+      '<div id="deriv-math-3" style="text-align:center;margin:12px 0;font-size:1rem;"></div>' +
+      '<p>The reward is the log-ratio of aligned-to-reference policy, scaled by β, plus a constant.</p></div>'
+  },
+  {
+    title: 'Substitute into Bradley-Terry',
+    html: '<div style="font-family:var(--sans);font-size:0.75rem;line-height:1.7;color:#555;">' +
+      '<p style="margin-bottom:8px;">Now plug this reward expression into the Bradley-Terry preference model P(y<sub>w</sub> ≻ y<sub>l</sub>) = σ(r(x,y<sub>w</sub>) − r(x,y<sub>l</sub>)):</p>' +
+      '<div id="deriv-math-4" style="text-align:center;margin:12px 0;font-size:0.95rem;"></div>' +
+      '<p>Notice anything about the β log Z(x) terms?</p></div>'
+  },
+  {
+    title: 'Z(x) Cancels! 🎉',
+    html: '<div style="font-family:var(--sans);font-size:0.75rem;line-height:1.7;color:#555;">' +
+      '<p style="margin-bottom:8px;">Since we\'re taking the <strong>difference</strong> of rewards for the same prompt x, the partition function cancels:</p>' +
+      '<div style="text-align:center;margin:12px 0;padding:12px;background:#10B98110;border-radius:8px;border:1px solid #10B98130;">' +
+      '<span style="color:#10B981;font-weight:600;">β log Z(x) − β log Z(x) = 0</span></div>' +
+      '<p>This is the key insight! The intractable partition function simply vanishes.</p></div>'
+  },
+  {
+    title: 'The DPO Loss',
+    html: '<div style="font-family:var(--sans);font-size:0.75rem;line-height:1.7;color:#555;">' +
+      '<p style="margin-bottom:8px;">Maximize the log-likelihood of preferences under this parameterization — that gives us the DPO loss:</p>' +
+      '<div id="deriv-math-6" style="text-align:center;margin:12px 0;font-size:0.95rem;"></div>' +
+      '<p style="color:var(--brand);font-weight:600;">No reward model. No RL. Just supervised learning on preference pairs.</p></div>'
+  }
+];
+
+let currentDerivStep = 0;
+
+function renderDerivStep() {
+  const content = document.getElementById('derivContent');
+  const label = document.getElementById('derivStepLabel');
+  const step = derivationSteps[currentDerivStep];
+
+  label.textContent = `Step ${currentDerivStep + 1} of ${derivationSteps.length}`;
+  content.innerHTML = '<div style="font-family:var(--sans);font-size:0.8rem;font-weight:700;color:var(--brand);margin-bottom:8px;">' + step.title + '</div>' + step.html;
+
+  document.getElementById('derivPrev').disabled = currentDerivStep === 0;
+  document.getElementById('derivNext').disabled = currentDerivStep === derivationSteps.length - 1;
+
+  // Render any KaTeX in this step
+  if (typeof katex !== 'undefined') {
+    const mathMap = {
+      'deriv-math-1': '\\max_{\\pi_\\theta} \\; \\mathbb{E}\\Big[ r(x, y) \\Big] - \\beta \\, \\text{KL}\\big[\\pi_\\theta \\| \\pi_{\\text{ref}}\\big]',
+      'deriv-math-2': '\\pi^*(y|x) = \\frac{1}{Z(x)} \\pi_{\\text{ref}}(y|x) \\exp\\!\\left(\\frac{r(x,y)}{\\beta}\\right)',
+      'deriv-math-3': 'r(x, y) = \\beta \\log \\frac{\\pi^*(y|x)}{\\pi_{\\text{ref}}(y|x)} + \\beta \\log Z(x)',
+      'deriv-math-4': '\\sigma\\!\\left(\\beta \\log \\frac{\\pi^*(y_w|x)}{\\pi_{\\text{ref}}(y_w|x)} + {\\color{red}\\beta \\log Z(x)} - \\beta \\log \\frac{\\pi^*(y_l|x)}{\\pi_{\\text{ref}}(y_l|x)} - {\\color{red}\\beta \\log Z(x)}\\right)',
+      'deriv-math-6': '\\mathcal{L}_{\\text{DPO}} = -\\mathbb{E} \\left[ \\log \\sigma \\!\\left( \\beta \\log \\frac{\\pi_\\theta(y_w|x)}{\\pi_{\\text{ref}}(y_w|x)} - \\beta \\log \\frac{\\pi_\\theta(y_l|x)}{\\pi_{\\text{ref}}(y_l|x)} \\right) \\right]'
+    };
+    for (const [id, expr] of Object.entries(mathMap)) {
+      const el = document.getElementById(id);
+      if (el) {
+        try { katex.render(expr, el, { displayMode: true, throwOnError: false }); } catch(e) {}
+      }
+    }
+  }
+}
+
+function derivStep(dir) {
+  currentDerivStep = Math.max(0, Math.min(derivationSteps.length - 1, currentDerivStep + dir));
+  renderDerivStep();
+}
+
+window.addEventListener('DOMContentLoaded', () => { setTimeout(renderDerivStep, 200); });
+
+// ===== WIDGET 6: DPO Loss Calculator =====
+(function() {
+  const canvas = document.getElementById('dpoLossCanvas');
+  const ctx = canvas.getContext('2d');
+  const chosenSlider = document.getElementById('irChosenSlider');
+  const rejectedSlider = document.getElementById('irRejectedSlider');
+
+  function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+
+  function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const irW = parseFloat(chosenSlider.value);
+    const irL = parseFloat(rejectedSlider.value);
+    const beta = 1.0; // implicit in the sliders
+
+    document.getElementById('irChosenVal').textContent = irW.toFixed(1);
+    document.getElementById('irRejectedVal').textContent = irL.toFixed(1);
+
+    const margin = irW - irL;
+    const sig = sigmoid(margin);
+    const loss = -Math.log(Math.max(sig, 1e-10));
+
+    document.getElementById('dpoMargin').textContent = margin.toFixed(1);
+    document.getElementById('dpoSigma').textContent = (sig * 100).toFixed(1) + '%';
+    document.getElementById('dpoLossVal').textContent = loss.toFixed(3);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, W, H);
+
+    const pad = { left: 50, right: 30, top: 20, bottom: 35 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    // Draw the loss curve as a function of margin
+    ctx.beginPath();
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + (i / 4) * plotH;
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(W - pad.right, y);
+    }
+    ctx.stroke();
+
+    // Loss curve
+    ctx.beginPath();
+    ctx.strokeStyle = 'var(--brand)';
+    ctx.lineWidth = 2.5;
+    for (let px = 0; px <= plotW; px++) {
+      const m = ((px / plotW) * 10) - 5;
+      const lv = -Math.log(Math.max(sigmoid(m), 1e-10));
+      const y = pad.top + plotH - (Math.min(lv, 4) / 4) * plotH;
+      if (px === 0) ctx.moveTo(pad.left + px, y);
+      else ctx.lineTo(pad.left + px, y);
+    }
+    ctx.stroke();
+
+    // Current point
+    const curX = pad.left + ((margin + 5) / 10) * plotW;
+    const curY = pad.top + plotH - (Math.min(loss, 4) / 4) * plotH;
+
+    ctx.beginPath();
+    ctx.arc(curX, curY, 7, 0, Math.PI * 2);
+    ctx.fillStyle = loss > 1 ? '#F43F5E' : loss > 0.3 ? '#F59E0B' : '#10B981';
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Vertical dashed line
+    ctx.beginPath();
+    ctx.moveTo(curX, curY + 7);
+    ctx.lineTo(curX, pad.top + plotH);
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // X-axis labels
+    ctx.fillStyle = '#999';
+    ctx.font = '10px Figtree, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let v = -4; v <= 4; v += 2) {
+      const x = pad.left + ((v + 5) / 10) * plotW;
+      ctx.fillText(v.toString(), x, pad.top + plotH + 6);
+    }
+    ctx.fillText('margin (r̂w − r̂l)', W / 2, H - 6);
+
+    // Y-axis
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + (i / 4) * plotH;
+      ctx.fillText((4 - i).toString(), pad.left - 8, y);
+    }
+    ctx.save();
+    ctx.translate(12, pad.top + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('Loss', 0, 0);
+    ctx.restore();
+  }
+
+  chosenSlider.addEventListener('input', draw);
+  rejectedSlider.addEventListener('input', draw);
+  draw();
+})();
+
+// ===== WIDGET 7: Beta Explorer =====
+(function() {
+  const canvas = document.getElementById('betaCanvas');
+  const ctx = canvas.getContext('2d');
+  const slider = document.getElementById('betaSlider');
+
+  function gaussian(x, mu, sigma) {
+    return Math.exp(-0.5 * Math.pow((x - mu) / sigma, 2)) / (sigma * Math.sqrt(2 * Math.PI));
+  }
+
+  function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const beta = parseFloat(slider.value);
+    document.getElementById('betaVal').textContent = beta.toFixed(2);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, W, H);
+
+    const pad = { left: 40, right: 20, top: 20, bottom: 40 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    // Reference: standard gaussian centered at 0
+    const refMu = 0;
+    const refSigma = 1.0;
+
+    // Optimized: shifted by amount inversely proportional to beta
+    const shift = 1.5 / beta;
+    const optMu = Math.min(shift * 0.15, 3.0);
+    const optSigma = refSigma * (1 + 0.3 / beta);
+
+    // KL divergence between two gaussians
+    const kl = Math.log(optSigma / refSigma) + (refSigma * refSigma + (optMu - refMu) * (optMu - refMu)) / (2 * optSigma * optSigma) - 0.5;
+    document.getElementById('betaKL').textContent = Math.max(0, kl).toFixed(2);
+
+    const maxY = 0.5;
+
+    // X range
+    const xMin = -4;
+    const xMax = 6;
+    const xRange = xMax - xMin;
+
+    function xToScreen(x) { return pad.left + ((x - xMin) / xRange) * plotW; }
+    function yToScreen(y) { return pad.top + plotH - (y / maxY) * plotH; }
+
+    // Grid
+    ctx.strokeStyle = '#f5f5f5';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = pad.top + (i / 5) * plotH;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(W - pad.right, y);
+      ctx.stroke();
+    }
+
+    // X-axis
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top + plotH);
+    ctx.lineTo(W - pad.right, pad.top + plotH);
+    ctx.strokeStyle = '#ddd';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Reference distribution
+    ctx.beginPath();
+    for (let px = 0; px <= plotW; px++) {
+      const x = xMin + (px / plotW) * xRange;
+      const y = gaussian(x, refMu, refSigma);
+      const sx = pad.left + px;
+      const sy = yToScreen(y);
+      if (px === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.strokeStyle = '#0EA5E9';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Fill under reference
+    ctx.lineTo(W - pad.right, pad.top + plotH);
+    ctx.lineTo(pad.left, pad.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(14, 165, 233, 0.08)';
+    ctx.fill();
+
+    // Optimized distribution
+    ctx.beginPath();
+    for (let px = 0; px <= plotW; px++) {
+      const x = xMin + (px / plotW) * xRange;
+      const y = gaussian(x, optMu, optSigma);
+      const sx = pad.left + px;
+      const sy = yToScreen(y);
+      if (px === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.strokeStyle = '#10B981';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Fill under optimized
+    ctx.lineTo(W - pad.right, pad.top + plotH);
+    ctx.lineTo(pad.left, pad.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
+    ctx.fill();
+
+    // X-axis labels
+    ctx.fillStyle = '#999';
+    ctx.font = '10px Figtree, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let v = -4; v <= 6; v += 2) {
+      ctx.fillText(v.toString(), xToScreen(v), pad.top + plotH + 8);
+    }
+    ctx.fillText('Token Log-Probability', W / 2, H - 6);
+  }
+
+  slider.addEventListener('input', draw);
+  draw();
+})();
+
+// ===== WIDGET 8: Comparison Slider =====
+(function() {
+  const slider = document.getElementById('compareSlider');
+  const rlhf = document.getElementById('compareRLHF');
+  const dpo = document.getElementById('compareDPO');
+
+  slider.addEventListener('input', function() {
+    const v = this.value;
+    rlhf.style.opacity = 1 - v / 150;
+    dpo.style.opacity = 0.3 + v / 143;
+  });
+})();
+
+// ===== WIDGET 9: Results Chart =====
+const benchmarkData = {
+  summarization: {
+    methods: ['SFT', 'Unlikelihood', 'PPO-best', 'DPO-best', 'Best of N'],
+    scores: [24, 28, 40, 47, 53],
+    colors: ['#ddd', '#ccc', '#6366F1', '#0EA5E9', '#10B981']
+  },
+  dialogue: {
+    methods: ['SFT', 'Unlikelihood', 'PPO', 'DPO', 'Best of N'],
+    scores: [33, 40, 42, 54, 52],
+    colors: ['#ddd', '#ccc', '#6366F1', '#0EA5E9', '#10B981']
+  },
+  sentiment: {
+    methods: ['SFT', 'Unlikelihood', 'PPO', 'DPO'],
+    scores: [48, 55, 74, 70],
+    colors: ['#ddd', '#ccc', '#6366F1', '#0EA5E9']
+  }
+};
+
+let currentBenchmark = 'summarization';
+
+function showBenchmark(name) {
+  currentBenchmark = name;
+  document.querySelectorAll('#benchmarkBtns .btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase() === name);
+  });
+  drawResults();
+}
+
+function drawResults() {
+  const canvas = document.getElementById('resultsCanvas');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, W, H);
+
+  const data = benchmarkData[currentBenchmark];
+  const pad = { left: 100, right: 40, top: 30, bottom: 30 };
+  const plotW = W - pad.left - pad.right;
+  const plotH = H - pad.top - pad.bottom;
+  const barH = Math.min(36, (plotH / data.methods.length) * 0.7);
+  const gap = (plotH - barH * data.methods.length) / (data.methods.length + 1);
+
+  // Grid lines
+  ctx.strokeStyle = '#f5f5f5';
+  ctx.lineWidth = 1;
+  for (let v = 0; v <= 100; v += 20) {
+    const x = pad.left + (v / 100) * plotW;
+    ctx.beginPath();
+    ctx.moveTo(x, pad.top);
+    ctx.lineTo(x, H - pad.bottom);
+    ctx.stroke();
+    ctx.fillStyle = '#ccc';
+    ctx.font = '10px Figtree, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(v + '%', x, H - pad.bottom + 16);
+  }
+
+  // Bars
+  data.methods.forEach((method, i) => {
+    const y = pad.top + gap + i * (barH + gap);
+    const barWidth = (data.scores[i] / 100) * plotW;
+
+    // Bar
+    ctx.beginPath();
+    ctx.roundRect(pad.left, y, barWidth, barH, 4);
+    ctx.fillStyle = data.colors[i];
+    ctx.fill();
+
+    // Label
+    ctx.fillStyle = '#555';
+    ctx.font = '12px Figtree, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(method, pad.left - 10, y + barH / 2);
+
+    // Value
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 11px Figtree, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(data.scores[i] + '%', pad.left + barWidth + 8, y + barH / 2);
+  });
+
+  // Title
+  ctx.fillStyle = '#666';
+  ctx.font = 'bold 12px Figtree, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Win Rate (%)', W / 2, 16);
+}
+
+window.addEventListener('DOMContentLoaded', drawResults);
+
+// ===== WIDGET 10: Quiz =====
+(function() {
+  const quizData = [
+    {
+      q: 'What key quantity cancels out in the DPO derivation, making the approach tractable?',
+      options: ['The KL divergence', 'The partition function Z(x)', 'The learning rate', 'The reference policy'],
+      answer: 1,
+      explanation: 'The partition function Z(x) appears in the reward reparameterization but cancels when taking the difference of rewards for two responses to the same prompt.'
+    },
+    {
+      q: 'How many models need to be kept in memory during DPO training?',
+      options: ['1 (just the policy)', '2 (policy + reference)', '3 (policy + reference + reward)', '4 (policy + reference + reward + value)'],
+      answer: 1,
+      explanation: 'DPO requires only the policy being trained and the frozen reference policy. This is half the memory of PPO-based RLHF.'
+    },
+    {
+      q: 'What does a lower β value in DPO allow?',
+      options: ['More conservative updates', 'Larger deviations from the reference policy', 'Faster convergence', 'Lower loss values'],
+      answer: 1,
+      explanation: 'Lower β allows the optimized policy to deviate further from the reference policy, at the risk of overfitting to preference data noise.'
+    }
+  ];
+
+  const container = document.getElementById('quizContainer');
+  quizData.forEach((q, qi) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:white;border-radius:10px;padding:18px 20px;border:1px solid var(--border);';
+
+    let optionsHTML = q.options.map((opt, oi) =>
+      `<button class="btn quiz-opt" data-qi="${qi}" data-oi="${oi}" onclick="checkQuiz(this, ${qi}, ${oi})" style="margin:4px;text-align:left;font-size:0.65rem;">${opt}</button>`
+    ).join('');
+
+    div.innerHTML = `
+      <div style="font-family:var(--sans);font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:12px;">${qi + 1}. ${q.q}</div>
+      <div style="display:flex;flex-wrap:wrap;">${optionsHTML}</div>
+      <div id="quizExpl${qi}" style="display:none;margin-top:10px;padding:10px 14px;border-radius:8px;font-family:var(--sans);font-size:0.7rem;line-height:1.5;"></div>
+    `;
+    container.appendChild(div);
+  });
+
+  window.checkQuiz = function(btn, qi, oi) {
+    const q = quizData[qi];
+    const expl = document.getElementById(`quizExpl${qi}`);
+    const allBtns = document.querySelectorAll(`[data-qi="${qi}"]`);
+
+    allBtns.forEach(b => {
+      b.disabled = true;
+      b.style.opacity = '0.6';
+    });
+
+    if (oi === q.answer) {
+      btn.style.background = '#10B981';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#10B981';
+      btn.style.opacity = '1';
+      expl.style.background = '#10B98110';
+      expl.style.color = '#065F46';
+      expl.innerHTML = '✓ Correct! ' + q.explanation;
+    } else {
+      btn.style.background = '#F43F5E';
+      btn.style.color = 'white';
+      btn.style.borderColor = '#F43F5E';
+      btn.style.opacity = '1';
+      // Highlight correct
+      allBtns[q.answer].style.background = '#10B981';
+      allBtns[q.answer].style.color = 'white';
+      allBtns[q.answer].style.borderColor = '#10B981';
+      allBtns[q.answer].style.opacity = '1';
+      expl.style.background = '#F43F5E10';
+      expl.style.color = '#9F1239';
+      expl.innerHTML = '✗ Not quite. ' + q.explanation;
+    }
+    expl.style.display = 'block';
+  };
+})();
+
+// ===== INTERSECTION OBSERVER FOR FADE-IN =====
+(function() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+})();
+</script>
+</body>
+</html>
