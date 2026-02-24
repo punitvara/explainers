@@ -1,0 +1,2317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scaling Laws for Neural Language Models — An Interactive Explainer</title>
+<style>
+:root {
+  --bg: #fafaf8;
+  --text: #1a1a1a;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --muted: #6b7280;
+  --callout-bg: #f8f5f0;
+  --callout-border: #d4a574;
+  --demo-bg: #ffffff;
+  --demo-border: #e5e5e5;
+  --green: #16a34a;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --purple: #7c3aed;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.content {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 100px 24px 60px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+.hero h1 {
+  font-family: Georgia, serif;
+  font-size: 44px;
+  line-height: 1.15;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+.hero .subtitle {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 18px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+.hero .paper-ref {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--accent);
+  font-style: italic;
+}
+.hero .meta {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 24px;
+}
+.hero .meta span { margin: 0 8px; }
+
+/* Hero SVG animation */
+.hero-viz {
+  margin: 40px auto 0;
+  max-width: 500px;
+}
+
+/* Table of Contents */
+.toc {
+  background: var(--callout-bg);
+  border: 1px solid var(--callout-border);
+  border-radius: 12px;
+  padding: 32px 36px;
+  margin: 40px auto;
+  max-width: 680px;
+}
+.toc h2 {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.toc ol {
+  list-style: none;
+  counter-reset: toc-counter;
+}
+.toc ol li {
+  counter-increment: toc-counter;
+  margin-bottom: 8px;
+}
+.toc ol li::before {
+  content: counter(toc-counter, upper-roman) ". ";
+  font-family: system-ui, sans-serif;
+  font-weight: 600;
+  color: var(--accent);
+  margin-right: 4px;
+}
+.toc a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 17px;
+  transition: color 0.2s;
+}
+.toc a:hover { color: var(--accent); }
+
+/* Section Headings */
+h2.section-title {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 80px 0 24px;
+  line-height: 1.25;
+  color: var(--text);
+}
+h2.section-title .section-num {
+  color: var(--accent);
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+h3 {
+  font-size: 24px;
+  margin: 40px 0 16px;
+  font-weight: 600;
+}
+h4 {
+  font-size: 20px;
+  margin: 24px 0 12px;
+  font-weight: 600;
+}
+
+/* Paragraphs */
+p { margin-bottom: 18px; }
+strong { font-weight: 700; }
+
+/* Callout */
+.callout {
+  background: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  padding: 20px 24px;
+  margin: 28px 0;
+  border-radius: 0 8px 8px 0;
+  font-size: 17px;
+}
+.callout.blue {
+  background: var(--accent-light);
+  border-left-color: var(--accent);
+}
+.callout p:last-child { margin-bottom: 0; }
+
+/* Demo Containers */
+.demo-container {
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: 14px;
+  padding: 28px;
+  margin: 32px -50px;
+  max-width: 780px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+@media (max-width: 820px) {
+  .demo-container { margin-left: 0; margin-right: 0; max-width: 100%; }
+}
+.demo-container h4 {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin: 0 0 18px 0;
+}
+.demo-caption {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 14px;
+  font-style: italic;
+}
+
+/* Buttons */
+.btn {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--accent);
+  color: white;
+}
+.btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn.secondary {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.btn.secondary:hover { background: #c7d9f7; }
+
+/* Sliders */
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+}
+.slider-group label {
+  min-width: 120px;
+  font-weight: 600;
+  color: var(--text);
+}
+.slider-group input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: 6px;
+}
+.slider-group .slider-val {
+  min-width: 90px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* SVG common */
+svg text {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Equation blocks */
+.equation {
+  text-align: center;
+  font-size: 20px;
+  margin: 24px 0;
+  padding: 18px;
+  background: var(--callout-bg);
+  border-radius: 8px;
+  font-family: Georgia, serif;
+  font-style: italic;
+  overflow-x: auto;
+}
+.equation .var { color: var(--accent); font-weight: 700; }
+.equation .exp { font-size: 14px; vertical-align: super; }
+
+/* Prediction challenge */
+.prediction-box {
+  background: #fffbeb;
+  border: 2px dashed #f59e0b;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 20px 0;
+  text-align: center;
+}
+.prediction-box .question {
+  font-family: system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.prediction-box .options {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.prediction-box .opt-btn {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: 2px solid var(--demo-border);
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.prediction-box .opt-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+.prediction-box .opt-btn.correct { border-color: var(--green); background: #dcfce7; color: var(--green); }
+.prediction-box .opt-btn.wrong { border-color: var(--red); background: #fef2f2; color: var(--red); }
+.prediction-box .feedback {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  margin-top: 14px;
+  display: none;
+  line-height: 1.5;
+}
+
+/* Toggle / Step-through */
+.step-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0;
+}
+.step-indicator {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Tabs */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.tab-btn {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--demo-border);
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* Mini data table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  margin: 12px 0;
+}
+.data-table th, .data-table td {
+  padding: 8px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--demo-border);
+}
+.data-table th {
+  font-weight: 700;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.data-table td:first-child, .data-table th:first-child { text-align: left; }
+.data-table tr:hover td { background: var(--accent-light); }
+
+/* Input group */
+.input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+}
+.input-group input[type="number"], .input-group input[type="text"] {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--demo-border);
+  border-radius: 6px;
+  width: 140px;
+}
+.input-group label { font-weight: 600; min-width: 100px; }
+
+/* Result display */
+.result-display {
+  font-family: system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+  padding: 16px;
+  background: var(--accent-light);
+  border-radius: 8px;
+  margin: 16px 0;
+  transition: all 0.3s;
+}
+
+/* Canvas wrapper */
+.canvas-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+}
+.canvas-wrap canvas {
+  max-width: 100%;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 60px 24px 40px;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+}
+footer a { color: var(--accent); text-decoration: none; }
+
+/* Resources */
+.resources-list {
+  list-style: none;
+  padding: 0;
+}
+.resources-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--demo-border);
+  font-size: 17px;
+}
+.resources-list li:last-child { border-bottom: none; }
+.resources-list a { color: var(--accent); text-decoration: none; font-weight: 600; }
+.resources-list a:hover { text-decoration: underline; }
+.resources-list .res-desc {
+  font-size: 14px;
+  color: var(--muted);
+  font-family: system-ui, sans-serif;
+}
+
+/* Highlight text */
+.hl { background: #fef08a; padding: 1px 4px; border-radius: 3px; }
+
+/* Animate on scroll */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Summary box */
+.summary-box {
+  background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+  border: 2px solid var(--accent);
+  border-radius: 14px;
+  padding: 32px;
+  margin: 32px 0;
+}
+.summary-box h3 {
+  margin-top: 0;
+  color: var(--accent);
+}
+.summary-box ul {
+  padding-left: 20px;
+  margin-top: 12px;
+}
+.summary-box li {
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
+/* Hover card */
+.hover-card {
+  display: inline-block;
+  position: relative;
+  border-bottom: 2px dotted var(--accent);
+  cursor: help;
+}
+.hover-card .hc-tip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  width: 260px;
+  text-align: center;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+.hover-card:hover .hc-tip { display: block; }
+
+@media (max-width: 600px) {
+  .hero h1 { font-size: 32px; }
+  h2.section-title { font-size: 26px; }
+  .demo-container { padding: 18px; }
+  .prediction-box .options { flex-direction: column; align-items: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<header class="hero">
+  <h1>Scaling Laws for Neural Language Models</h1>
+  <p class="subtitle">The discovery that made billion-dollar training runs predictable — and turned AI research into an engineering discipline.</p>
+  <p class="paper-ref">Kaplan, McCandlish, Henighan, Brown, Chess, Child, Gray, Radford, Wu & Amodei — OpenAI, January 2020</p>
+  <div class="meta">
+    <span>📄 ~6,500 words</span>
+    <span>·</span>
+    <span>⏱ 25 min read</span>
+    <span>·</span>
+    <span>🧪 11 interactive demos</span>
+  </div>
+
+  <!-- Animated hero SVG: a power-law curve being drawn -->
+  <div class="hero-viz">
+    <svg id="heroSvg" viewBox="0 0 500 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="heroGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#2563eb" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#2563eb" stop-opacity="0.01"/>
+        </linearGradient>
+      </defs>
+      <!-- axes -->
+      <line x1="60" y1="170" x2="480" y2="170" stroke="#d4d4d4" stroke-width="1"/>
+      <line x1="60" y1="170" x2="60" y2="20" stroke="#d4d4d4" stroke-width="1"/>
+      <text x="270" y="195" text-anchor="middle" fill="#6b7280" font-size="12">Scale (log)</text>
+      <text x="20" y="95" text-anchor="middle" fill="#6b7280" font-size="12" transform="rotate(-90,20,95)">Loss</text>
+      <!-- power law curve (will be animated) -->
+      <path id="heroCurve" d="" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+      <!-- area under curve -->
+      <path id="heroArea" d="" fill="url(#heroGrad)"/>
+      <!-- dot on curve -->
+      <circle id="heroDot" cx="60" cy="40" r="5" fill="#2563eb"/>
+    </svg>
+  </div>
+</header>
+
+<!-- ═══════════════════════════ TOC ═══════════════════════════ -->
+<nav class="toc content fade-in">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#s1">The Punchline: Loss is Predictable</a></li>
+    <li><a href="#s2">Three Knobs of Scale</a></li>
+    <li><a href="#s3">Power Laws — Nature's Favorite Pattern</a></li>
+    <li><a href="#s4">Scaling in Parameters: L(N)</a></li>
+    <li><a href="#s5">Scaling in Data: L(D)</a></li>
+    <li><a href="#s6">Scaling in Compute: L(C)</a></li>
+    <li><a href="#s7">Larger Models are More Sample-Efficient</a></li>
+    <li><a href="#s8">The Optimal Allocation of Compute</a></li>
+    <li><a href="#s9">Early Stopping &amp; the Convergence Tradeoff</a></li>
+    <li><a href="#s10">Planning a Training Run</a></li>
+    <li><a href="#s11">How This Paper Changed Everything</a></li>
+    <li><a href="#s12">Summary &amp; Further Reading</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════ OPENING HOOK ═══════════════════════════ -->
+<div class="content">
+  <p class="fade-in" style="font-size: 21px; line-height: 1.8;">
+    Imagine you're about to spend <strong>$10 million</strong> training a language model. You have a choice: a 1-billion parameter model trained for a long time, or a 10-billion parameter model trained briefly. Which gives you better bang for your buck? Before January 2020, the answer was essentially: <em>"Run the experiment and find out."</em>
+  </p>
+  <p class="fade-in">
+    Then Jared Kaplan and his collaborators at OpenAI published a paper that changed the game. They discovered that <strong>language model performance follows clean, predictable power laws</strong> — and that you could forecast a model's loss before spending a single GPU-hour. This paper turned the art of training large models into something closer to <strong>engineering</strong>.
+  </p>
+  <p class="fade-in">
+    Let's dive into the most influential paper you've maybe never read — one that quietly sits behind every decision to train GPT-4, Claude, Gemini, and every other frontier model.
+  </p>
+
+  <!-- ═══════════════════════════ SECTION 1 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s1">
+    <span class="section-num">Section I</span>
+    The Punchline: Loss is Predictable
+  </h2>
+
+  <p class="fade-in">
+    Here's the core revelation of the paper, stated plainly: if you plot language model <strong>cross-entropy loss</strong> against scale — whether that's the number of parameters, the amount of training data, or the total compute — you get a <strong>straight line on a log-log plot</strong>.
+  </p>
+
+  <p class="fade-in">
+    A straight line on a log-log plot means the relationship is a <strong>power law</strong>. It means that every time you multiply your scale by some factor, you get a predictable, consistent improvement in performance. Not diminishing returns (though the absolute gains do shrink). Not a cliff. Not chaos. Just… a smooth, beautiful line stretching across many orders of magnitude.
+  </p>
+
+  <p class="fade-in">
+    This was shocking. Neural networks are famously finicky. Training them involves millions of interacting parameters, random initialization, stochastic gradient descent, and all sorts of potential instabilities. And yet, zoom out far enough, and the final loss is governed by something as simple as <em>y = ax<sup>b</sup></em>.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Demo: Log-Log Plot Explorer</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Toggle between linear and log-log scales to see how a power law transforms into a straight line. Drag the slider to change the exponent.
+    </p>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="setPlotScale('linear')">Linear Scale</button>
+      <button class="tab-btn" onclick="setPlotScale('log')">Log-Log Scale</button>
+    </div>
+    <div class="slider-group">
+      <label>Exponent (α):</label>
+      <input type="range" id="expSlider" min="0.05" max="0.8" step="0.01" value="0.076" oninput="drawLogLogPlot()">
+      <span class="slider-val" id="expVal">0.076</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="loglogCanvas" width="700" height="360"></canvas>
+    </div>
+    <p class="demo-caption">On log-log axes, a power law L = N<sup>−α</sup> becomes a straight line with slope −α.</p>
+  </div>
+
+  <div class="callout fade-in">
+    <p><strong>Key insight:</strong> The specific values of the exponents tell you <em>how fast</em> loss decreases with scale. Kaplan et al. found α ≈ 0.076 for parameters (N), α ≈ 0.095 for data (D), and α ≈ 0.050 for compute (C). Small exponents — but they compound over orders of magnitude.</p>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 2 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s2">
+    <span class="section-num">Section II</span>
+    Three Knobs of Scale
+  </h2>
+
+  <p class="fade-in">
+    When you train a language model, there are exactly <strong>three dials</strong> you can turn to make it more powerful. Kaplan et al. studied each one in isolation and in combination:
+  </p>
+
+  <p class="fade-in">
+    <strong>N — Number of Parameters.</strong> This is the model's "size." A model with 100 million parameters has 100 million learnable weights. GPT-3 has 175 billion. More parameters means more capacity to store and generalize patterns.
+  </p>
+
+  <p class="fade-in">
+    <strong>D — Dataset Size (in tokens).</strong> This is how much text the model trains on. A token is roughly ¾ of a word. More data means more examples for the model to learn from. WebText had ~8 billion tokens; modern datasets have trillions.
+  </p>
+
+  <p class="fade-in">
+    <strong>C — Compute Budget (in FLOPs).</strong> This is the total computational work: roughly <em>C ≈ 6ND</em> for a Transformer (6 floating-point operations per parameter per token). It's the product of <em>how big</em> the model is and <em>how long</em> you train it.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: The Three Knobs of Scale</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Adjust each knob and see how they relate. The compute budget C ≈ 6·N·D links all three.
+    </p>
+    <div class="slider-group">
+      <label>N (params):</label>
+      <input type="range" id="knobN" min="6" max="12" step="0.1" value="8" oninput="updateKnobs()">
+      <span class="slider-val" id="knobNVal">100M</span>
+    </div>
+    <div class="slider-group">
+      <label>D (tokens):</label>
+      <input type="range" id="knobD" min="8" max="14" step="0.1" value="10" oninput="updateKnobs()">
+      <span class="slider-val" id="knobDVal">10B</span>
+    </div>
+    <div class="result-display" id="knobResult">
+      Compute C ≈ 6 × N × D = <span id="knobC">6.0 × 10²⁰</span> FLOPs
+    </div>
+    <div style="text-align:center; margin-top: 12px;">
+      <svg id="knobsSvg" viewBox="0 0 700 180" width="100%" xmlns="http://www.w3.org/2000/svg">
+        <!-- N circle -->
+        <circle cx="150" cy="90" r="50" fill="none" stroke="#2563eb" stroke-width="3" id="knobCircN"/>
+        <text x="150" y="80" text-anchor="middle" font-size="28" font-weight="700" fill="#2563eb">N</text>
+        <text x="150" y="105" text-anchor="middle" font-size="11" fill="#6b7280" id="knobLabelN">100M params</text>
+        <!-- D circle -->
+        <circle cx="350" cy="90" r="50" fill="none" stroke="#16a34a" stroke-width="3" id="knobCircD"/>
+        <text x="350" y="80" text-anchor="middle" font-size="28" font-weight="700" fill="#16a34a">D</text>
+        <text x="350" y="105" text-anchor="middle" font-size="11" fill="#6b7280" id="knobLabelD">10B tokens</text>
+        <!-- C circle -->
+        <circle cx="550" cy="90" r="50" fill="none" stroke="#ea580c" stroke-width="3" id="knobCircC"/>
+        <text x="550" y="80" text-anchor="middle" font-size="28" font-weight="700" fill="#ea580c">C</text>
+        <text x="550" y="105" text-anchor="middle" font-size="11" fill="#6b7280" id="knobLabelC">6e20 FLOPs</text>
+        <!-- Arrows -->
+        <line x1="205" y1="80" x2="295" y2="80" stroke="#d4d4d4" stroke-width="2" marker-end="url(#arrowGray)"/>
+        <line x1="405" y1="80" x2="495" y2="80" stroke="#d4d4d4" stroke-width="2" marker-end="url(#arrowGray)"/>
+        <text x="250" y="72" text-anchor="middle" font-size="11" fill="#6b7280">×</text>
+        <text x="450" y="72" text-anchor="middle" font-size="11" fill="#6b7280">= C / 6</text>
+        <defs>
+          <marker id="arrowGray" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
+            <path d="M0,0 L8,4 L0,8" fill="#d4d4d4"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <p class="demo-caption">The fundamental equation: C ≈ 6ND links parameters, data, and compute.</p>
+  </div>
+
+  <p class="fade-in">
+    The beauty of Kaplan et al.'s framework is that it treats each of these knobs both independently and jointly. <strong>Given a fixed compute budget C, how should you split it between N and D?</strong> That's the central allocation question — and the answer surprised everyone.
+  </p>
+
+  <!-- ═══════════════════════════ SECTION 3 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s3">
+    <span class="section-num">Section III</span>
+    Power Laws — Nature's Favorite Pattern
+  </h2>
+
+  <p class="fade-in">
+    Before we unpack the specific scaling laws, let's build intuition for <strong>power laws</strong> themselves. A power law has the form:
+  </p>
+
+  <div class="equation fade-in">
+    <span class="var">L</span>(x) = a · x<span class="exp">−α</span>
+  </div>
+
+  <p class="fade-in">
+    Power laws are everywhere in nature: earthquake magnitudes (Gutenberg-Richter law), city population distributions (Zipf's law), even word frequencies in language. The hallmark is <strong>scale invariance</strong> — the same relationship holds whether you're looking at small scales or large ones.
+  </p>
+
+  <p class="fade-in">
+    Why do they appear in neural network scaling? The honest answer is: <strong>we don't fully know</strong>. There are theoretical arguments about feature learning, information-theoretic limits, and the structure of natural language. But the empirical fact is undeniable — the fits are remarkably clean across 7+ orders of magnitude.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Prediction Challenge: Spot the Power Law</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Below are four curves on a log-log plot. Which one represents a true power law? (Hint: power laws are perfectly straight on log-log axes.)
+    </p>
+    <div class="canvas-wrap">
+      <canvas id="spotCanvas" width="700" height="320"></canvas>
+    </div>
+    <div class="prediction-box">
+      <div class="question">Which curve (A, B, C, or D) is a power law?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="checkPowerLaw(this, 'A')">Curve A</button>
+        <button class="opt-btn" onclick="checkPowerLaw(this, 'B')">Curve B</button>
+        <button class="opt-btn" onclick="checkPowerLaw(this, 'C')">Curve C</button>
+        <button class="opt-btn" onclick="checkPowerLaw(this, 'D')">Curve D</button>
+      </div>
+      <div class="feedback" id="plFeedback"></div>
+    </div>
+  </div>
+
+  <p class="fade-in">
+    The critical thing about power laws versus, say, exponential decay is that power laws never "bottom out" or "plateau" — they keep improving, just more and more slowly. This is both encouraging (more scale always helps) and humbling (you need <em>a lot</em> more scale for each incremental gain).
+  </p>
+
+  <!-- ═══════════════════════════ SECTION 4 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s4">
+    <span class="section-num">Section IV</span>
+    Scaling in Parameters: L(N)
+  </h2>
+
+  <p class="fade-in">
+    The first scaling law says: <strong>when you make a model bigger (more parameters) while giving it plenty of data, loss decreases as a power law in N</strong>.
+  </p>
+
+  <div class="equation fade-in">
+    <span class="var">L</span>(N) = (N<sub>c</sub> / N)<span class="exp">α<sub>N</sub></span> &nbsp; where α<sub>N</sub> ≈ 0.076, N<sub>c</sub> ≈ 8.8 × 10<sup>13</sup>
+  </div>
+
+  <p class="fade-in">
+    What this means in practice: if you <strong>10× the number of parameters</strong>, you reduce the loss by a factor of 10<sup>0.076</sup> ≈ 1.19 — roughly a 19% reduction in the "reducible" loss component. That might not sound like much, but compound it over several orders of magnitude and you go from a model that babbles to one that writes essays.
+  </p>
+
+  <p class="fade-in">
+    Crucially, this relationship is <strong>independent of model architecture details</strong>. Whether you use 12 layers or 48, wider or narrower, the loss mostly depends on the <em>total parameter count</em>. This was a surprising finding — it suggests there's something fundamental about capacity, not architecture, that drives performance.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: Scale Your Model</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Drag the slider to increase model parameters and watch the predicted loss drop along the L(N) power law curve.
+    </p>
+    <div class="slider-group">
+      <label>Parameters N:</label>
+      <input type="range" id="lnSlider" min="6" max="11" step="0.05" value="7" oninput="updateLN()">
+      <span class="slider-val" id="lnNVal">10M</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="lnCanvas" width="700" height="340"></canvas>
+    </div>
+    <div class="result-display" id="lnResult">
+      Predicted Loss: <span id="lnLoss">3.42</span> nats
+    </div>
+    <p class="demo-caption">The smooth curve shows L(N) ∝ N<sup>−0.076</sup>. Each point represents a model of that size trained to convergence.</p>
+  </div>
+
+  <div class="callout blue fade-in">
+    <p><strong>Why nats?</strong> The loss is measured in "nats" — natural units of information (using natural log instead of log-2). 1 nat ≈ 1.44 bits. A loss of 3.0 nats means the model's per-token perplexity is e<sup>3</sup> ≈ 20 — it considers roughly 20 tokens equally likely at each position.</p>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 5 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s5">
+    <span class="section-num">Section V</span>
+    Scaling in Data: L(D)
+  </h2>
+
+  <p class="fade-in">
+    The second law: <strong>when you increase the amount of training data while using a large enough model, loss decreases as a power law in D</strong>.
+  </p>
+
+  <div class="equation fade-in">
+    <span class="var">L</span>(D) = (D<sub>c</sub> / D)<span class="exp">α<sub>D</sub></span> &nbsp; where α<sub>D</sub> ≈ 0.095, D<sub>c</sub> ≈ 5.4 × 10<sup>13</sup>
+  </div>
+
+  <p class="fade-in">
+    Data scales <em>slightly faster</em> than parameters (0.095 > 0.076). That means, unit-for-unit, more data gives you a bit more bang than more parameters. But there's a catch: <strong>high-quality text data is finite</strong>. At some point, you start running into data walls — a problem that has indeed become relevant by 2025.
+  </p>
+
+  <p class="fade-in">
+    The "large enough model" caveat is important. If your model is too small for your dataset, it <strong>bottlenecks</strong> — it can't absorb all the patterns in the data. The scaling law for D assumes you've removed this bottleneck.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: Data Scaling Explorer</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Set a model size, then drag the data slider to see how loss decreases. Notice how small models "plateau" while large models keep improving.
+    </p>
+    <div class="tab-bar" id="dataTabs">
+      <button class="tab-btn active" onclick="setDataModel(1e7, this)">10M params</button>
+      <button class="tab-btn" onclick="setDataModel(1e8, this)">100M params</button>
+      <button class="tab-btn" onclick="setDataModel(1e9, this)">1B params</button>
+      <button class="tab-btn" onclick="setDataModel(1e10, this)">10B params</button>
+    </div>
+    <div class="slider-group">
+      <label>Dataset D:</label>
+      <input type="range" id="ldSlider" min="7" max="13" step="0.05" value="9" oninput="updateLD()">
+      <span class="slider-val" id="ldDVal">1B tokens</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="ldCanvas" width="700" height="340"></canvas>
+    </div>
+    <div class="result-display" id="ldResult">
+      Predicted Loss: <span id="ldLoss">3.10</span> nats
+    </div>
+    <p class="demo-caption">Smaller models hit a "wall" — they can't absorb more data. Larger models keep improving.</p>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 6 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s6">
+    <span class="section-num">Section VI</span>
+    Scaling in Compute: L(C)
+  </h2>
+
+  <p class="fade-in">
+    The third and perhaps most practically important law: <strong>if you optimally allocate a fixed compute budget C between model size and data, loss decreases as a power law in C</strong>.
+  </p>
+
+  <div class="equation fade-in">
+    <span class="var">L</span>(C) = (C<sub>c</sub> / C)<span class="exp">α<sub>C</sub></span> &nbsp; where α<sub>C</sub> ≈ 0.050, C<sub>c</sub> ≈ 3.1 × 10<sup>8</sup>
+  </div>
+
+  <p class="fade-in">
+    The exponent is smaller (0.050 vs 0.076 or 0.095), which makes sense — compute is the "joint" variable that combines N and D. But the key point is that this law tells you: <strong>"If I have 10× more compute, here's how much better my model will be."</strong> That's incredibly valuable for planning.
+  </p>
+
+  <p class="fade-in">
+    Think about what this means for a lab like OpenAI, Google, or Anthropic. Before this paper, deciding to spend $100M on training was a leap of faith. After this paper, it's a <strong>calculable investment</strong>: you can estimate the loss you'll achieve before you even begin training. That's a seismic shift.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: Compute Budget Calculator</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Set your compute budget and see the predicted loss. Compare it against known models.
+    </p>
+    <div class="slider-group">
+      <label>Compute (FLOPs):</label>
+      <input type="range" id="lcSlider" min="17" max="26" step="0.1" value="21" oninput="updateLC()">
+      <span class="slider-val" id="lcCVal">10²¹</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="lcCanvas" width="700" height="360"></canvas>
+    </div>
+    <div class="result-display" id="lcResult">
+      Predicted Loss: <span id="lcLoss">2.80</span> nats &nbsp;|&nbsp; Perplexity: <span id="lcPpl">16.4</span>
+    </div>
+    <table class="data-table" style="max-width: 500px; margin: 16px auto;">
+      <tr><th>Model (approx)</th><th>Compute (FLOPs)</th><th>Loss (nats)</th></tr>
+      <tr><td>GPT-2 Small</td><td>~2 × 10¹⁹</td><td>~3.3</td></tr>
+      <tr><td>GPT-2 XL</td><td>~3 × 10²⁰</td><td>~2.9</td></tr>
+      <tr><td>GPT-3 13B</td><td>~5 × 10²²</td><td>~2.4</td></tr>
+      <tr><td>GPT-3 175B</td><td>~3 × 10²³</td><td>~2.1</td></tr>
+    </table>
+    <p class="demo-caption">Each 10× increase in compute yields a roughly 12% reduction in loss.</p>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 7 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s7">
+    <span class="section-num">Section VII</span>
+    Larger Models Are More Sample-Efficient
+  </h2>
+
+  <p class="fade-in">
+    Here's one of the paper's most surprising and important findings: <strong>bigger models reach the same loss with less data</strong>. In other words, larger models are more <strong>sample-efficient</strong>.
+  </p>
+
+  <p class="fade-in">
+    Think of it like this: a student with a bigger brain (more parameters) can learn from fewer examples. A small model might need to see a billion sentences to learn subject-verb agreement; a large model grasps it after seeing far fewer. This isn't just convenient — it has deep implications for data requirements.
+  </p>
+
+  <p class="fade-in">
+    Specifically, to reach a given loss level, the number of data points needed scales as <strong>D ∝ N<sup>0.74</sup></strong>. So if you 10× the model size, you only need about 10<sup>0.74</sup> ≈ 5.5× the data to reach the same loss level with optimal training. You <em>don't</em> need 10× the data — big models squeeze more information from each example.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: Sample Efficiency Comparison</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Watch how a larger model achieves a target loss using fewer training tokens. Click "Step" to advance through the training process.
+    </p>
+    <div class="slider-group">
+      <label>Target Loss:</label>
+      <input type="range" id="seTarget" min="2.2" max="3.8" step="0.05" value="2.8" oninput="updateSE()">
+      <span class="slider-val" id="seTargetVal">2.80 nats</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="seCanvas" width="700" height="340"></canvas>
+    </div>
+    <div style="font-family: system-ui, sans-serif; font-size: 14px; display: flex; justify-content: space-around; margin-top: 12px;">
+      <div style="text-align:center;">
+        <div style="color: var(--accent); font-weight:700;">Small Model (10M)</div>
+        <div id="seSmall">Needs ~5.0B tokens</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="color: var(--orange); font-weight:700;">Large Model (1B)</div>
+        <div id="seLarge">Needs ~1.2B tokens</div>
+      </div>
+    </div>
+    <p class="demo-caption">Larger models learn faster — they extract more information per token.</p>
+  </div>
+
+  <div class="callout fade-in">
+    <p><strong>The data wall problem:</strong> This finding is why modern labs obsess over data. Even with sample efficiency advantages, models at the frontier need <em>trillions</em> of tokens. High-quality text data is genuinely running out — which is why synthetic data, multimodal data, and careful data curation have become critical research areas.</p>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 8 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s8">
+    <span class="section-num">Section VIII</span>
+    The Optimal Allocation of Compute
+  </h2>
+
+  <p class="fade-in">
+    Now the big question: <strong>given a fixed compute budget, how should you split it between model size (N) and training data (D)?</strong>
+  </p>
+
+  <p class="fade-in">
+    Kaplan et al.'s answer was striking: <strong>most of the budget should go to making the model bigger, not training longer</strong>. Specifically, they found that with optimal allocation, as compute C increases:
+  </p>
+
+  <div class="equation fade-in">
+    N<sub>opt</sub> ∝ C<span class="exp">0.73</span> &nbsp;&nbsp;&nbsp; D<sub>opt</sub> ∝ C<span class="exp">0.27</span>
+  </div>
+
+  <p class="fade-in">
+    Read that again: the exponent for model size (0.73) is nearly <strong>three times</strong> the exponent for data (0.27). This means that when you get 10× more compute, you should increase your model size by ~5.4× but only increase your data by ~1.9×.
+  </p>
+
+  <p class="fade-in">
+    This was the recommendation that directly influenced the design of GPT-3. It's also the recommendation that was later <strong>challenged by the Chinchilla paper</strong> (Hoffmann et al., 2022), which found a more balanced split. But we'll get to that. First, let's explore the allocation interactively.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: Compute Allocation Optimizer</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Given a compute budget, drag the slider to explore different N/D allocations. The loss curve shows which split is optimal. Compare the Kaplan and Chinchilla prescriptions.
+    </p>
+    <div class="slider-group">
+      <label>Compute budget:</label>
+      <input type="range" id="allocC" min="19" max="25" step="0.1" value="22" oninput="updateAlloc()">
+      <span class="slider-val" id="allocCVal">10²² FLOPs</span>
+    </div>
+    <div class="slider-group">
+      <label>N allocation:</label>
+      <input type="range" id="allocSplit" min="0.1" max="0.9" step="0.01" value="0.5" oninput="updateAlloc()">
+      <span class="slider-val" id="allocSplitVal">50% → N</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="allocCanvas" width="700" height="360"></canvas>
+    </div>
+    <div class="result-display" id="allocResult">
+      N = <span id="allocN">—</span> &nbsp;|&nbsp; D = <span id="allocD">—</span> &nbsp;|&nbsp; Loss = <span id="allocLoss">—</span>
+    </div>
+    <div style="display:flex; gap: 12px; justify-content: center; margin-top: 8px;">
+      <button class="btn secondary" onclick="setAllocPreset('kaplan')">Kaplan Optimal</button>
+      <button class="btn secondary" onclick="setAllocPreset('chinchilla')">Chinchilla Optimal</button>
+    </div>
+    <p class="demo-caption">The loss valley shows the optimal split. Kaplan favors larger models; Chinchilla favors more data.</p>
+  </div>
+
+  <div class="callout blue fade-in">
+    <p><strong>Kaplan vs. Chinchilla:</strong> Kaplan et al. (2020) recommended allocating ~73% of compute-scaling to parameters. Hoffmann et al. (2022, "Chinchilla") later found the optimal split is closer to 50-50 (N ∝ C<sup>0.5</sup>, D ∝ C<sup>0.5</sup>). The difference came from fixing a methodology issue in how models were compared. Both are landmark results — together they bracket the optimal strategy.</p>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 9 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s9">
+    <span class="section-num">Section IX</span>
+    Early Stopping &amp; the Convergence Tradeoff
+  </h2>
+
+  <p class="fade-in">
+    Here's a practical consequence of the scaling laws that matters enormously for <strong>training efficiency</strong>: you don't need to train a model to full convergence to benefit from its size advantage.
+  </p>
+
+  <p class="fade-in">
+    Kaplan et al. found that the loss curves for different model sizes are <strong>roughly parallel</strong> on a log scale. A larger model starts at a lower loss <em>and</em> improves at roughly the same rate per step. This means you can <strong>early-stop a large model</strong> and still beat a smaller model trained for much longer.
+  </p>
+
+  <p class="fade-in">
+    This insight is critical for budget-constrained training. If you can't afford to train a big model for a long time, it might still be worth starting a big model and stopping early — rather than training a small model exhaustively. You get a better model per FLOP spent.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: Early Stopping Simulator</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Watch two models train: a small model trained to convergence vs. a large model early-stopped at the same compute budget. Which achieves lower loss?
+    </p>
+    <div class="slider-group">
+      <label>Compute budget:</label>
+      <input type="range" id="esCompute" min="18" max="23" step="0.1" value="20" oninput="updateES()">
+      <span class="slider-val" id="esComputeVal">10²⁰ FLOPs</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="esCanvas" width="700" height="360"></canvas>
+    </div>
+    <div style="font-family: system-ui, sans-serif; font-size: 14px; display: flex; justify-content: space-around; margin-top: 12px;">
+      <div style="text-align:center; padding: 10px; background: #eff6ff; border-radius: 8px; min-width: 200px;">
+        <div style="color: var(--accent); font-weight:700;">Small Model (converged)</div>
+        <div id="esSmallResult">10M params → L = 3.35</div>
+      </div>
+      <div style="text-align:center; padding: 10px; background: #fef3e2; border-radius: 8px; min-width: 200px;">
+        <div style="color: var(--orange); font-weight:700;">Large Model (early-stopped)</div>
+        <div id="esLargeResult">100M params → L = 3.15</div>
+      </div>
+    </div>
+    <p class="demo-caption">The large model wins even with early stopping — because bigger models are more compute-efficient.</p>
+  </div>
+
+  <p class="fade-in">
+    This result has a delightful analogy: it's like choosing between a <strong>compact car driven across the country</strong> versus a <strong>sports car driven halfway</strong>. If "distance per gallon" is better in the sports car, even stopping early gets you further. Bigger models have better "loss per FLOP."
+  </p>
+
+  <!-- ═══════════════════════════ SECTION 10 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s10">
+    <span class="section-num">Section X</span>
+    Planning a Training Run
+  </h2>
+
+  <p class="fade-in">
+    Let's put it all together. Suppose you're the head of a training team and you have a specific compute budget. How do you use the scaling laws to plan your run?
+  </p>
+
+  <p class="fade-in">
+    <strong>Step 1:</strong> Determine your compute budget C (based on your GPU cluster and time). <strong>Step 2:</strong> Use the optimal allocation formula to compute N<sub>opt</sub> and D<sub>opt</sub>. <strong>Step 3:</strong> Predict your expected loss. <strong>Step 4:</strong> Validate with a small-scale pilot.
+  </p>
+
+  <p class="fade-in">
+    The scaling laws also let you <strong>extrapolate from small runs</strong>. Train a few small models, fit the power-law curve, and predict what a much larger model will achieve. This "scaling curve" approach has become standard practice at every major lab.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: Training Run Planner</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Enter your constraints and get a recommended training plan based on the scaling laws.
+    </p>
+    <div class="input-group">
+      <label>GPU type:</label>
+      <select id="planGpu" onchange="updatePlan()" style="font-family: system-ui, sans-serif; font-size: 14px; padding: 8px 12px; border: 1px solid var(--demo-border); border-radius: 6px;">
+        <option value="312e12">A100 (312 TFLOPS fp16)</option>
+        <option value="990e12">H100 (990 TFLOPS fp16)</option>
+        <option value="2500e12">B200 (2500 TFLOPS fp16)</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Num GPUs:</label>
+      <input type="number" id="planGpus" value="64" min="1" max="100000" onchange="updatePlan()">
+    </div>
+    <div class="input-group">
+      <label>Training days:</label>
+      <input type="number" id="planDays" value="14" min="1" max="365" onchange="updatePlan()">
+    </div>
+    <div class="slider-group">
+      <label>MFU efficiency:</label>
+      <input type="range" id="planMfu" min="0.1" max="0.6" step="0.01" value="0.35" oninput="updatePlan()">
+      <span class="slider-val" id="planMfuVal">35%</span>
+    </div>
+    <div class="result-display" id="planResult" style="text-align: left; font-size: 15px; line-height: 1.8;">
+      Loading...
+    </div>
+    <p class="demo-caption">Adjust your hardware constraints and see the recommended training configuration.</p>
+  </div>
+
+  <div class="callout fade-in">
+    <p><strong>MFU (Model FLOPs Utilization)</strong> is the fraction of theoretical peak compute you actually use. In practice, communication overhead, memory bottlenecks, and pipeline bubbles reduce this. 30–45% is typical for large training runs. Palm achieved ~46%, which was considered impressive.</p>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 11 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s11">
+    <span class="section-num">Section XI</span>
+    How This Paper Changed Everything
+  </h2>
+
+  <p class="fade-in">
+    Before the scaling laws paper, training large language models was part science, part alchemy. Researchers would try various architectures, dataset mixtures, and training schedules, often relying on intuition and small-scale experiments that didn't necessarily predict large-scale behavior.
+  </p>
+
+  <p class="fade-in">
+    After this paper, the field underwent a <strong>philosophical shift</strong>. The central question changed from <em>"What's the right architecture?"</em> to <em>"How do we get more compute?"</em> If performance is a smooth function of scale, and you know the function, the path to better AI is brutally simple: <strong>scale up</strong>.
+  </p>
+
+  <p class="fade-in">
+    This paper is a direct ancestor of the "scaling hypothesis" — the bet that scaling alone (with known architectures and data) is sufficient to reach increasingly general AI capabilities. It's the intellectual foundation that justified billion-dollar GPU clusters and multi-month training runs.
+  </p>
+
+  <p class="fade-in">
+    It also spawned a rich follow-up literature: <strong>Chinchilla</strong> refined the optimal allocation formula. <strong>Scaling laws for downstream tasks</strong> (like coding or math) showed similar patterns. <strong>Emergent abilities</strong> research (Wei et al., 2022) explored where scaling laws "break" — where sudden capabilities appear at specific scale thresholds.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Interactive: Timeline of Scaling</h4>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 14px;">
+      Click on each milestone to see how scaling laws influenced the trajectory of AI development.
+    </p>
+    <div id="timelineContainer" style="position: relative; padding: 20px 0;">
+      <svg id="timelineSvg" viewBox="0 0 700 320" width="100%" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div id="timelineInfo" style="font-family: system-ui, sans-serif; font-size: 14px; background: var(--accent-light); padding: 16px; border-radius: 8px; margin-top: 8px; min-height: 60px;">
+      <em>Click a milestone above to learn more.</em>
+    </div>
+    <p class="demo-caption">The scaling laws paper set the stage for the modern era of large language models.</p>
+  </div>
+
+  <p class="fade-in">
+    Of course, scaling laws have <strong>limitations</strong>. They say nothing about what capabilities emerge at what scale. They don't capture the effect of data quality, RLHF, or instruction tuning. They assume a fixed architecture family. And the exponents may shift as we approach data ceilings or discover new training techniques.
+  </p>
+
+  <p class="fade-in">
+    But the core insight remains: <strong>more scale, more predictably</strong>. And that insight alone was worth billions.
+  </p>
+
+  <div class="demo-container fade-in">
+    <h4>Prediction Challenge: Test Your Intuition</h4>
+    <div class="prediction-box" id="quiz2">
+      <div class="question">You have 10× more compute than your last training run. According to Kaplan's scaling laws, roughly how much should you increase model size?</div>
+      <div class="options">
+        <button class="opt-btn" onclick="checkQuiz2(this, 'A')">2×</button>
+        <button class="opt-btn" onclick="checkQuiz2(this, 'B')">5.4×</button>
+        <button class="opt-btn" onclick="checkQuiz2(this, 'C')">10×</button>
+        <button class="opt-btn" onclick="checkQuiz2(this, 'D')">3.2×</button>
+      </div>
+      <div class="feedback" id="quiz2Feedback"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ SECTION 12 ═══════════════════════════ -->
+  <h2 class="section-title fade-in" id="s12">
+    <span class="section-num">Section XII</span>
+    Summary &amp; Further Reading
+  </h2>
+
+  <div class="summary-box fade-in">
+    <h3>Key Takeaways</h3>
+    <ul>
+      <li><strong>Power-law scaling:</strong> Loss decreases as a smooth power law in parameters (N), data (D), and compute (C), holding across 7+ orders of magnitude.</li>
+      <li><strong>Three exponents:</strong> α<sub>N</sub> ≈ 0.076, α<sub>D</sub> ≈ 0.095, α<sub>C</sub> ≈ 0.050. Small numbers with enormous consequences at scale.</li>
+      <li><strong>Architecture-independence:</strong> Total parameter count matters more than specific architectural choices (depth vs. width).</li>
+      <li><strong>Sample efficiency:</strong> Larger models learn more from each training example. They're not just bigger — they're better learners.</li>
+      <li><strong>Optimal allocation:</strong> Kaplan recommended N ∝ C<sup>0.73</sup> (later revised by Chinchilla to ~C<sup>0.5</sup>).</li>
+      <li><strong>Early stopping:</strong> A large, early-stopped model beats a small, fully-converged model at the same compute budget.</li>
+      <li><strong>Predictability:</strong> You can forecast model performance from small pilot runs, making multi-million-dollar training decisions calculable.</li>
+      <li><strong>Paradigm shift:</strong> This paper turned "how to make AI better" from an architecture question into a scaling question.</li>
+    </ul>
+  </div>
+
+  <h3 class="fade-in">Further Resources</h3>
+  <ul class="resources-list fade-in">
+    <li>
+      <a href="https://arxiv.org/abs/2001.08361" target="_blank">Scaling Laws for Neural Language Models (Kaplan et al., 2020)</a>
+      <div class="res-desc">The original paper. Dense but readable. The plots alone are worth the read.</div>
+    </li>
+    <li>
+      <a href="https://arxiv.org/abs/2203.15556" target="_blank">Training Compute-Optimal LLMs "Chinchilla" (Hoffmann et al., 2022)</a>
+      <div class="res-desc">The key follow-up that revised the optimal N/D allocation to a more balanced split.</div>
+    </li>
+    <li>
+      <a href="https://arxiv.org/abs/2206.07682" target="_blank">Emergent Abilities of Large Language Models (Wei et al., 2022)</a>
+      <div class="res-desc">Explores where smooth scaling laws meet sudden capability jumps.</div>
+    </li>
+    <li>
+      <a href="https://arxiv.org/abs/2404.10102" target="_blank">Scaling Data-Constrained Language Models (Muennighoff et al., 2023)</a>
+      <div class="res-desc">What happens when you run out of unique data? Explores repeated data and multi-epoch training.</div>
+    </li>
+    <li>
+      <a href="https://www.gwern.net/Scaling-hypothesis" target="_blank">The Scaling Hypothesis — Gwern Branwen</a>
+      <div class="res-desc">An excellent long-form essay putting scaling laws in broader context.</div>
+    </li>
+  </ul>
+
+</div><!-- end .content -->
+
+<!-- ═══════════════════════════ FOOTER ═══════════════════════════ -->
+<footer>
+  <p>Built with care. Inspired by <a href="https://explainers.blog" target="_blank">explainers.blog</a>.</p>
+  <p style="margin-top: 8px;">© 2026 · All equations approximate. All analogies intentional.</p>
+</footer>
+
+<!-- ═══════════════════════════ JAVASCRIPT ═══════════════════════════ -->
+<script>
+// ─── Utility functions ───
+function formatNum(n) {
+  if (n >= 1e15) return (n/1e15).toFixed(1) + 'e15';
+  if (n >= 1e12) return (n/1e12).toFixed(1) + 'T';
+  if (n >= 1e9)  return (n/1e9).toFixed(1)  + 'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(1)  + 'M';
+  if (n >= 1e3)  return (n/1e3).toFixed(1)  + 'K';
+  return n.toFixed(0);
+}
+function formatSci(n) {
+  if (n === 0) return '0';
+  const exp = Math.floor(Math.log10(Math.abs(n)));
+  const mantissa = n / Math.pow(10, exp);
+  return mantissa.toFixed(1) + '×10^' + exp;
+}
+function superscript(exp) {
+  const sup = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','.':'·','-':'⁻'};
+  return String(exp).split('').map(c => sup[c] || c).join('');
+}
+
+// ─── Hero animation ───
+(function animateHero() {
+  const curve = document.getElementById('heroCurve');
+  const area = document.getElementById('heroArea');
+  const dot = document.getElementById('heroDot');
+  let pts = [];
+  for (let i = 0; i <= 100; i++) {
+    const t = i / 100;
+    const x = 60 + t * 420;
+    const y = 170 - 150 * Math.pow(0.05 + t, -0.3) / Math.pow(0.05, -0.3);
+    pts.push({x, y});
+  }
+  let frame = 0;
+  function draw() {
+    const n = Math.min(frame, pts.length);
+    if (n > 1) {
+      let d = 'M' + pts[0].x + ',' + pts[0].y;
+      for (let i = 1; i < n; i++) d += ' L' + pts[i].x + ',' + pts[i].y;
+      curve.setAttribute('d', d);
+      let areaD = d + ' L' + pts[n-1].x + ',170 L60,170 Z';
+      area.setAttribute('d', areaD);
+      dot.setAttribute('cx', pts[n-1].x);
+      dot.setAttribute('cy', pts[n-1].y);
+    }
+    frame++;
+    if (frame <= pts.length + 10) requestAnimationFrame(draw);
+  }
+  setTimeout(draw, 300);
+})();
+
+// ─── Fade-in on scroll ───
+const fadeEls = document.querySelectorAll('.fade-in');
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.1 });
+fadeEls.forEach(el => obs.observe(el));
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 1: Log-Log Plot Explorer
+// ═══════════════════════════════════════════════════════════════
+let plotScale = 'linear';
+function setPlotScale(s) {
+  plotScale = s;
+  document.querySelectorAll('#s1 .tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  drawLogLogPlot();
+}
+
+function drawLogLogPlot() {
+  const canvas = document.getElementById('loglogCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const alpha = parseFloat(document.getElementById('expSlider').value);
+  document.getElementById('expVal').textContent = alpha.toFixed(3);
+
+  const pad = {l:70, r:30, t:30, b:50};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  // Draw grid
+  ctx.strokeStyle = '#e5e5e5';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const x = pad.l + (i/5) * pw;
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.stroke();
+    const y = pad.t + (i/5) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.stroke();
+  }
+
+  // Axes
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t + ph); ctx.lineTo(pad.l + pw, pad.t + ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ph); ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(plotScale === 'log' ? 'log(N)' : 'N (parameters)', W/2, H - 8);
+  ctx.save();
+  ctx.translate(16, H/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText(plotScale === 'log' ? 'log(L)' : 'Loss L(N)', 0, 0);
+  ctx.restore();
+
+  // Generate data points
+  const nPts = 200;
+  let minX, maxX, minY, maxY;
+  if (plotScale === 'log') {
+    minX = 6; maxX = 12; // log10
+    minY = -0.5; maxY = 0.5;
+  } else {
+    minX = 1e6; maxX = 1e12;
+    minY = 0; maxY = 6;
+  }
+
+  // Power law: L = 8.8e13^alpha * N^(-alpha)
+  const Nc = 8.8e13;
+  ctx.strokeStyle = '#2563eb';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i <= nPts; i++) {
+    const t = i / nPts;
+    let N, L;
+    if (plotScale === 'log') {
+      const logN = 6 + t * 6;
+      N = Math.pow(10, logN);
+      L = Math.pow(Nc / N, alpha);
+      const logL = Math.log10(L);
+      const px = pad.l + ((logN - minX) / (maxX - minX)) * pw;
+      const py = pad.t + ph - ((logL - minY) / (maxY - minY)) * ph;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    } else {
+      N = minX + t * (maxX - minX);
+      L = Math.pow(Nc / N, alpha);
+      const px = pad.l + t * pw;
+      const py = pad.t + ph - ((L - minY) / (maxY - minY)) * ph;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+  }
+  ctx.stroke();
+
+  // Scatter a few "data points" with noise
+  ctx.fillStyle = '#2563eb';
+  const scatterNs = [1e6, 3e6, 1e7, 3e7, 1e8, 3e8, 1e9, 3e9, 1e10, 3e10, 1e11];
+  scatterNs.forEach(N => {
+    const L = Math.pow(Nc / N, alpha) * (0.95 + Math.random() * 0.1);
+    let px, py;
+    if (plotScale === 'log') {
+      const logN = Math.log10(N);
+      const logL = Math.log10(L);
+      px = pad.l + ((logN - minX) / (maxX - minX)) * pw;
+      py = pad.t + ph - ((logL - minY) / (maxY - minY)) * ph;
+    } else {
+      px = pad.l + ((N - minX) / (maxX - minX)) * pw;
+      py = pad.t + ph - ((L - minY) / (maxY - minY)) * ph;
+    }
+    if (px >= pad.l && px <= pad.l + pw && py >= pad.t && py <= pad.t + ph) {
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  // Tick labels
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  if (plotScale === 'log') {
+    for (let e = 6; e <= 12; e++) {
+      const px = pad.l + ((e - 6) / 6) * pw;
+      ctx.fillText('10' + superscript(e), px, pad.t + ph + 18);
+    }
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 4; i++) {
+      const v = minY + (i/4) * (maxY - minY);
+      const py = pad.t + ph - (i/4) * ph;
+      ctx.fillText(v.toFixed(2), pad.l - 8, py + 4);
+    }
+  } else {
+    ['1M','','100M','','10B',''].forEach((lbl, i) => {
+      const px = pad.l + (i/5) * pw;
+      if (lbl) ctx.fillText(lbl, px, pad.t + ph + 18);
+    });
+  }
+}
+drawLogLogPlot();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 2: Three Knobs
+// ═══════════════════════════════════════════════════════════════
+function updateKnobs() {
+  const logN = parseFloat(document.getElementById('knobN').value);
+  const logD = parseFloat(document.getElementById('knobD').value);
+  const N = Math.pow(10, logN);
+  const D = Math.pow(10, logD);
+  const C = 6 * N * D;
+  document.getElementById('knobNVal').textContent = formatNum(N);
+  document.getElementById('knobDVal').textContent = formatNum(D);
+  const logC = Math.log10(C);
+  document.getElementById('knobC').textContent = '10' + superscript(logC.toFixed(1));
+  document.getElementById('knobLabelN').textContent = formatNum(N) + ' params';
+  document.getElementById('knobLabelD').textContent = formatNum(D) + ' tokens';
+  document.getElementById('knobLabelC').textContent = formatSci(C) + ' FLOPs';
+  // Scale circles
+  const rN = 30 + (logN - 6) / 6 * 30;
+  const rD = 30 + (logD - 8) / 6 * 30;
+  const rC = 30 + (logC - 15) / 12 * 30;
+  document.getElementById('knobCircN').setAttribute('r', rN);
+  document.getElementById('knobCircD').setAttribute('r', rD);
+  document.getElementById('knobCircC').setAttribute('r', rC);
+}
+updateKnobs();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 3: Spot the Power Law
+// ═══════════════════════════════════════════════════════════════
+(function drawSpotPL() {
+  const canvas = document.getElementById('spotCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = {l:60, r:30, t:20, b:40};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const x = pad.l + (i/5)*pw; ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+ph); ctx.stroke();
+    const y = pad.t + (i/5)*ph; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
+  }
+  ctx.strokeStyle = '#999'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t+ph); ctx.lineTo(pad.l+pw, pad.t+ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t+ph); ctx.stroke();
+
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('log(x)', W/2, H-6);
+
+  const colors = ['#2563eb', '#16a34a', '#dc2626', '#7c3aed'];
+  const labels = ['A', 'B', 'C', 'D'];
+  // A: exponential decay (curves down on log-log)
+  // B: sigmoid / logistic
+  // C: power law (straight line!)
+  // D: logarithmic (curves up on log-log)
+  const funcs = [
+    t => 1.8 - 1.5 * (1 - Math.exp(-3*t)),           // A: exponential → curves
+    t => 1.8 - 1.2 / (1 + Math.exp(-8*(t - 0.5))),   // B: sigmoid
+    t => 1.8 - 1.4 * t,                                // C: power law (linear on log-log)
+    t => 1.8 - 0.6 * Math.log(1 + 8 * t),            // D: log → curves
+  ];
+
+  funcs.forEach((fn, fi) => {
+    ctx.strokeStyle = colors[fi];
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i = 0; i <= 200; i++) {
+      const t = i / 200;
+      const y = fn(t);
+      const px = pad.l + t * pw;
+      const py = pad.t + (1 - (y - 0) / 2) * ph;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // Label
+    const yEnd = fn(1);
+    const px = pad.l + pw + 8;
+    const py = pad.t + (1 - (yEnd) / 2) * ph;
+    ctx.fillStyle = colors[fi];
+    ctx.font = 'bold 14px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText(labels[fi], px, py + 4);
+  });
+})();
+
+function checkPowerLaw(btn, answer) {
+  const fb = document.getElementById('plFeedback');
+  document.querySelectorAll('#s3 .opt-btn').forEach(b => { b.classList.remove('correct','wrong'); b.disabled = true; });
+  if (answer === 'C') {
+    btn.classList.add('correct');
+    fb.innerHTML = '✅ <strong>Correct!</strong> Curve C is the only straight line on the log-log plot, meaning it\'s a power law. Curve A is an exponential, B is sigmoidal, and D is logarithmic.';
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('#s3 .opt-btn')[2].classList.add('correct');
+    fb.innerHTML = '❌ <strong>Not quite.</strong> The power law is Curve C — the only perfectly straight line on log-log axes. Curves that bend are exponential, sigmoid, or logarithmic.';
+  }
+  fb.style.display = 'block';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 4: L(N) — Scaling in Parameters
+// ═══════════════════════════════════════════════════════════════
+function updateLN() {
+  const logN = parseFloat(document.getElementById('lnSlider').value);
+  const N = Math.pow(10, logN);
+  document.getElementById('lnNVal').textContent = formatNum(N);
+  const Nc = 8.8e13;
+  const alpha = 0.076;
+  // L(N) = (Nc/N)^alpha  + irreducible ~ 1.69
+  const L = Math.pow(Nc / N, alpha) + 1.69;
+  document.getElementById('lnLoss').textContent = L.toFixed(2);
+
+  // Draw chart
+  const canvas = document.getElementById('lnCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = {l:70, r:40, t:20, b:50};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  // Grid
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const x = pad.l + (i/5)*pw; ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+ph); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (i/4)*ph; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
+  }
+
+  const minLogN = 6, maxLogN = 11;
+  const minL = 2.0, maxL = 4.5;
+
+  // Curve
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    const ln = minLogN + t * (maxLogN - minLogN);
+    const n = Math.pow(10, ln);
+    const loss = Math.pow(Nc / n, alpha) + 1.69;
+    const px = pad.l + t * pw;
+    const py = pad.t + ((maxL - loss) / (maxL - minL)) * ph;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Fill area under curve
+  ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    const ln = minLogN + t * (maxLogN - minLogN);
+    const n = Math.pow(10, ln);
+    const loss = Math.pow(Nc / n, alpha) + 1.69;
+    const px = pad.l + t * pw;
+    const py = pad.t + ((maxL - loss) / (maxL - minL)) * ph;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.lineTo(pad.l + pw, pad.t + ph);
+  ctx.lineTo(pad.l, pad.t + ph);
+  ctx.closePath();
+  ctx.fill();
+
+  // Current point
+  const curT = (logN - minLogN) / (maxLogN - minLogN);
+  const curPx = pad.l + curT * pw;
+  const curPy = pad.t + ((maxL - L) / (maxL - minL)) * ph;
+  ctx.fillStyle = '#2563eb';
+  ctx.beginPath(); ctx.arc(curPx, curPy, 7, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(curPx, curPy, 3, 0, Math.PI * 2); ctx.fill();
+
+  // Dashed lines to axes
+  ctx.setLineDash([4,4]);
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(curPx, curPy); ctx.lineTo(curPx, pad.t + ph); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(curPx, curPy); ctx.lineTo(pad.l, curPy); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Axis labels
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('Parameters N (log scale)', W/2, H - 8);
+  for (let e = 6; e <= 11; e++) {
+    const px = pad.l + ((e - minLogN) / (maxLogN - minLogN)) * pw;
+    ctx.fillText('10' + superscript(e), px, pad.t + ph + 18);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = minL + ((4-i)/4) * (maxL - minL);
+    const py = pad.t + (i/4) * ph;
+    ctx.fillText(v.toFixed(1), pad.l - 8, py + 4);
+  }
+  ctx.save();
+  ctx.translate(14, H/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center';
+  ctx.fillText('Loss (nats)', 0, 0);
+  ctx.restore();
+}
+updateLN();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 5: L(D) — Data Scaling
+// ═══════════════════════════════════════════════════════════════
+let dataModelN = 1e7;
+function setDataModel(n, btn) {
+  dataModelN = n;
+  document.querySelectorAll('#dataTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateLD();
+}
+
+function updateLD() {
+  const logD = parseFloat(document.getElementById('ldSlider').value);
+  const D = Math.pow(10, logD);
+  document.getElementById('ldDVal').textContent = formatNum(D);
+
+  const Dc = 5.4e13;
+  const alphaD = 0.095;
+  const Nc = 8.8e13;
+  const alphaN = 0.076;
+  // Combined: L(N,D) ≈ [(Nc/N)^(alphaN/alphaD) + Dc/D]^alphaD + 1.69
+  // Simplified for demo
+  const lossN = Math.pow(Nc / dataModelN, alphaN);
+  const lossD = Math.pow(Dc / D, alphaD);
+  const L = Math.max(lossN, lossD) + 0.5 * Math.min(lossN, lossD) + 1.69;
+  document.getElementById('ldLoss').textContent = L.toFixed(2);
+
+  const canvas = document.getElementById('ldCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = {l:70, r:40, t:20, b:50};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  const minLogD = 7, maxLogD = 13;
+  const minL = 1.8, maxL = 5.0;
+
+  // Grid
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 6; i++) {
+    const x = pad.l + (i/6)*pw; ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+ph); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (i/4)*ph; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
+  }
+
+  // Draw curves for all model sizes
+  const models = [{n:1e7, c:'#93c5fd', lbl:'10M'}, {n:1e8, c:'#60a5fa', lbl:'100M'}, {n:1e9, c:'#3b82f6', lbl:'1B'}, {n:1e10, c:'#1d4ed8', lbl:'10B'}];
+  models.forEach(m => {
+    ctx.strokeStyle = m.n === dataModelN ? m.c : m.c + '40';
+    ctx.lineWidth = m.n === dataModelN ? 3 : 1.5;
+    ctx.beginPath();
+    for (let i = 0; i <= 200; i++) {
+      const t = i / 200;
+      const ld = minLogD + t * (maxLogD - minLogD);
+      const d = Math.pow(10, ld);
+      const ln = Math.pow(Nc / m.n, alphaN);
+      const ldv = Math.pow(Dc / d, alphaD);
+      const loss = Math.max(ln, ldv) + 0.5 * Math.min(ln, ldv) + 1.69;
+      const px = pad.l + t * pw;
+      const py = pad.t + ((maxL - loss) / (maxL - minL)) * ph;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // label at end
+    const dEnd = Math.pow(10, maxLogD);
+    const lnE = Math.pow(Nc / m.n, alphaN);
+    const ldE = Math.pow(Dc / dEnd, alphaD);
+    const lossEnd = Math.max(lnE, ldE) + 0.5 * Math.min(lnE, ldE) + 1.69;
+    const pyEnd = pad.t + ((maxL - lossEnd) / (maxL - minL)) * ph;
+    ctx.fillStyle = m.n === dataModelN ? m.c : m.c + '60';
+    ctx.font = 'bold 11px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText(m.lbl, pad.l + pw + 4, pyEnd + 4);
+  });
+
+  // Current point on active curve
+  const curT = (logD - minLogD) / (maxLogD - minLogD);
+  const curPx = pad.l + curT * pw;
+  const curPy = pad.t + ((maxL - L) / (maxL - minL)) * ph;
+  ctx.fillStyle = '#2563eb';
+  ctx.beginPath(); ctx.arc(curPx, curPy, 7, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(curPx, curPy, 3, 0, Math.PI * 2); ctx.fill();
+
+  // Axes
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('Dataset size D (tokens, log scale)', W/2, H - 8);
+  for (let e = 7; e <= 13; e++) {
+    const px = pad.l + ((e - minLogD) / (maxLogD - minLogD)) * pw;
+    ctx.fillText('10' + superscript(e), px, pad.t + ph + 18);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = minL + ((4-i)/4) * (maxL - minL);
+    const py = pad.t + (i/4) * ph;
+    ctx.fillText(v.toFixed(1), pad.l - 8, py + 4);
+  }
+}
+updateLD();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 6: L(C) — Compute Scaling
+// ═══════════════════════════════════════════════════════════════
+function updateLC() {
+  const logC = parseFloat(document.getElementById('lcSlider').value);
+  document.getElementById('lcCVal').textContent = '10' + superscript(logC.toFixed(1));
+  const C = Math.pow(10, logC);
+  const Cc = 3.1e8;
+  const alphaC = 0.050;
+  const L = Math.pow(Cc / C, alphaC) + 1.69;
+  const ppl = Math.exp(L);
+  document.getElementById('lcLoss').textContent = L.toFixed(2);
+  document.getElementById('lcPpl').textContent = ppl.toFixed(1);
+
+  const canvas = document.getElementById('lcCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = {l:70, r:40, t:20, b:50};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  const minLogC = 17, maxLogC = 26;
+  const minL_p = 1.6, maxL_p = 4.0;
+
+  // Grid
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 9; i++) {
+    const x = pad.l + (i/9)*pw; ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+ph); ctx.stroke();
+  }
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (i/4)*ph; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
+  }
+
+  // Curve
+  ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let i = 0; i <= 300; i++) {
+    const t = i / 300;
+    const lc = minLogC + t * (maxLogC - minLogC);
+    const c = Math.pow(10, lc);
+    const loss = Math.pow(Cc / c, alphaC) + 1.69;
+    const px = pad.l + t * pw;
+    const py = pad.t + ((maxL_p - loss) / (maxL_p - minL_p)) * ph;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Fill
+  ctx.fillStyle = 'rgba(234, 88, 12, 0.06)';
+  ctx.beginPath();
+  for (let i = 0; i <= 300; i++) {
+    const t = i / 300;
+    const lc = minLogC + t * (maxLogC - minLogC);
+    const c = Math.pow(10, lc);
+    const loss = Math.pow(Cc / c, alphaC) + 1.69;
+    const px = pad.l + t * pw;
+    const py = pad.t + ((maxL_p - loss) / (maxL_p - minL_p)) * ph;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.lineTo(pad.l + pw, pad.t + ph);
+  ctx.lineTo(pad.l, pad.t + ph);
+  ctx.closePath();
+  ctx.fill();
+
+  // Known models
+  const known = [
+    {name:'GPT-2 S', logC: 19.3, loss: 3.3},
+    {name:'GPT-2 XL', logC: 20.5, loss: 2.9},
+    {name:'GPT-3 13B', logC: 22.7, loss: 2.4},
+    {name:'GPT-3 175B', logC: 23.5, loss: 2.1},
+  ];
+  known.forEach(k => {
+    const px = pad.l + ((k.logC - minLogC) / (maxLogC - minLogC)) * pw;
+    const py = pad.t + ((maxL_p - k.loss) / (maxL_p - minL_p)) * ph;
+    ctx.fillStyle = '#9ca3af';
+    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#6b7280'; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(k.name, px, py - 10);
+  });
+
+  // Current point
+  const curT = (logC - minLogC) / (maxLogC - minLogC);
+  const curPx = pad.l + curT * pw;
+  const curPy = pad.t + ((maxL_p - L) / (maxL_p - minL_p)) * ph;
+  ctx.fillStyle = '#ea580c';
+  ctx.beginPath(); ctx.arc(curPx, curPy, 8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(curPx, curPy, 3, 0, Math.PI*2); ctx.fill();
+
+  // Axis labels
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('Compute C (FLOPs, log scale)', W/2, H - 8);
+  for (let e = 17; e <= 26; e++) {
+    const px = pad.l + ((e - minLogC) / (maxLogC - minLogC)) * pw;
+    ctx.fillText('10' + superscript(e), px, pad.t + ph + 18);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = minL_p + ((4-i)/4) * (maxL_p - minL_p);
+    const py = pad.t + (i/4) * ph;
+    ctx.fillText(v.toFixed(1), pad.l - 8, py + 4);
+  }
+}
+updateLC();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 7: Sample Efficiency
+// ═══════════════════════════════════════════════════════════════
+function updateSE() {
+  const target = parseFloat(document.getElementById('seTarget').value);
+  document.getElementById('seTargetVal').textContent = target.toFixed(2) + ' nats';
+
+  // How many tokens needed for small (10M) vs large (1B) model to reach target loss
+  // Using simplified model: L = base + A * D^(-beta) where beta depends on N
+  const smallBase = 2.8, smallA = 20, smallBeta = 0.15;
+  const largeBase = 2.0, largeA = 15, largeBeta = 0.18;
+
+  // Solve for D: target = base + A * D^(-beta) => D = (A / (target - base))^(1/beta)
+  let smallD = Infinity, largeD = Infinity;
+  if (target > smallBase) smallD = Math.pow(smallA / (target - smallBase), 1/smallBeta);
+  if (target > largeBase) largeD = Math.pow(largeA / (target - largeBase), 1/largeBeta);
+
+  document.getElementById('seSmall').textContent = smallD < 1e15 ? 'Needs ~' + formatNum(smallD) + ' tokens' : 'Cannot reach this loss!';
+  document.getElementById('seLarge').textContent = largeD < 1e15 ? 'Needs ~' + formatNum(largeD) + ' tokens' : 'Cannot reach this loss!';
+
+  // Draw
+  const canvas = document.getElementById('seCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = {l:70, r:40, t:20, b:50};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+  const minLogD = 7, maxLogD = 14, minL = 1.5, maxL = 5.0;
+
+  // Grid
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 7; i++) {
+    const x = pad.l + (i/7)*pw; ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,pad.t+ph); ctx.stroke();
+  }
+
+  // Small model curve
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const t = i/200;
+    const ld = minLogD + t * (maxLogD - minLogD);
+    const d = Math.pow(10, ld);
+    const loss = smallBase + smallA * Math.pow(d, -smallBeta);
+    const px = pad.l + t * pw;
+    const py = pad.t + ((maxL - loss) / (maxL - minL)) * ph;
+    if (py >= pad.t && py <= pad.t + ph) {
+      if (i === 0 || (pad.t + ((maxL - (smallBase + smallA * Math.pow(Math.pow(10, minLogD + (i-1)/200*(maxLogD-minLogD)), -smallBeta))) / (maxL - minL)) * ph) < pad.t) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+  }
+  ctx.stroke();
+
+  // Large model curve
+  ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const t = i/200;
+    const ld = minLogD + t * (maxLogD - minLogD);
+    const d = Math.pow(10, ld);
+    const loss = largeBase + largeA * Math.pow(d, -largeBeta);
+    const px = pad.l + t * pw;
+    const py = pad.t + ((maxL - loss) / (maxL - minL)) * ph;
+    if (py >= pad.t && py <= pad.t + ph) {
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+  }
+  ctx.stroke();
+
+  // Target line
+  const targetPy = pad.t + ((maxL - target) / (maxL - minL)) * ph;
+  if (targetPy >= pad.t && targetPy <= pad.t + ph) {
+    ctx.setLineDash([6,4]);
+    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, targetPy); ctx.lineTo(pad.l + pw, targetPy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#dc2626'; ctx.font = 'bold 12px system-ui'; ctx.textAlign = 'left';
+    ctx.fillText('Target: ' + target.toFixed(2), pad.l + pw - 100, targetPy - 6);
+  }
+
+  // Mark intersection points
+  if (smallD < 1e15 && smallD > Math.pow(10, minLogD)) {
+    const sLogD = Math.log10(smallD);
+    if (sLogD <= maxLogD) {
+      const spx = pad.l + ((sLogD - minLogD) / (maxLogD - minLogD)) * pw;
+      ctx.fillStyle = '#2563eb';
+      ctx.beginPath(); ctx.arc(spx, targetPy, 6, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  if (largeD < 1e15 && largeD > Math.pow(10, minLogD)) {
+    const lLogD = Math.log10(largeD);
+    if (lLogD <= maxLogD) {
+      const lpx = pad.l + ((lLogD - minLogD) / (maxLogD - minLogD)) * pw;
+      ctx.fillStyle = '#ea580c';
+      ctx.beginPath(); ctx.arc(lpx, targetPy, 6, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  // Legend
+  ctx.font = 'bold 12px system-ui';
+  ctx.fillStyle = '#2563eb'; ctx.fillText('● Small (10M)', pad.l + 10, pad.t + 16);
+  ctx.fillStyle = '#ea580c'; ctx.fillText('● Large (1B)', pad.l + 140, pad.t + 16);
+
+  // Axis labels
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('Training tokens D (log scale)', W/2, H - 8);
+  for (let e = 7; e <= 14; e++) {
+    const px = pad.l + ((e - minLogD) / (maxLogD - minLogD)) * pw;
+    ctx.fillText('10' + superscript(e), px, pad.t + ph + 18);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = minL + ((4-i)/4) * (maxL - minL);
+    const py = pad.t + (i/4) * ph;
+    ctx.fillText(v.toFixed(1), pad.l - 8, py + 4);
+  }
+}
+updateSE();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 8: Compute Allocation Optimizer
+// ═══════════════════════════════════════════════════════════════
+function updateAlloc() {
+  const logC = parseFloat(document.getElementById('allocC').value);
+  const split = parseFloat(document.getElementById('allocSplit').value);
+  document.getElementById('allocCVal').textContent = '10' + superscript(logC.toFixed(1)) + ' FLOPs';
+  document.getElementById('allocSplitVal').textContent = Math.round(split * 100) + '% → N';
+
+  const C = Math.pow(10, logC);
+  // split determines: N-fraction of compute
+  // C = 6*N*D => with fraction f: N_eff = (f*C/6)^0.5-ish, D_eff = (1-f)*C/6/N
+  // Simplified: logN = log(C)/2 * f-factor, logD = log(C/6/N)
+  const logN = Math.log10(C) * 0.4 * split + 5; // Simplified mapping
+  const N = Math.pow(10, logN);
+  const D = C / (6 * N);
+  const logD = Math.log10(D);
+
+  document.getElementById('allocN').textContent = formatNum(N);
+  document.getElementById('allocD').textContent = formatNum(D);
+
+  // Loss = (Nc/N)^alphaN + (Dc/D)^alphaD + 1.69
+  const Nc = 8.8e13, alphaN = 0.076;
+  const Dc = 5.4e13, alphaD = 0.095;
+  const lossN = Math.pow(Nc / Math.max(N, 1), alphaN);
+  const lossD = Math.pow(Dc / Math.max(D, 1), alphaD);
+  const L = lossN + lossD + 1.69;
+  document.getElementById('allocLoss').textContent = L.toFixed(3) + ' nats';
+
+  // Draw
+  const canvas = document.getElementById('allocCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = {l:70, r:40, t:30, b:50};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  // Sweep over split values
+  let losses = [];
+  let minLoss = Infinity, bestSplit = 0.5;
+  for (let i = 0; i <= 100; i++) {
+    const s = 0.1 + (i/100) * 0.8;
+    const ln = Math.log10(C) * 0.4 * s + 5;
+    const n = Math.pow(10, ln);
+    const d = C / (6 * n);
+    const loss = Math.pow(Nc / Math.max(n,1), alphaN) + Math.pow(Dc / Math.max(d,1), alphaD) + 1.69;
+    losses.push({s, loss});
+    if (loss < minLoss) { minLoss = loss; bestSplit = s; }
+  }
+
+  const lossMin = minLoss - 0.1;
+  const lossMax = minLoss + 0.8;
+
+  // Grid
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + (i/5)*ph; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
+  }
+
+  // Loss curve
+  ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 3;
+  ctx.beginPath();
+  losses.forEach((p, i) => {
+    const px = pad.l + ((p.s - 0.1) / 0.8) * pw;
+    const py = pad.t + ((lossMax - p.loss) / (lossMax - lossMin)) * ph;
+    const clampedPy = Math.max(pad.t, Math.min(pad.t + ph, py));
+    if (i === 0) ctx.moveTo(px, clampedPy); else ctx.lineTo(px, clampedPy);
+  });
+  ctx.stroke();
+
+  // Fill
+  ctx.fillStyle = 'rgba(124, 58, 237, 0.06)';
+  ctx.beginPath();
+  losses.forEach((p, i) => {
+    const px = pad.l + ((p.s - 0.1) / 0.8) * pw;
+    const py = Math.max(pad.t, Math.min(pad.t + ph, pad.t + ((lossMax - p.loss) / (lossMax - lossMin)) * ph));
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  });
+  ctx.lineTo(pad.l + pw, pad.t + ph);
+  ctx.lineTo(pad.l, pad.t + ph);
+  ctx.closePath();
+  ctx.fill();
+
+  // Mark Kaplan optimal (~73%)
+  const kaplanX = pad.l + ((0.73 - 0.1) / 0.8) * pw;
+  ctx.setLineDash([4,4]);
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(kaplanX, pad.t); ctx.lineTo(kaplanX, pad.t + ph); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#2563eb'; ctx.font = 'bold 11px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('Kaplan', kaplanX, pad.t - 6);
+
+  // Mark Chinchilla optimal (~50%)
+  const chinX = pad.l + ((0.50 - 0.1) / 0.8) * pw;
+  ctx.setLineDash([4,4]);
+  ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(chinX, pad.t); ctx.lineTo(chinX, pad.t + ph); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#16a34a'; ctx.font = 'bold 11px system-ui';
+  ctx.fillText('Chinchilla', chinX, pad.t - 6);
+
+  // Current point
+  const curPx = pad.l + ((split - 0.1) / 0.8) * pw;
+  const curPy = Math.max(pad.t, Math.min(pad.t + ph, pad.t + ((lossMax - L) / (lossMax - lossMin)) * ph));
+  ctx.fillStyle = '#7c3aed';
+  ctx.beginPath(); ctx.arc(curPx, curPy, 8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.arc(curPx, curPy, 3, 0, Math.PI*2); ctx.fill();
+
+  // Axes
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('Fraction of compute budget allocated to model size (N)', W/2, H - 8);
+  for (let i = 0; i <= 4; i++) {
+    const v = 10 + i * 20;
+    const px = pad.l + ((v/100 - 0.1) / 0.8) * pw;
+    ctx.fillText(v + '%', px, pad.t + ph + 18);
+  }
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = lossMin + ((4-i)/4) * (lossMax - lossMin);
+    const py = pad.t + (i/4) * ph;
+    ctx.fillText(v.toFixed(2), pad.l - 8, py + 4);
+  }
+  ctx.save();
+  ctx.translate(14, H/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center';
+  ctx.fillText('Loss (nats)', 0, 0);
+  ctx.restore();
+}
+
+function setAllocPreset(type) {
+  if (type === 'kaplan') {
+    document.getElementById('allocSplit').value = 0.73;
+  } else {
+    document.getElementById('allocSplit').value = 0.50;
+  }
+  updateAlloc();
+}
+updateAlloc();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 9: Early Stopping Simulator
+// ═══════════════════════════════════════════════════════════════
+function updateES() {
+  const logC = parseFloat(document.getElementById('esCompute').value);
+  document.getElementById('esComputeVal').textContent = '10' + superscript(logC.toFixed(1)) + ' FLOPs';
+  const C = Math.pow(10, logC);
+
+  // Small model: 10M params, train to near convergence
+  const smallN = 1e7;
+  const smallD = C / (6 * smallN);
+  // Large model: 30× bigger, early stop
+  const largeN = smallN * 30;
+  const largeD = C / (6 * largeN);
+
+  const Nc = 8.8e13, alphaN = 0.076;
+  const Dc = 5.4e13, alphaD = 0.095;
+
+  function getLoss(n, d) {
+    const ln = Math.pow(Nc / n, alphaN);
+    const ld = Math.pow(Dc / Math.max(d, 1), alphaD);
+    return Math.max(ln, ld) + 0.4 * Math.min(ln, ld) + 1.69;
+  }
+
+  const smallLoss = getLoss(smallN, smallD);
+  const largeLoss = getLoss(largeN, largeD);
+
+  document.getElementById('esSmallResult').textContent = formatNum(smallN) + ' params → L = ' + smallLoss.toFixed(2);
+  document.getElementById('esLargeResult').textContent = formatNum(largeN) + ' params → L = ' + largeLoss.toFixed(2);
+
+  // Draw training curves
+  const canvas = document.getElementById('esCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = {l:70, r:40, t:20, b:50};
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+  const minStep = 0, maxStep = 1;
+  const minL = 1.5, maxL = 5.5;
+
+  // Grid
+  ctx.strokeStyle = '#eee'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.t + (i/5)*ph; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+pw,y); ctx.stroke();
+  }
+
+  // Small model training curve (trains longer, higher final loss)
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    // Simulated training curve: starts high, decays
+    const loss = smallLoss + 2.0 * Math.exp(-5 * t) + 0.5 * Math.exp(-15 * t);
+    const px = pad.l + t * pw;
+    const py = pad.t + ((maxL - loss) / (maxL - minL)) * ph;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Large model training curve (shorter, lower final loss)
+  const largeFrac = largeD / smallD; // fraction of steps
+  ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++) {
+    const t = i / 200;
+    if (t > largeFrac + 0.02) break;
+    const tNorm = t / largeFrac;
+    const loss = largeLoss + 1.5 * Math.exp(-5 * tNorm) + 0.3 * Math.exp(-15 * tNorm);
+    const px = pad.l + t * pw;
+    const py = pad.t + ((maxL - loss) / (maxL - minL)) * ph;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Mark early stop
+  const stopPx = pad.l + Math.min(largeFrac, 1) * pw;
+  const stopLoss = largeLoss + 0.05;
+  const stopPy = pad.t + ((maxL - stopLoss) / (maxL - minL)) * ph;
+  ctx.setLineDash([4,4]);
+  ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(stopPx, pad.t); ctx.lineTo(stopPx, pad.t + ph); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#ea580c'; ctx.font = '11px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('Early stop', stopPx, pad.t + ph + 16);
+
+  // End points
+  const smallFinalPy = pad.t + ((maxL - smallLoss) / (maxL - minL)) * ph;
+  ctx.fillStyle = '#2563eb';
+  ctx.beginPath(); ctx.arc(pad.l + pw, smallFinalPy, 6, 0, Math.PI*2); ctx.fill();
+
+  if (largeFrac <= 1) {
+    ctx.fillStyle = '#ea580c';
+    ctx.beginPath(); ctx.arc(stopPx, stopPy, 6, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Legend
+  ctx.font = 'bold 12px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#2563eb'; ctx.fillText('● Small (' + formatNum(smallN) + ') — trained fully', pad.l + 10, pad.t + 16);
+  ctx.fillStyle = '#ea580c'; ctx.fillText('● Large (' + formatNum(largeN) + ') — early stopped', pad.l + 10, pad.t + 34);
+
+  // Winner label
+  const winner = largeLoss < smallLoss ? 'Large model wins!' : 'Small model wins!';
+  const winColor = largeLoss < smallLoss ? '#ea580c' : '#2563eb';
+  ctx.fillStyle = winColor; ctx.font = 'bold 14px system-ui'; ctx.textAlign = 'right';
+  ctx.fillText('→ ' + winner, pad.l + pw - 10, pad.t + 24);
+
+  // Axes
+  ctx.fillStyle = '#6b7280'; ctx.font = '12px system-ui'; ctx.textAlign = 'center';
+  ctx.fillText('Training progress (normalized)', W/2, H - 8);
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const v = minL + ((4-i)/4) * (maxL - minL);
+    const py = pad.t + (i/4) * ph;
+    ctx.fillText(v.toFixed(1), pad.l - 8, py + 4);
+  }
+}
+updateES();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 10: Training Run Planner
+// ═══════════════════════════════════════════════════════════════
+function updatePlan() {
+  const gpuFlops = parseFloat(document.getElementById('planGpu').value);
+  const numGpus = parseInt(document.getElementById('planGpus').value) || 1;
+  const days = parseInt(document.getElementById('planDays').value) || 1;
+  const mfu = parseFloat(document.getElementById('planMfu').value);
+  document.getElementById('planMfuVal').textContent = Math.round(mfu * 100) + '%';
+
+  const seconds = days * 24 * 3600;
+  const totalFlops = gpuFlops * numGpus * seconds * mfu;
+  const logC = Math.log10(totalFlops);
+
+  // Kaplan optimal allocation
+  const kaplanNexp = 0.73;
+  const kaplanDexp = 0.27;
+  // N_opt ∝ C^0.73 => approximate: logN = 0.73 * logC - constant
+  const logN_kaplan = kaplanNexp * logC - 10.5;
+  const N_kaplan = Math.pow(10, logN_kaplan);
+  const D_kaplan = totalFlops / (6 * N_kaplan);
+
+  // Chinchilla optimal
+  const logN_chin = 0.5 * logC - 5.2;
+  const N_chin = Math.pow(10, logN_chin);
+  const D_chin = totalFlops / (6 * N_chin);
+
+  // Expected loss (using compute scaling)
+  const Cc = 3.1e8, alphaC = 0.050;
+  const expectedLoss = Math.pow(Cc / totalFlops, alphaC) + 1.69;
+  const expectedPpl = Math.exp(expectedLoss);
+
+  const gpuName = document.getElementById('planGpu').selectedOptions[0].text.split(' (')[0];
+
+  document.getElementById('planResult').innerHTML = `
+    <div style="margin-bottom: 12px; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Training Plan</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      <div><strong>Hardware:</strong> ${numGpus}× ${gpuName}</div>
+      <div><strong>Duration:</strong> ${days} days</div>
+      <div><strong>Total compute:</strong> ${formatSci(totalFlops)} FLOPs</div>
+      <div><strong>MFU:</strong> ${Math.round(mfu*100)}%</div>
+    </div>
+    <hr style="margin: 12px 0; border: none; border-top: 1px solid var(--demo-border);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div style="padding: 10px; background: #eff6ff; border-radius: 6px;">
+        <div style="font-size: 12px; color: var(--accent); font-weight: 700;">KAPLAN ALLOCATION</div>
+        <div>N = ${formatNum(N_kaplan)} params</div>
+        <div>D = ${formatNum(D_kaplan)} tokens</div>
+      </div>
+      <div style="padding: 10px; background: #f0fdf4; border-radius: 6px;">
+        <div style="font-size: 12px; color: var(--green); font-weight: 700;">CHINCHILLA ALLOCATION</div>
+        <div>N = ${formatNum(N_chin)} params</div>
+        <div>D = ${formatNum(D_chin)} tokens</div>
+      </div>
+    </div>
+    <hr style="margin: 12px 0; border: none; border-top: 1px solid var(--demo-border);">
+    <div style="text-align: center;">
+      <strong>Expected loss:</strong> ${expectedLoss.toFixed(2)} nats &nbsp;|&nbsp;
+      <strong>Perplexity:</strong> ${expectedPpl.toFixed(1)}
+    </div>
+  `;
+}
+updatePlan();
+
+// ═══════════════════════════════════════════════════════════════
+// DEMO 11: Timeline
+// ═══════════════════════════════════════════════════════════════
+(function drawTimeline() {
+  const milestones = [
+    {year: 2017, label: 'Transformer', desc: 'Vaswani et al. publish "Attention Is All You Need." The architecture that would become the substrate for all scaling experiments.'},
+    {year: 2018, label: 'GPT-1', desc: 'OpenAI trains a 117M parameter Transformer on books. First hint that scaling language models works.'},
+    {year: 2019, label: 'GPT-2', desc: '1.5B parameters. Surprisingly fluent text. But no systematic study of scaling yet — just "bigger is better."'},
+    {year: 2020, label: 'Scaling Laws', desc: 'Kaplan et al. discover that loss follows clean power laws in N, D, C. This paper changes how every lab plans training runs. The age of calculable AI begins.', highlight: true},
+    {year: 2020.5, label: 'GPT-3', desc: '175B parameters, designed using the scaling laws. The model size was chosen to optimally use the available compute budget. A direct application of this paper.'},
+    {year: 2022, label: 'Chinchilla', desc: 'Hoffmann et al. refine the optimal allocation: models should be trained on more data than Kaplan suggested. N ∝ C^0.5, D ∝ C^0.5.'},
+    {year: 2023, label: 'GPT-4 & Llama', desc: 'Frontier models trained with Chinchilla-informed scaling. Labs can now predict performance before training begins.'},
+    {year: 2024, label: 'Scale + Quality', desc: 'New scaling laws account for data quality, mixture ratios, and post-training. The framework keeps expanding.'},
+  ];
+
+  const svg = document.getElementById('timelineSvg');
+  let html = '';
+  const W = 700, H = 320;
+  const y0 = 160, xStart = 50, xEnd = 660;
+  const xRange = xEnd - xStart;
+  const yearMin = 2017, yearMax = 2024.5;
+
+  // Main line
+  html += `<line x1="${xStart}" y1="${y0}" x2="${xEnd}" y2="${y0}" stroke="#d4d4d4" stroke-width="2"/>`;
+
+  milestones.forEach((m, i) => {
+    const x = xStart + ((m.year - yearMin) / (yearMax - yearMin)) * xRange;
+    const above = i % 2 === 0;
+    const yDot = y0;
+    const yText = above ? y0 - 50 : y0 + 50;
+    const yLine = above ? y0 - 20 : y0 + 20;
+    const fill = m.highlight ? '#2563eb' : '#6b7280';
+    const r = m.highlight ? 8 : 5;
+
+    html += `<line x1="${x}" y1="${y0}" x2="${x}" y2="${yLine}" stroke="${fill}" stroke-width="1.5"/>`;
+    html += `<circle cx="${x}" cy="${yDot}" r="${r}" fill="${fill}" style="cursor:pointer" onclick="showTimelineInfo(${i})"/>`;
+    html += `<text x="${x}" y="${yText}" text-anchor="middle" font-size="11" font-weight="700" fill="${fill}" style="cursor:pointer" onclick="showTimelineInfo(${i})">${m.label}</text>`;
+    html += `<text x="${x}" y="${yText + (above ? -14 : 14)}" text-anchor="middle" font-size="10" fill="#9ca3af">${Math.floor(m.year)}</text>`;
+  });
+
+  svg.innerHTML = html;
+  window._timelineMilestones = milestones;
+})();
+
+function showTimelineInfo(i) {
+  const m = window._timelineMilestones[i];
+  const el = document.getElementById('timelineInfo');
+  el.innerHTML = `<strong>${Math.floor(m.year)} — ${m.label}</strong><br>${m.desc}`;
+  el.style.borderLeft = m.highlight ? '4px solid var(--accent)' : '4px solid var(--callout-border)';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Quiz 2
+// ═══════════════════════════════════════════════════════════════
+function checkQuiz2(btn, answer) {
+  const fb = document.getElementById('quiz2Feedback');
+  document.querySelectorAll('#quiz2 .opt-btn').forEach(b => { b.classList.remove('correct','wrong'); b.disabled = true; });
+  if (answer === 'B') {
+    btn.classList.add('correct');
+    fb.innerHTML = '✅ <strong>Correct!</strong> With N<sub>opt</sub> ∝ C<sup>0.73</sup>, a 10× compute increase means N increases by 10<sup>0.73</sup> ≈ 5.4×. This is the Kaplan recommendation — spend most of the extra compute on a bigger model.';
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('#quiz2 .opt-btn')[1].classList.add('correct');
+    fb.innerHTML = '❌ <strong>Not quite.</strong> The answer is 5.4×. Since N<sub>opt</sub> ∝ C<sup>0.73</sup>, a 10× increase in C gives 10<sup>0.73</sup> ≈ 5.4× increase in N. (Under Chinchilla\'s rule, it would be ~3.2×.)';
+  }
+  fb.style.display = 'block';
+}
+</script>
+</body>
+</html>

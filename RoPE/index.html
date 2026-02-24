@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoFormer: Rotary Position Embeddings (RoPE) — An Interactive Explainer</title>
+<style>
+:root {
+  --bg: #fafaf8;
+  --text: #1a1a1a;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --muted: #6b7280;
+  --callout-bg: #f8f5f0;
+  --callout-border: #d4a574;
+  --demo-bg: #ffffff;
+  --demo-border: #e5e5e5;
+  --green: #16a34a;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --purple: #7c3aed;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.content {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 100px 24px 60px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+.hero-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+  display: block;
+}
+.hero h1 {
+  font-family: Georgia, serif;
+  font-size: 46px;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  letter-spacing: -1px;
+  color: var(--text);
+}
+.hero .subtitle {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 18px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
+}
+.hero .meta {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* TOC */
+.toc {
+  max-width: 680px;
+  margin: 0 auto 50px;
+  padding: 30px 32px;
+  background: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  border-radius: 6px;
+}
+.toc h2 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.toc ol {
+  list-style: upper-roman;
+  padding-left: 28px;
+}
+.toc li {
+  font-size: 16px;
+  line-height: 1.9;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.toc a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.toc a:hover { border-bottom-color: var(--accent); }
+
+/* Sections */
+section { margin-bottom: 60px; }
+h2.section-title {
+  font-family: Georgia, serif;
+  font-size: 32px;
+  line-height: 1.25;
+  margin: 60px 0 20px;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+h3 {
+  font-family: Georgia, serif;
+  font-size: 24px;
+  margin: 30px 0 14px;
+  color: var(--text);
+}
+p { margin-bottom: 18px; }
+strong { color: var(--text); }
+a { color: var(--accent); }
+
+/* Callout */
+.callout {
+  background: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  padding: 20px 24px;
+  margin: 28px 0;
+  border-radius: 4px;
+  font-size: 17px;
+}
+.callout strong { color: var(--text); }
+.callout-emoji { margin-right: 6px; }
+
+/* Demo Containers */
+.demo-container {
+  max-width: 780px;
+  margin: 32px auto;
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: 10px;
+  padding: 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.demo-container h4 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.demo-caption {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 14px;
+  line-height: 1.5;
+}
+
+/* Buttons & Controls */
+.btn {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  padding: 8px 18px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.btn:hover { background: #1d4ed8; }
+.btn-outline {
+  background: transparent;
+  color: var(--accent);
+}
+.btn-outline:hover { background: var(--accent-light); }
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+.slider-group label {
+  min-width: 130px;
+  color: var(--muted);
+}
+.slider-group input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.slider-group .slider-val {
+  min-width: 50px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Math Blocks */
+.math-block {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 24px 0;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  line-height: 1.8;
+  overflow-x: auto;
+  text-align: center;
+}
+.math-inline {
+  font-family: 'Courier New', monospace;
+  font-size: 17px;
+  background: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* Token Bars */
+.token-row {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.token-box {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  user-select: none;
+  border: 2px solid transparent;
+}
+.token-box:hover { border-color: var(--accent); transform: translateY(-2px); }
+.token-box.active { background: var(--accent); color: #fff; }
+
+/* SVG container */
+.svg-container {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0;
+}
+.svg-container svg { max-width: 100%; height: auto; }
+
+/* Summary Section */
+.summary-box {
+  background: var(--accent-light);
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  padding: 28px;
+  margin: 32px 0;
+}
+.summary-box h3 {
+  color: var(--accent);
+  margin-top: 0;
+}
+.summary-box ul {
+  padding-left: 20px;
+  margin-top: 12px;
+}
+.summary-box li {
+  margin-bottom: 8px;
+  font-size: 17px;
+}
+
+/* Resources */
+.resource-card {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  margin: 12px 0;
+  background: var(--demo-bg);
+  transition: box-shadow 0.2s;
+  text-decoration: none;
+  color: var(--text);
+}
+.resource-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.resource-emoji { font-size: 28px; }
+.resource-info { flex: 1; }
+.resource-info strong { display: block; margin-bottom: 4px; font-size: 17px; }
+.resource-info span { font-size: 14px; color: var(--muted); font-family: system-ui, sans-serif; }
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 60px 24px 40px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  border-top: 1px solid var(--demo-border);
+  margin-top: 60px;
+}
+
+/* Grid helper */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+/* Comparison table */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  margin: 16px 0;
+}
+.compare-table th, .compare-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--demo-border);
+}
+.compare-table th {
+  background: var(--callout-bg);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+.compare-table td { color: var(--text); }
+.compare-table tr:hover td { background: #fafafa; }
+
+/* Step display */
+.step-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+}
+.step-counter {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 15px;
+}
+
+/* Quiz */
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  padding: 12px 18px;
+  margin: 8px 0;
+  border: 2px solid var(--demo-border);
+  border-radius: 8px;
+  background: var(--demo-bg);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quiz-option:hover { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.correct { border-color: var(--green); background: #dcfce7; }
+.quiz-option.wrong { border-color: var(--red); background: #fce4e4; }
+.quiz-feedback {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  display: none;
+}
+
+/* Highlight number */
+.num-highlight {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  font-family: system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Rotation animation */
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.rotate-anim { animation: rotate-slow 8s linear infinite; }
+
+/* Pulsing dot */
+@keyframes pulse {
+  0%, 100% { r: 5; opacity: 1; }
+  50% { r: 8; opacity: 0.6; }
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .hero h1 { font-size: 32px; }
+  h2.section-title { font-size: 26px; }
+  .demo-container { padding: 18px; margin-left: -12px; margin-right: -12px; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== HERO ===================== -->
+<div class="hero">
+  <span class="hero-icon">🔄</span>
+  <h1>Rotary Position Embeddings</h1>
+  <p class="subtitle">How RoPE taught Transformers to feel position by <em>rotating</em> vectors in the complex plane — and why every modern LLM uses it</p>
+  <p class="meta">Based on "RoFormer: Enhanced Transformer with Rotary Position Embedding" (Su et al., 2021) · Interactive Explainer</p>
+</div>
+
+<!-- ===================== TOC ===================== -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#sec-permutation">The Permutation Problem</a></li>
+    <li><a href="#sec-absolute">Absolute & Learned Embeddings</a></li>
+    <li><a href="#sec-sinusoidal">Sinusoidal Embeddings</a></li>
+    <li><a href="#sec-rotation">The Rotation Insight</a></li>
+    <li><a href="#sec-complex">Complex Numbers & Rotation Matrices</a></li>
+    <li><a href="#sec-relative">Relative Position from Dot Products</a></li>
+    <li><a href="#sec-decay">The Long-Range Decay Property</a></li>
+    <li><a href="#sec-extending">Extending Context: NTK & YaRN</a></li>
+    <li><a href="#sec-adoption">Why Every Modern LLM Uses RoPE</a></li>
+    <li><a href="#sec-implementation">Implementation Details</a></li>
+    <li><a href="#sec-summary">Summary</a></li>
+    <li><a href="#sec-resources">Further Resources</a></li>
+  </ol>
+</div>
+
+<!-- ===================== OPENING HOOK ===================== -->
+<div class="content">
+  <p>Here's a riddle: take the sentence <em>"The cat sat on the mat"</em> and feed it to a Transformer. Now scramble the words to <em>"mat the on sat cat The"</em>. <strong>A vanilla Transformer — the attention mechanism alone — would produce the exact same representations for both.</strong></p>
+
+  <p>That sounds catastrophically broken. And it is! Transformers are <strong>permutation-invariant</strong> by design. The attention operation treats its inputs like an unordered set. Word order, the very skeleton of language, is invisible.</p>
+
+  <p>So we need a way to inject position information. For years, the field experimented with various schemes — adding position vectors, learning them, synthesizing them with sine waves. Each had trade-offs. Then in 2021, Jianlin Su and colleagues proposed something elegantly different: <strong>don't add position to the embedding. Rotate it.</strong></p>
+
+  <p>This idea — <strong>Rotary Position Embedding (RoPE)</strong> — turned out to be so effective that it was adopted by LLaMA, GPT-NeoX, PaLM, Falcon, Mistral, and essentially every major open-source LLM since. Let's understand why.</p>
+</div>
+
+<!-- ===================== I. THE PERMUTATION PROBLEM ===================== -->
+<div class="content">
+  <section id="sec-permutation">
+    <h2 class="section-title">I. The Permutation Problem</h2>
+
+    <p>The self-attention mechanism computes a weighted sum of value vectors, where the weights come from how well each query matches each key. Crucially, <strong>the attention function treats its inputs as a set</strong> — there's nothing in the dot-product computation that knows token 3 comes before token 7.</p>
+
+    <p>Think of it this way: if you hand someone a bag of Scrabble tiles that spell "LISTEN" vs. "SILENT," and they can only look at what letters are present — not their arrangement — they literally can't tell the two words apart. That's a Transformer without position encoding.</p>
+
+    <p>Try it yourself below. Drag the words around and watch what a position-blind Transformer "sees":</p>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>🔀 Interactive Demo: Permutation Invariance</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Click "Shuffle" to reorder the tokens. Notice the attention scores stay the same — the model can't tell the difference!</p>
+  <div id="perm-tokens" class="token-row" style="min-height: 50px;"></div>
+  <div style="text-align: center; margin: 16px 0;">
+    <button class="btn" onclick="shufflePermDemo()">Shuffle Words</button>
+    <button class="btn btn-outline" onclick="resetPermDemo()">Reset</button>
+  </div>
+  <div style="margin-top: 16px;">
+    <div style="font-family: system-ui, sans-serif; font-size: 13px; color: var(--muted); margin-bottom: 8px;">Attention pattern (position-blind):</div>
+    <div class="svg-container">
+      <svg id="perm-attn-svg" width="500" height="90"></svg>
+    </div>
+    <div id="perm-verdict" style="text-align: center; font-family: system-ui, sans-serif; font-size: 15px; font-weight: 600; color: var(--red); margin-top: 8px;">⚠️ Same attention pattern regardless of word order!</div>
+  </div>
+  <div class="demo-caption">Without position information, "The cat sat" and "sat The cat" look identical to self-attention.</div>
+</div>
+
+<!-- ===================== II. ABSOLUTE & LEARNED EMBEDDINGS ===================== -->
+<div class="content">
+  <section id="sec-absolute">
+    <h2 class="section-title">II. Absolute & Learned Embeddings</h2>
+
+    <p>The first attempt at fixing this was simple: <strong>give each position a unique vector and add it to the token embedding.</strong> Position 0 gets vector <span class="math-inline">p₀</span>, position 1 gets <span class="math-inline">p₁</span>, and so on. This is the <strong>absolute position embedding</strong> approach.</p>
+
+    <p>In BERT and GPT-2, these position vectors are <strong>learned parameters</strong> — random at initialization, trained alongside the model. This works well enough, but comes with a hard limitation: <strong>the model has a fixed maximum sequence length.</strong> If you trained with 512 positions, position 513 simply doesn't exist. There's no vector for it.</p>
+
+    <p>There's a subtler problem too. When token at position 3 attends to position 7, the model needs to understand the <em>relative</em> relationship (4 positions apart). But with absolute embeddings, this relative information is only implicit — the model has to <em>learn</em> that <span class="math-inline">p₇ - p₃</span> means "4 apart," separately from learning that <span class="math-inline">p₁₀ - p₆</span> also means "4 apart."</p>
+
+    <div class="callout">
+      <span class="callout-emoji">🧩</span> <strong>The core tension:</strong> Absolute embeddings tell the model <em>where</em> a token is, but not directly <em>how far apart</em> two tokens are. Relative position — the distance between tokens — is what often matters more for understanding language.
+    </div>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>📍 Interactive Demo: Absolute Position Embeddings</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Click any token to see its position embedding (a learned vector). Notice: position vectors are <em>independent</em> — there's no built-in notion of "distance."</p>
+  <div id="abs-tokens" class="token-row"></div>
+  <div style="margin-top: 16px;">
+    <div style="font-family: system-ui, sans-serif; font-size: 13px; color: var(--muted); margin-bottom: 6px;">Position embedding vector (first 8 dims):</div>
+    <div class="svg-container">
+      <svg id="abs-embed-svg" width="500" height="120"></svg>
+    </div>
+    <div id="abs-info" style="text-align: center; font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-top: 8px;">Click a token above</div>
+  </div>
+  <div class="demo-caption">Each position has its own learned vector. Position 513? Sorry, doesn't exist.</div>
+</div>
+
+<!-- ===================== III. SINUSOIDAL EMBEDDINGS ===================== -->
+<div class="content">
+  <section id="sec-sinusoidal">
+    <h2 class="section-title">III. Sinusoidal Embeddings</h2>
+
+    <p>The original "Attention Is All You Need" paper proposed a clever alternative: <strong>sinusoidal position embeddings.</strong> Instead of learning position vectors, they defined them with a formula using sine and cosine waves at different frequencies:</p>
+
+    <div class="math-block">
+      PE(pos, 2i) = sin(pos / 10000^(2i/d))<br>
+      PE(pos, 2i+1) = cos(pos / 10000^(2i/d))
+    </div>
+
+    <p>Each dimension of the position embedding oscillates at a different frequency — fast oscillations in early dimensions (capturing fine-grained position differences), slow oscillations in later ones (capturing broad position regions). It's like a <strong>binary clock, but with smooth waves instead of bits.</strong></p>
+
+    <p>The beautiful property: for any fixed offset <span class="math-inline">k</span>, the position encoding at <span class="math-inline">pos+k</span> can be expressed as a linear transformation of the encoding at <span class="math-inline">pos</span>. In theory, this lets the model learn relative positions. In practice? The signal is there but <strong>buried inside additions to the content embeddings</strong> — the model has to untangle "what the token is" from "where it sits."</p>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>🌊 Interactive Demo: Sinusoidal Frequencies</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Adjust the position and dimension to see how sine/cosine embeddings change. Each dimension uses a different frequency.</p>
+  <div class="slider-group">
+    <label>Position:</label>
+    <input type="range" id="sin-pos" min="0" max="127" value="0">
+    <span class="slider-val" id="sin-pos-val">0</span>
+  </div>
+  <div class="slider-group">
+    <label>Dimension (2i):</label>
+    <input type="range" id="sin-dim" min="0" max="31" value="0">
+    <span class="slider-val" id="sin-dim-val">0</span>
+  </div>
+  <div class="svg-container">
+    <svg id="sin-wave-svg" width="520" height="200"></svg>
+  </div>
+  <div id="sin-values" style="text-align: center; font-family: 'Courier New', monospace; font-size: 14px; color: var(--accent); margin-top: 4px;"></div>
+  <div class="demo-caption">Higher dimensions oscillate more slowly — they encode coarser position information, like the hour hand vs. the second hand on a clock.</div>
+</div>
+
+<!-- ===================== IV. THE ROTATION INSIGHT ===================== -->
+<div class="content">
+  <section id="sec-rotation">
+    <h2 class="section-title">IV. The Rotation Insight</h2>
+
+    <p>Here's where RoPE enters the picture, and the idea is genuinely beautiful.</p>
+
+    <p>Instead of <strong>adding</strong> a position vector to the token embedding (which mixes position and content), RoPE <strong>rotates</strong> the embedding vector in a position-dependent way. The angle of rotation depends on the position. The key insight is this:</p>
+
+    <div class="callout">
+      <span class="callout-emoji">💡</span> <strong>The RoPE insight:</strong> If you rotate vector <strong>q</strong> by angle <em>mθ</em> and vector <strong>k</strong> by angle <em>nθ</em>, their dot product depends only on the <em>difference</em> (m-n)θ. Position information enters through the angle, and relative position falls out automatically from the dot product.
+    </div>
+
+    <p>Think of a clock face. If I'm standing at the 3 o'clock position and you're at the 7 o'clock position, the angle <em>between us</em> is 4 hours' worth of rotation — regardless of whether we both shift to 5 o'clock and 9 o'clock. <strong>The relative angle is invariant to absolute position.</strong></p>
+
+    <p>This is a fundamental property of rotations, and it's exactly what we want for encoding relative position in attention. Let's see it in action:</p>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>🔄 Interactive Demo: Rotation Encodes Position</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Drag the sliders to set two token positions. Watch how the <em>relative angle</em> between them stays constant when you shift both by the same amount.</p>
+  <div class="slider-group">
+    <label>Position m:</label>
+    <input type="range" id="rot-m" min="0" max="20" value="2">
+    <span class="slider-val" id="rot-m-val">2</span>
+  </div>
+  <div class="slider-group">
+    <label>Position n:</label>
+    <input type="range" id="rot-n" min="0" max="20" value="5">
+    <span class="slider-val" id="rot-n-val">5</span>
+  </div>
+  <div class="slider-group">
+    <label>θ (base freq):</label>
+    <input type="range" id="rot-theta" min="5" max="45" value="15">
+    <span class="slider-val" id="rot-theta-val">15°</span>
+  </div>
+  <div class="svg-container">
+    <svg id="rotation-svg" width="340" height="340"></svg>
+  </div>
+  <div id="rot-info" style="text-align: center; font-family: system-ui, sans-serif; font-size: 15px; margin-top: 8px;"></div>
+  <div class="demo-caption">The blue vector is q (rotated by mθ), the orange vector is k (rotated by nθ). Their relative angle is always (m−n)θ.</div>
+</div>
+
+<!-- ===================== V. COMPLEX NUMBERS & ROTATION MATRICES ===================== -->
+<div class="content">
+  <section id="sec-complex">
+    <h2 class="section-title">V. Complex Numbers & Rotation Matrices</h2>
+
+    <p>Time for the math — but don't worry, the core idea is simpler than it looks.</p>
+
+    <p>A 2D rotation by angle θ can be written as multiplication by the complex number <span class="math-inline">e^(iθ) = cos θ + i sin θ</span>. If we represent a 2D vector <span class="math-inline">(x₁, x₂)</span> as the complex number <span class="math-inline">x₁ + ix₂</span>, then rotating it by angle θ is just:</p>
+
+    <div class="math-block">
+      (x₁ + ix₂) · e^(iθ) = (x₁cosθ − x₂sinθ) + i(x₁sinθ + x₂cosθ)
+    </div>
+
+    <p>Equivalently, as a <strong>rotation matrix</strong>:</p>
+
+    <div class="math-block">
+      ┌ cosθ  −sinθ ┐ ┌ x₁ ┐<br>
+      │              │ │    │<br>
+      └ sinθ   cosθ ┘ └ x₂ ┘
+    </div>
+
+    <p>RoPE pairs up the dimensions of the embedding vector — dimensions (0,1), (2,3), (4,5), etc. — and applies a <strong>different rotation to each pair</strong>. Position <em>m</em> gets rotation angle <span class="math-inline">mθᵢ</span> for the i-th pair, where <span class="math-inline">θᵢ = 10000^(-2i/d)</span>. Sound familiar? Those are the same frequencies as sinusoidal embeddings!</p>
+
+    <p>The full rotation matrix for a d-dimensional vector at position m is <strong>block-diagonal</strong>: d/2 independent 2×2 rotation blocks, each spinning at a different speed.</p>
+
+    <div class="callout">
+      <span class="callout-emoji">🔧</span> <strong>Implementation shortcut:</strong> Rather than building a huge rotation matrix, you can implement RoPE by treating consecutive pairs of dimensions as complex numbers and multiplying by <span class="math-inline">e^(imθᵢ)</span>. Just a few lines of code.
+    </div>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>🧮 Interactive Demo: The Rotation Matrix</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Set a position and see the block-diagonal rotation matrix. Each 2×2 block rotates a pair of dimensions at its own frequency.</p>
+  <div class="slider-group">
+    <label>Position m:</label>
+    <input type="range" id="mat-pos" min="0" max="50" value="3">
+    <span class="slider-val" id="mat-pos-val">3</span>
+  </div>
+  <div class="slider-group">
+    <label>Model dim d:</label>
+    <input type="range" id="mat-dim" min="4" max="12" value="8" step="2">
+    <span class="slider-val" id="mat-dim-val">8</span>
+  </div>
+  <div id="mat-grid" style="overflow-x: auto; margin-top: 16px;"></div>
+  <div id="mat-info" style="text-align: center; font-family: system-ui, sans-serif; font-size: 13px; color: var(--muted); margin-top: 12px;"></div>
+  <div class="demo-caption">The matrix is block-diagonal — each 2×2 block independently rotates one pair of dimensions. Higher-indexed pairs rotate more slowly.</div>
+</div>
+
+<!-- ===================== VI. RELATIVE POSITION FROM DOT PRODUCTS ===================== -->
+<div class="content">
+  <section id="sec-relative">
+    <h2 class="section-title">VI. Relative Position from Dot Products</h2>
+
+    <p>Here's where the magic happens. In self-attention, we compute the dot product between a query and a key:</p>
+
+    <div class="math-block">
+      score(m, n) = (R(m) · q)ᵀ · (R(n) · k) = qᵀ · R(m)ᵀ · R(n) · k = qᵀ · R(n−m) · k
+    </div>
+
+    <p>Since the transpose of a rotation by angle θ is a rotation by −θ, and composing rotations adds their angles: <span class="math-inline">R(m)ᵀ · R(n) = R(n−m)</span>. <strong>The attention score depends only on the relative position (n−m), not on the absolute positions m and n individually.</strong></p>
+
+    <p>This is extraordinary. We get relative position encoding <strong>for free</strong>, just from the mathematical properties of rotations. No extra parameters. No architectural modifications. Just rotate the queries and keys before computing attention, and relative position information appears automatically in the attention scores.</p>
+
+    <p>Compare this to adding position embeddings: there, the dot product becomes <span class="math-inline">(q + p_m)ᵀ(k + p_n)</span>, which expands to four terms including content-position cross terms that muddy the signal. With RoPE, content and position interact <em>multiplicatively</em> through rotation — a much cleaner factorization.</p>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>🎯 Interactive Demo: Dot Product Depends on Relative Position</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Set positions for q and k. Watch the dot product: it only depends on their <em>difference</em>. Try keeping the gap constant while moving both positions.</p>
+  <div class="grid-2">
+    <div>
+      <div class="slider-group">
+        <label>q position (m):</label>
+        <input type="range" id="dot-m" min="0" max="30" value="3">
+        <span class="slider-val" id="dot-m-val">3</span>
+      </div>
+    </div>
+    <div>
+      <div class="slider-group">
+        <label>k position (n):</label>
+        <input type="range" id="dot-n" min="0" max="30" value="8">
+        <span class="slider-val" id="dot-n-val">8</span>
+      </div>
+    </div>
+  </div>
+  <div id="dot-result" style="text-align: center; margin: 20px 0;"></div>
+  <div class="svg-container">
+    <svg id="dot-chart-svg" width="520" height="160"></svg>
+  </div>
+  <div class="demo-caption">The dot product value depends on (n − m), not on m or n individually. Move both sliders by the same amount — the result stays the same!</div>
+</div>
+
+<!-- ===================== VII. LONG-RANGE DECAY ===================== -->
+<div class="content">
+  <section id="sec-decay">
+    <h2 class="section-title">VII. The Long-Range Decay Property</h2>
+
+    <p>RoPE has another desirable property that emerges naturally: <strong>attention scores tend to decay with distance.</strong> As the relative position (m−n) grows, the rotated query and key vectors become increasingly misaligned on average, leading to lower dot products.</p>
+
+    <p>Why? Each dimension pair rotates at a different frequency. At short distances, most pairs are still roughly aligned. But as distance increases, the faster-rotating pairs become essentially random in their alignment — their contribution averages toward zero. Only the slowest-rotating pairs maintain coherent alignment at long range.</p>
+
+    <p>This creates a natural <strong>inductive bias toward local attention</strong> — nearby tokens contribute more strongly — while still allowing the model to attend to distant tokens when their content is particularly relevant. It's a soft locality bias, not a hard cutoff.</p>
+
+    <div class="callout">
+      <span class="callout-emoji">📉</span> <strong>Think of it as:</strong> At short distances, all frequency "channels" contribute to the dot product. At long distances, the high-frequency channels cancel out (like static), and only the low-frequency channels carry signal. It's a natural low-pass filter on position information.
+    </div>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>📉 Interactive Demo: Attention Decay with Distance</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">See how the expected attention score changes as relative distance increases. Adjust the model dimension to see how more dimensions affect the decay curve.</p>
+  <div class="slider-group">
+    <label>Model dimension d:</label>
+    <input type="range" id="decay-dim" min="8" max="128" value="64" step="8">
+    <span class="slider-val" id="decay-dim-val">64</span>
+  </div>
+  <div class="slider-group">
+    <label>Base frequency:</label>
+    <input type="range" id="decay-base" min="100" max="100000" value="10000" step="100">
+    <span class="slider-val" id="decay-base-val">10000</span>
+  </div>
+  <div class="svg-container">
+    <svg id="decay-svg" width="520" height="220"></svg>
+  </div>
+  <div class="demo-caption">The smooth decay means nearby tokens naturally get higher attention — a free inductive bias toward locality.</div>
+</div>
+
+<!-- ===================== VIII. EXTENDING CONTEXT ===================== -->
+<div class="content">
+  <section id="sec-extending">
+    <h2 class="section-title">VIII. Extending Context: NTK-Aware Scaling & YaRN</h2>
+
+    <p>One of the most active research areas around RoPE is <strong>context length extension</strong> — making a model trained on, say, 4K tokens work well at 32K or even 128K tokens.</p>
+
+    <p>The naive approach is <strong>position interpolation</strong>: if you trained with max position 4096, just divide all positions by 4 to fit 16K tokens into the 0–4096 range. This works surprisingly well but loses resolution — positions that were 1 apart now look only 0.25 apart.</p>
+
+    <h3>NTK-Aware Scaling</h3>
+
+    <p><strong>NTK-aware scaling</strong> (Neural Tangent Kernel-aware) takes a smarter approach. Instead of uniformly scaling all frequencies, it <strong>stretches only the high-frequency components</strong> while leaving the low-frequency ones mostly unchanged. The insight: high-frequency dimensions already complete many full rotations within the training length, so they can handle interpolation easily. Low-frequency dimensions barely complete one rotation, so stretching them would destroy their signal.</p>
+
+    <p>In practice, NTK-aware scaling simply increases the base of the frequency calculation from 10000 to a larger number, like <span class="math-inline">10000 · α^(d/(d-2))</span> where α is the scaling factor.</p>
+
+    <h3>YaRN (Yet another RoPE extensioN)</h3>
+
+    <p><strong>YaRN</strong> combines NTK-aware scaling with an attention temperature correction and a gradual transition between dimensions. It divides dimensions into three groups: those that can be interpolated freely, those that shouldn't be scaled at all, and a transition region in between. This achieves state-of-the-art context extension with minimal quality loss.</p>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>📏 Interactive Demo: Context Length Extension Strategies</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Compare how different scaling strategies modify the rotation frequencies. See the trade-off between extending context and preserving resolution.</p>
+  <div class="slider-group">
+    <label>Scale factor:</label>
+    <input type="range" id="ext-scale" min="1" max="8" value="4" step="1">
+    <span class="slider-val" id="ext-scale-val">4×</span>
+  </div>
+  <div style="display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap;">
+    <button class="btn" id="ext-btn-none" onclick="setExtMethod('none')">Original (No Scaling)</button>
+    <button class="btn btn-outline" id="ext-btn-linear" onclick="setExtMethod('linear')">Linear Interpolation</button>
+    <button class="btn btn-outline" id="ext-btn-ntk" onclick="setExtMethod('ntk')">NTK-Aware</button>
+  </div>
+  <div class="svg-container">
+    <svg id="ext-svg" width="520" height="240"></svg>
+  </div>
+  <div id="ext-info" style="text-align: center; font-family: system-ui, sans-serif; font-size: 14px; margin-top: 8px;"></div>
+  <div class="demo-caption">NTK-aware scaling preserves high-frequency resolution while stretching low-frequency components — the best of both worlds.</div>
+</div>
+
+<!-- ===================== IX. ADOPTION ===================== -->
+<div class="content">
+  <section id="sec-adoption">
+    <h2 class="section-title">IX. Why Every Modern LLM Uses RoPE</h2>
+
+    <p>RoPE went from a single paper in 2021 to <strong>the default position encoding in essentially every major open-source LLM.</strong> Why such rapid, universal adoption?</p>
+
+    <p><strong>1. Relative position for free.</strong> No extra parameters, no architectural changes to the attention mechanism. Just rotate q and k before the dot product.</p>
+
+    <p><strong>2. No sequence length limit.</strong> Unlike learned embeddings, RoPE is defined for any position. Combined with context extension techniques, models can generalize far beyond their training length.</p>
+
+    <p><strong>3. Linear self-attention compatible.</strong> RoPE works with efficient attention variants because it only modifies q and k, not the attention computation itself.</p>
+
+    <p><strong>4. Decaying distance bias.</strong> The natural long-range decay acts as a useful inductive bias without being rigid — the model can still attend to distant tokens when needed.</p>
+
+    <p><strong>5. Computational efficiency.</strong> Applying RoPE is just element-wise multiplication of complex numbers — negligible cost compared to the attention computation itself.</p>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>🏛️ Interactive Demo: The RoPE Family Tree</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Hover over each model to see how it uses RoPE and its context length. Click to see details.</p>
+  <div id="adoption-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 12px;"></div>
+  <div id="adoption-info" style="margin-top: 16px; padding: 16px; background: var(--callout-bg); border-radius: 8px; font-family: system-ui, sans-serif; font-size: 14px; min-height: 60px; display: none;"></div>
+  <div class="demo-caption">From LLaMA to Mistral, RoPE is the position encoding standard for modern LLMs.</div>
+</div>
+
+<!-- ===================== X. IMPLEMENTATION DETAILS ===================== -->
+<div class="content">
+  <section id="sec-implementation">
+    <h2 class="section-title">X. Implementation Details</h2>
+
+    <p>The beauty of RoPE is that the implementation is remarkably concise. Here's the core algorithm:</p>
+
+    <p><strong>Step 1:</strong> Compute the frequency for each dimension pair: <span class="math-inline">θᵢ = 10000^(-2i/d)</span> for i = 0, 1, ..., d/2−1.</p>
+
+    <p><strong>Step 2:</strong> For each position m, compute the angles: <span class="math-inline">mθ₀, mθ₁, ..., mθ_{d/2-1}</span>.</p>
+
+    <p><strong>Step 3:</strong> Pair up consecutive dimensions of the query and key vectors. Treat each pair as a complex number.</p>
+
+    <p><strong>Step 4:</strong> Multiply each complex pair by <span class="math-inline">e^(imθᵢ) = cos(mθᵢ) + i·sin(mθᵢ)</span>.</p>
+
+    <p><strong>Step 5:</strong> Convert back to real pairs. Done!</p>
+
+    <p>In PyTorch, the entire operation is roughly 10 lines of code. The frequencies are precomputed once and cached. The rotation itself is applied every forward pass to q and k (but <em>not</em> to v — value vectors carry content without position encoding).</p>
+
+    <div class="callout">
+      <span class="callout-emoji">⚡</span> <strong>Important detail:</strong> RoPE is applied to queries and keys <em>after</em> the linear projection but <em>before</em> the attention dot product. It's not applied to values — the value vectors should carry pure content information without position encoding baked in.
+    </div>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>⚙️ Interactive Demo: Step-Through RoPE Application</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-bottom: 16px;">Walk through how RoPE transforms a query vector step by step. Use the buttons to advance through each stage.</p>
+  <div style="text-align: center; margin-bottom: 16px;">
+    <div class="step-display">
+      <button class="btn btn-outline" id="impl-prev" onclick="implStep(-1)">← Prev</button>
+      <span class="step-counter" id="impl-step-label">Step 1 / 5</span>
+      <button class="btn" id="impl-next" onclick="implStep(1)">Next →</button>
+    </div>
+  </div>
+  <div id="impl-content" style="min-height: 250px;"></div>
+  <div class="demo-caption">Five simple steps: compute frequencies, compute angles, pair dimensions, rotate as complex numbers, unpack. That's it.</div>
+</div>
+
+<!-- ===================== QUIZ ===================== -->
+<div class="content">
+  <section>
+    <h2 class="section-title">Quick Check: Test Your Understanding</h2>
+    <p>Before we wrap up, let's make sure the key ideas stuck:</p>
+  </section>
+</div>
+
+<div class="demo-container">
+  <h4>🧠 Prediction Challenge</h4>
+  <div id="quiz-area"></div>
+</div>
+
+<!-- ===================== XI. SUMMARY ===================== -->
+<div class="content">
+  <section id="sec-summary">
+    <h2 class="section-title">XI. Summary</h2>
+
+    <div class="summary-box">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li><strong>Transformers are permutation-invariant</strong> without position encoding — they see inputs as unordered sets.</li>
+        <li><strong>Absolute embeddings</strong> (learned or sinusoidal) add position info but encode it separately from content, with a fixed max length.</li>
+        <li><strong>RoPE rotates</strong> the query and key vectors by position-dependent angles instead of adding position vectors.</li>
+        <li>The rotation is applied to <strong>pairs of dimensions</strong>, each at a different frequency, forming a block-diagonal rotation matrix.</li>
+        <li>The dot product of rotated vectors <strong>depends only on relative position</strong> — relative encoding emerges for free from rotation math.</li>
+        <li>RoPE has a natural <strong>long-range decay</strong> — nearby tokens get stronger attention by default.</li>
+        <li><strong>NTK-aware scaling and YaRN</strong> enable context length extension beyond training by smartly adjusting rotation frequencies.</li>
+        <li>RoPE is used in <strong>LLaMA, GPT-NeoX, PaLM, Falcon, Mistral</strong>, and essentially all modern open LLMs.</li>
+        <li>Implementation is ~10 lines of code: pair dimensions, treat as complex numbers, multiply by <span class="math-inline">e^(imθ)</span>.</li>
+      </ul>
+    </div>
+
+    <p>RoPE is one of those ideas that, in retrospect, feels inevitable. Rotations preserve norm, encode relative position through dot products, generalize to arbitrary lengths, and cost almost nothing to compute. It's a beautiful case of the right mathematical tool meeting the right engineering problem.</p>
+
+    <p>The next time you chat with an LLM and it correctly resolves a pronoun that refers back 2000 tokens, spare a thought for the tiny rotations happening inside every attention head — spinning query and key vectors through the complex plane, making "where" and "how far" as natural as breathing.</p>
+  </section>
+</div>
+
+<!-- ===================== XII. RESOURCES ===================== -->
+<div class="content">
+  <section id="sec-resources">
+    <h2 class="section-title">XII. Further Resources</h2>
+
+    <a class="resource-card" href="https://arxiv.org/abs/2104.09864" target="_blank">
+      <span class="resource-emoji">📄</span>
+      <div class="resource-info">
+        <strong>RoFormer: Enhanced Transformer with Rotary Position Embedding</strong>
+        <span>Su et al., 2021 — The original paper introducing RoPE.</span>
+      </div>
+    </a>
+
+    <a class="resource-card" href="https://blog.eleuther.ai/rotary-embeddings/" target="_blank">
+      <span class="resource-emoji">🔬</span>
+      <div class="resource-info">
+        <strong>Rotary Embeddings: A Relative Revolution</strong>
+        <span>EleutherAI — Excellent deep-dive blog post with proofs and intuition.</span>
+      </div>
+    </a>
+
+    <a class="resource-card" href="https://arxiv.org/abs/2309.00071" target="_blank">
+      <span class="resource-emoji">🧶</span>
+      <div class="resource-info">
+        <strong>YaRN: Efficient Context Window Extension</strong>
+        <span>Peng et al., 2023 — State-of-the-art context extension for RoPE models.</span>
+      </div>
+    </a>
+
+    <a class="resource-card" href="https://arxiv.org/abs/2306.15595" target="_blank">
+      <span class="resource-emoji">📐</span>
+      <div class="resource-info">
+        <strong>Extending Context Window via Interpolation</strong>
+        <span>Chen et al., 2023 — The position interpolation paper that kicked off context extension research.</span>
+      </div>
+    </a>
+
+    <a class="resource-card" href="https://arxiv.org/abs/2302.13971" target="_blank">
+      <span class="resource-emoji">🦙</span>
+      <div class="resource-info">
+        <strong>LLaMA: Open and Efficient Foundation Language Models</strong>
+        <span>Touvron et al., 2023 — The influential model family that popularized RoPE in open-source LLMs.</span>
+      </div>
+    </a>
+  </section>
+</div>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <p>Built with care. Inspired by <a href="https://explainers.blog" target="_blank" style="color: var(--accent);">explainers.blog</a>.</p>
+  <p style="margin-top: 8px;">RoFormer & RoPE Explainer · 2024</p>
+</footer>
+
+<!-- ===================== JAVASCRIPT ===================== -->
+<script>
+// ========== UTILITY ==========
+function $(id) { return document.getElementById(id); }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+// ========== I. PERMUTATION DEMO ==========
+const permWords = ["The", "cat", "sat", "on", "the", "mat"];
+let permOrder = [...permWords];
+
+function renderPermDemo() {
+  const cont = $('perm-tokens');
+  cont.innerHTML = '';
+  permOrder.forEach((w, i) => {
+    const el = document.createElement('div');
+    el.className = 'token-box';
+    el.textContent = w;
+    el.style.transition = 'all 0.4s ease';
+    cont.appendChild(el);
+  });
+  renderPermAttn();
+}
+
+function renderPermAttn() {
+  const svg = $('perm-attn-svg');
+  const n = permOrder.length;
+  const w = 500, h = 90;
+  let html = '';
+  // Fixed attention pattern (content-based, doesn't change with order)
+  const fixedScores = [
+    [0.3, 0.15, 0.2, 0.1, 0.15, 0.1],
+    [0.1, 0.35, 0.15, 0.1, 0.15, 0.15],
+    [0.15, 0.2, 0.25, 0.15, 0.1, 0.15],
+    [0.1, 0.1, 0.15, 0.3, 0.2, 0.15],
+    [0.2, 0.1, 0.1, 0.15, 0.3, 0.15],
+    [0.1, 0.15, 0.15, 0.15, 0.1, 0.35]
+  ];
+  const cw = w / n;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const s = fixedScores[i][j];
+      const op = 0.15 + s * 2;
+      html += `<rect x="${j * cw + 4}" y="${i * 14 + 2}" width="${cw - 8}" height="12" rx="2" fill="var(--accent)" opacity="${op}"/>`;
+    }
+  }
+  // Labels
+  for (let i = 0; i < n; i++) {
+    html += `<text x="${i * cw + cw/2}" y="${n * 14 + 18}" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="var(--muted)">${permOrder[i]}</text>`;
+  }
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', n * 14 + 24);
+  svg.innerHTML = html;
+}
+
+function shufflePermDemo() {
+  for (let i = permOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [permOrder[i], permOrder[j]] = [permOrder[j], permOrder[i]];
+  }
+  renderPermDemo();
+}
+
+function resetPermDemo() {
+  permOrder = [...permWords];
+  renderPermDemo();
+}
+
+// ========== II. ABSOLUTE EMBEDDINGS DEMO ==========
+const absTokens = ["The", "cat", "sat", "on", "the", "mat"];
+// Pseudo-random position embeddings (fixed seed)
+function pseudoEmbed(pos) {
+  const vals = [];
+  for (let d = 0; d < 8; d++) {
+    vals.push(Math.sin(pos * (d + 1) * 1.7 + d * 0.3) * 0.6 + Math.cos(pos * (d + 2) * 0.9) * 0.4);
+  }
+  return vals;
+}
+
+function renderAbsDemo() {
+  const cont = $('abs-tokens');
+  cont.innerHTML = '';
+  absTokens.forEach((w, i) => {
+    const el = document.createElement('div');
+    el.className = 'token-box';
+    el.textContent = `${w} [${i}]`;
+    el.onclick = () => showAbsEmbed(i, w);
+    cont.appendChild(el);
+  });
+}
+
+function showAbsEmbed(pos, word) {
+  const vals = pseudoEmbed(pos);
+  const svg = $('abs-embed-svg');
+  const w = 500, h = 120;
+  const bw = 50, gap = 12;
+  const startX = (w - (8 * (bw + gap) - gap)) / 2;
+  let html = '';
+  vals.forEach((v, i) => {
+    const barH = Math.abs(v) * 40;
+    const y = v >= 0 ? 55 - barH : 55;
+    const color = v >= 0 ? 'var(--accent)' : 'var(--orange)';
+    html += `<rect x="${startX + i * (bw + gap)}" y="${y}" width="${bw}" height="${barH}" rx="3" fill="${color}" opacity="0.8"/>`;
+    html += `<text x="${startX + i * (bw + gap) + bw/2}" y="100" text-anchor="middle" font-family="monospace" font-size="11" fill="var(--muted)">d${i}</text>`;
+    html += `<text x="${startX + i * (bw + gap) + bw/2}" y="115" text-anchor="middle" font-family="monospace" font-size="10" fill="var(--text)">${v.toFixed(2)}</text>`;
+  });
+  // Center line
+  html += `<line x1="0" y1="55" x2="${w}" y2="55" stroke="var(--demo-border)" stroke-width="1" stroke-dasharray="4"/>`;
+  svg.innerHTML = html;
+  $('abs-info').innerHTML = `Position embedding for "<strong>${word}</strong>" at position <strong>${pos}</strong>`;
+  $('abs-info').style.color = 'var(--accent)';
+  // Highlight selected
+  document.querySelectorAll('#abs-tokens .token-box').forEach((el, i) => {
+    el.classList.toggle('active', i === pos);
+  });
+}
+
+// ========== III. SINUSOIDAL DEMO ==========
+function updateSinDemo() {
+  const pos = parseInt($('sin-pos').value);
+  const dim = parseInt($('sin-dim').value);
+  $('sin-pos-val').textContent = pos;
+  $('sin-dim-val').textContent = dim * 2;
+
+  const svg = $('sin-wave-svg');
+  const w = 520, h = 200;
+  const freq = 1 / Math.pow(10000, (dim * 2) / 64);
+
+  // Draw wave for all positions
+  let sinPath = 'M';
+  let cosPath = 'M';
+  for (let p = 0; p <= 127; p++) {
+    const x = 40 + (p / 127) * (w - 60);
+    const sinY = h/2 - Math.sin(p * freq) * 70;
+    const cosY = h/2 - Math.cos(p * freq) * 70;
+    sinPath += `${p === 0 ? '' : ' L'}${x},${sinY}`;
+    cosPath += `${p === 0 ? '' : ' L'}${x},${cosY}`;
+  }
+
+  const curX = 40 + (pos / 127) * (w - 60);
+  const sinVal = Math.sin(pos * freq);
+  const cosVal = Math.cos(pos * freq);
+  const sinY = h/2 - sinVal * 70;
+  const cosY = h/2 - cosVal * 70;
+
+  let html = '';
+  // Axes
+  html += `<line x1="40" y1="${h/2}" x2="${w-20}" y2="${h/2}" stroke="var(--demo-border)" stroke-width="1"/>`;
+  html += `<text x="10" y="${h/2 + 4}" font-family="system-ui" font-size="11" fill="var(--muted)">0</text>`;
+  html += `<text x="10" y="25" font-family="system-ui" font-size="11" fill="var(--muted)">+1</text>`;
+  html += `<text x="10" y="${h - 15}" font-family="system-ui" font-size="11" fill="var(--muted)">-1</text>`;
+  // Waves
+  html += `<path d="${sinPath}" fill="none" stroke="var(--accent)" stroke-width="2" opacity="0.7"/>`;
+  html += `<path d="${cosPath}" fill="none" stroke="var(--orange)" stroke-width="2" opacity="0.7"/>`;
+  // Current pos markers
+  html += `<line x1="${curX}" y1="10" x2="${curX}" y2="${h-10}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3"/>`;
+  html += `<circle cx="${curX}" cy="${sinY}" r="6" fill="var(--accent)"/>`;
+  html += `<circle cx="${curX}" cy="${cosY}" r="6" fill="var(--orange)"/>`;
+  // Legend
+  html += `<text x="${w-120}" y="20" font-family="system-ui" font-size="12" fill="var(--accent)">● sin (dim ${dim*2})</text>`;
+  html += `<text x="${w-120}" y="36" font-family="system-ui" font-size="12" fill="var(--orange)">● cos (dim ${dim*2+1})</text>`;
+
+  svg.innerHTML = html;
+  $('sin-values').textContent = `sin(${pos} · θ) = ${sinVal.toFixed(4)}    cos(${pos} · θ) = ${cosVal.toFixed(4)}    θ = 1/10000^(${dim*2}/64) ≈ ${freq.toExponential(2)}`;
+}
+
+$('sin-pos').oninput = updateSinDemo;
+$('sin-dim').oninput = updateSinDemo;
+
+// ========== IV. ROTATION DEMO ==========
+function updateRotDemo() {
+  const m = parseInt($('rot-m').value);
+  const n = parseInt($('rot-n').value);
+  const thetaDeg = parseInt($('rot-theta').value);
+  $('rot-m-val').textContent = m;
+  $('rot-n-val').textContent = n;
+  $('rot-theta-val').textContent = thetaDeg + '°';
+
+  const theta = thetaDeg * Math.PI / 180;
+  const angM = m * theta;
+  const angN = n * theta;
+  const relAng = (n - m) * theta;
+
+  const svg = $('rotation-svg');
+  const cx = 170, cy = 170, r = 130;
+
+  let html = '';
+  // Circle
+  html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--demo-border)" stroke-width="1.5"/>`;
+  html += `<circle cx="${cx}" cy="${cy}" r="3" fill="var(--muted)"/>`;
+
+  // Angle arc (relative)
+  const arcR = 50;
+  const startAng = -angM;
+  const endAng = -angN;
+  const arcStartX = cx + arcR * Math.cos(startAng);
+  const arcStartY = cy + arcR * Math.sin(startAng);
+  const arcEndX = cx + arcR * Math.cos(endAng);
+  const arcEndY = cy + arcR * Math.sin(endAng);
+  const largeArc = Math.abs(relAng) > Math.PI ? 1 : 0;
+  const sweep = relAng >= 0 ? 0 : 1;
+  if (m !== n) {
+    html += `<path d="M${arcStartX},${arcStartY} A${arcR},${arcR} 0 ${largeArc},${sweep} ${arcEndX},${arcEndY}" fill="none" stroke="var(--green)" stroke-width="2" stroke-dasharray="4"/>`;
+  }
+
+  // Vector q (blue)
+  const qx = cx + r * Math.cos(-angM);
+  const qy = cy + r * Math.sin(-angM);
+  html += `<line x1="${cx}" y1="${cy}" x2="${qx}" y2="${qy}" stroke="var(--accent)" stroke-width="3" marker-end="url(#arrow-blue)"/>`;
+  html += `<circle cx="${qx}" cy="${qy}" r="5" fill="var(--accent)"/>`;
+  const qlx = cx + (r + 18) * Math.cos(-angM);
+  const qly = cy + (r + 18) * Math.sin(-angM);
+  html += `<text x="${qlx}" y="${qly}" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="var(--accent)">q (m=${m})</text>`;
+
+  // Vector k (orange)
+  const kx = cx + r * Math.cos(-angN);
+  const ky = cy + r * Math.sin(-angN);
+  html += `<line x1="${cx}" y1="${cy}" x2="${kx}" y2="${ky}" stroke="var(--orange)" stroke-width="3" marker-end="url(#arrow-orange)"/>`;
+  html += `<circle cx="${kx}" cy="${ky}" r="5" fill="var(--orange)"/>`;
+  const klx = cx + (r + 18) * Math.cos(-angN);
+  const kly = cy + (r + 18) * Math.sin(-angN);
+  html += `<text x="${klx}" y="${kly}" text-anchor="middle" font-family="system-ui" font-size="14" font-weight="700" fill="var(--orange)">k (n=${n})</text>`;
+
+  // Arrow markers
+  html = `<defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--accent)"/></marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="var(--orange)"/></marker>
+  </defs>` + html;
+
+  svg.innerHTML = html;
+
+  const relDeg = ((n - m) * thetaDeg);
+  $('rot-info').innerHTML = `Angle of <strong style="color:var(--accent)">q</strong> = ${m}×${thetaDeg}° = <strong>${(m * thetaDeg)}°</strong> &nbsp;|&nbsp; Angle of <strong style="color:var(--orange)">k</strong> = ${n}×${thetaDeg}° = <strong>${(n * thetaDeg)}°</strong> &nbsp;|&nbsp; <strong style="color:var(--green)">Relative: (${n}−${m})×${thetaDeg}° = ${relDeg}°</strong>`;
+}
+
+$('rot-m').oninput = updateRotDemo;
+$('rot-n').oninput = updateRotDemo;
+$('rot-theta').oninput = updateRotDemo;
+
+// ========== V. ROTATION MATRIX DEMO ==========
+function updateMatDemo() {
+  const pos = parseInt($('mat-pos').value);
+  const d = parseInt($('mat-dim').value);
+  $('mat-pos-val').textContent = pos;
+  $('mat-dim-val').textContent = d;
+
+  const grid = $('mat-grid');
+  const base = 10000;
+  const pairs = d / 2;
+
+  let tableHTML = '<table class="compare-table" style="text-align: center;">';
+  // Header
+  tableHTML += '<tr>';
+  for (let c = 0; c < d; c++) {
+    tableHTML += `<th style="text-align:center; padding: 6px 8px; font-size: 11px;">d${c}</th>`;
+  }
+  tableHTML += '</tr>';
+
+  for (let r = 0; r < d; r++) {
+    tableHTML += '<tr>';
+    for (let c = 0; c < d; c++) {
+      const blockR = Math.floor(r / 2);
+      const blockC = Math.floor(c / 2);
+      if (blockR !== blockC) {
+        tableHTML += '<td style="text-align:center; padding:6px 8px; color:#ddd; font-size:12px; font-family:monospace;">0</td>';
+      } else {
+        const i = blockR;
+        const theta_i = 1 / Math.pow(base, (2 * i) / d);
+        const angle = pos * theta_i;
+        const localR = r % 2;
+        const localC = c % 2;
+        let val = 0;
+        if (localR === 0 && localC === 0) val = Math.cos(angle);
+        else if (localR === 0 && localC === 1) val = -Math.sin(angle);
+        else if (localR === 1 && localC === 0) val = Math.sin(angle);
+        else val = Math.cos(angle);
+
+        const intensity = Math.abs(val);
+        const bgColor = val >= 0 ? `rgba(37,99,235,${intensity * 0.3})` : `rgba(234,88,12,${intensity * 0.3})`;
+        tableHTML += `<td style="text-align:center; padding:6px 8px; background:${bgColor}; font-size:12px; font-family:monospace; font-weight:600;">${val.toFixed(2)}</td>`;
+      }
+    }
+    tableHTML += '</tr>';
+  }
+  tableHTML += '</table>';
+  grid.innerHTML = tableHTML;
+
+  let info = 'Frequencies: ';
+  for (let i = 0; i < pairs; i++) {
+    const theta_i = 1 / Math.pow(base, (2 * i) / d);
+    info += `θ<sub>${i}</sub>=${theta_i.toExponential(1)}  `;
+  }
+  $('mat-info').innerHTML = info;
+}
+
+$('mat-pos').oninput = updateMatDemo;
+$('mat-dim').oninput = updateMatDemo;
+
+// ========== VI. DOT PRODUCT DEMO ==========
+function updateDotDemo() {
+  const m = parseInt($('dot-m').value);
+  const n = parseInt($('dot-n').value);
+  $('dot-m-val').textContent = m;
+  $('dot-n-val').textContent = n;
+
+  const d = 64;
+  const base = 10000;
+
+  // Compute dot product of rotated unit vectors
+  // For a fixed q and k vector, the dot product after RoPE depends on (n-m)
+  function computeRoPEDot(relPos) {
+    let dot = 0;
+    for (let i = 0; i < d / 2; i++) {
+      const theta_i = 1 / Math.pow(base, (2 * i) / d);
+      const angle = relPos * theta_i;
+      dot += Math.cos(angle); // simplified: sum of cos(relPos * theta_i)
+    }
+    return dot / (d / 2);
+  }
+
+  const rel = n - m;
+  const dotVal = computeRoPEDot(rel);
+
+  $('dot-result').innerHTML = `
+    <div style="font-family: system-ui, sans-serif;">
+      <span style="font-size: 14px; color: var(--muted);">Relative position:</span>
+      <span class="num-highlight">${n} − ${m} = ${rel}</span>
+      <span style="margin: 0 16px; font-size: 14px; color: var(--muted);">Dot product:</span>
+      <span class="num-highlight" style="background: ${dotVal > 0.5 ? 'var(--green)' : dotVal > 0 ? 'var(--orange)' : 'var(--red)'}">${dotVal.toFixed(4)}</span>
+    </div>
+  `;
+
+  // Chart: dot product vs relative position
+  const svg = $('dot-chart-svg');
+  const sw = 520, sh = 160;
+  const maxRel = 30;
+  let html = '';
+
+  // Axes
+  html += `<line x1="50" y1="${sh-30}" x2="${sw-10}" y2="${sh-30}" stroke="var(--demo-border)" stroke-width="1"/>`;
+  html += `<line x1="50" y1="10" x2="50" y2="${sh-30}" stroke="var(--demo-border)" stroke-width="1"/>`;
+  html += `<text x="${sw/2}" y="${sh-5}" text-anchor="middle" font-family="system-ui" font-size="11" fill="var(--muted)">Relative position (n − m)</text>`;
+  html += `<text x="10" y="10" font-family="system-ui" font-size="11" fill="var(--muted)">Dot</text>`;
+
+  // Bars
+  const barW = (sw - 70) / (2 * maxRel + 1);
+  for (let rp = -maxRel; rp <= maxRel; rp++) {
+    const val = computeRoPEDot(rp);
+    const x = 50 + (rp + maxRel) * barW;
+    const barH = Math.abs(val) * (sh - 50);
+    const y = val >= 0 ? (sh - 30 - barH) : (sh - 30);
+    const isActive = rp === rel;
+    const color = isActive ? 'var(--accent)' : (val >= 0 ? 'rgba(37,99,235,0.2)' : 'rgba(234,88,12,0.2)');
+    html += `<rect x="${x}" y="${y}" width="${Math.max(barW - 1, 1)}" height="${barH}" fill="${color}" rx="1"/>`;
+    if (rp % 10 === 0) {
+      html += `<text x="${x + barW/2}" y="${sh-18}" text-anchor="middle" font-family="system-ui" font-size="9" fill="var(--muted)">${rp}</text>`;
+    }
+  }
+
+  // Highlight current
+  const activeX = 50 + (rel + maxRel) * barW + barW / 2;
+  html += `<line x1="${activeX}" y1="5" x2="${activeX}" y2="${sh-30}" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3"/>`;
+
+  svg.innerHTML = html;
+}
+
+$('dot-m').oninput = updateDotDemo;
+$('dot-n').oninput = updateDotDemo;
+
+// ========== VII. DECAY DEMO ==========
+function updateDecayDemo() {
+  const d = parseInt($('decay-dim').value);
+  const base = parseInt($('decay-base').value);
+  $('decay-dim-val').textContent = d;
+  $('decay-base-val').textContent = base;
+
+  const svg = $('decay-svg');
+  const sw = 520, sh = 220;
+  const maxDist = 512;
+
+  function decayAtDist(dist) {
+    let sum = 0;
+    for (let i = 0; i < d / 2; i++) {
+      const theta_i = 1 / Math.pow(base, (2 * i) / d);
+      sum += Math.cos(dist * theta_i);
+    }
+    return sum / (d / 2);
+  }
+
+  let html = '';
+  // Axes
+  html += `<line x1="50" y1="${sh-30}" x2="${sw-10}" y2="${sh-30}" stroke="var(--demo-border)" stroke-width="1"/>`;
+  html += `<line x1="50" y1="10" x2="50" y2="${sh-30}" stroke="var(--demo-border)" stroke-width="1"/>`;
+  html += `<text x="${sw/2}" y="${sh-5}" text-anchor="middle" font-family="system-ui" font-size="11" fill="var(--muted)">Relative distance</text>`;
+  html += `<text x="8" y="20" font-family="system-ui" font-size="10" fill="var(--muted)">Score</text>`;
+
+  // 0 line
+  const zeroY = sh - 30 - ((sh - 50) * 0.5);
+  html += `<line x1="50" y1="${zeroY}" x2="${sw-10}" y2="${zeroY}" stroke="var(--demo-border)" stroke-width="0.5" stroke-dasharray="3"/>`;
+  html += `<text x="38" y="${zeroY+4}" text-anchor="end" font-family="system-ui" font-size="9" fill="var(--muted)">0</text>`;
+
+  // Curve
+  const steps = 200;
+  let path = 'M';
+  for (let s = 0; s <= steps; s++) {
+    const dist = (s / steps) * maxDist;
+    const val = decayAtDist(dist);
+    const x = 50 + (s / steps) * (sw - 70);
+    const y = sh - 30 - (val + 0.2) / 1.2 * (sh - 50);
+    path += `${s === 0 ? '' : ' L'}${x},${clamp(y, 10, sh - 30)}`;
+  }
+  html += `<path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5"/>`;
+
+  // Fill area under curve
+  html += `<path d="${path} L${sw-20},${sh-30} L50,${sh-30} Z" fill="var(--accent)" opacity="0.08"/>`;
+
+  // Tick marks
+  for (let t = 0; t <= maxDist; t += 128) {
+    const x = 50 + (t / maxDist) * (sw - 70);
+    html += `<text x="${x}" y="${sh-18}" text-anchor="middle" font-family="system-ui" font-size="9" fill="var(--muted)">${t}</text>`;
+  }
+
+  // 1.0 label
+  html += `<text x="38" y="${sh - 30 - (1.2/1.2)*(sh-50) + 4}" text-anchor="end" font-family="system-ui" font-size="9" fill="var(--muted)">1.0</text>`;
+
+  svg.innerHTML = html;
+}
+
+$('decay-dim').oninput = updateDecayDemo;
+$('decay-base').oninput = updateDecayDemo;
+
+// ========== VIII. EXTENSION DEMO ==========
+let extMethod = 'none';
+
+function setExtMethod(method) {
+  extMethod = method;
+  ['none', 'linear', 'ntk'].forEach(m => {
+    $('ext-btn-' + m).className = m === method ? 'btn' : 'btn btn-outline';
+  });
+  updateExtDemo();
+}
+
+function updateExtDemo() {
+  const scale = parseInt($('ext-scale').value);
+  $('ext-scale-val').textContent = scale + '×';
+
+  const svg = $('ext-svg');
+  const sw = 520, sh = 240;
+  const d = 64;
+  const origBase = 10000;
+  const numPairs = 16; // show first 16 pairs
+
+  let html = '';
+  // Axes
+  html += `<line x1="60" y1="${sh-40}" x2="${sw-10}" y2="${sh-40}" stroke="var(--demo-border)" stroke-width="1"/>`;
+  html += `<line x1="60" y1="30" x2="60" y2="${sh-40}" stroke="var(--demo-border)" stroke-width="1"/>`;
+  html += `<text x="${sw/2}" y="${sh-8}" text-anchor="middle" font-family="system-ui" font-size="11" fill="var(--muted)">Dimension pair index (i)</text>`;
+  html += `<text x="10" y="25" font-family="system-ui" font-size="10" fill="var(--muted)">Freq (log)</text>`;
+
+  const barW = (sw - 80) / numPairs;
+
+  function getFreq(i, method, scale) {
+    const origFreq = 1 / Math.pow(origBase, (2 * i) / d);
+    if (method === 'none') return origFreq;
+    if (method === 'linear') return origFreq / scale;
+    if (method === 'ntk') {
+      const newBase = origBase * Math.pow(scale, d / (d - 2));
+      return 1 / Math.pow(newBase, (2 * i) / d);
+    }
+    return origFreq;
+  }
+
+  // Find range for log scale
+  const allFreqs = [];
+  for (let i = 0; i < numPairs; i++) {
+    allFreqs.push(getFreq(i, 'none', 1));
+    allFreqs.push(getFreq(i, extMethod, scale));
+  }
+  const logMin = Math.log10(Math.min(...allFreqs)) - 0.5;
+  const logMax = Math.log10(Math.max(...allFreqs)) + 0.5;
+  const logRange = logMax - logMin;
+
+  for (let i = 0; i < numPairs; i++) {
+    const x = 60 + i * barW;
+    const origFreq = getFreq(i, 'none', 1);
+    const newFreq = getFreq(i, extMethod, scale);
+
+    const origY = sh - 40 - ((Math.log10(origFreq) - logMin) / logRange) * (sh - 80);
+    const newY = sh - 40 - ((Math.log10(newFreq) - logMin) / logRange) * (sh - 80);
+
+    // Original bar (grey)
+    html += `<rect x="${x + 2}" y="${origY}" width="${barW/2 - 3}" height="${sh - 40 - origY}" fill="var(--muted)" opacity="0.2" rx="2"/>`;
+    // New bar (colored)
+    const color = extMethod === 'none' ? 'var(--accent)' : extMethod === 'linear' ? 'var(--orange)' : 'var(--green)';
+    html += `<rect x="${x + barW/2 + 1}" y="${newY}" width="${barW/2 - 3}" height="${sh - 40 - newY}" fill="${color}" opacity="0.7" rx="2"/>`;
+
+    // Label
+    html += `<text x="${x + barW/2}" y="${sh-28}" text-anchor="middle" font-family="system-ui" font-size="9" fill="var(--muted)">${i}</text>`;
+  }
+
+  // Legend
+  html += `<rect x="${sw-180}" y="35" width="10" height="10" fill="var(--muted)" opacity="0.2" rx="1"/>`;
+  html += `<text x="${sw-165}" y="44" font-family="system-ui" font-size="11" fill="var(--muted)">Original</text>`;
+  const lColor = extMethod === 'none' ? 'var(--accent)' : extMethod === 'linear' ? 'var(--orange)' : 'var(--green)';
+  html += `<rect x="${sw-180}" y="52" width="10" height="10" fill="${lColor}" opacity="0.7" rx="1"/>`;
+  const lName = extMethod === 'none' ? 'No scaling' : extMethod === 'linear' ? 'Linear interp.' : 'NTK-aware';
+  html += `<text x="${sw-165}" y="61" font-family="system-ui" font-size="11" fill="var(--muted)">${lName}</text>`;
+
+  svg.innerHTML = html;
+
+  const infoMap = {
+    'none': 'Original frequencies — no scaling applied. Context limited to training length.',
+    'linear': `Linear interpolation (÷${scale}): all frequencies scaled equally. Simple but loses resolution for nearby tokens.`,
+    'ntk': `NTK-aware scaling: high frequencies (left) barely change, low frequencies (right) stretched more. Preserves local resolution while extending context ${scale}×.`
+  };
+  $('ext-info').innerHTML = infoMap[extMethod];
+}
+
+$('ext-scale').oninput = updateExtDemo;
+
+// ========== IX. ADOPTION DEMO ==========
+const adoptionModels = [
+  { name: 'LLaMA', year: 2023, ctx: '2K→128K', detail: 'Meta\'s foundational open LLM family. Used RoPE from the start (LLaMA-1). Later versions extended to 128K context with YaRN-like scaling.', color: 'var(--accent)' },
+  { name: 'LLaMA 2', year: 2023, ctx: '4K', detail: 'Extended training to 2T tokens, kept RoPE. Introduced grouped-query attention alongside RoPE for efficiency.', color: 'var(--accent)' },
+  { name: 'LLaMA 3', year: 2024, ctx: '8K→128K', detail: 'Scaled to 405B parameters. RoPE with increased base frequency (500K) for native longer context.', color: 'var(--accent)' },
+  { name: 'GPT-NeoX', year: 2022, ctx: '2K', detail: 'EleutherAI\'s 20B model. One of the first large-scale models to adopt RoPE, validating it at scale.', color: 'var(--purple)' },
+  { name: 'PaLM', year: 2022, ctx: '2K', detail: 'Google\'s 540B model used RoPE. Demonstrated that RoPE works at extreme scale (the largest model to use it at the time).', color: 'var(--green)' },
+  { name: 'Falcon', year: 2023, ctx: '2K', detail: 'TII\'s 40B/180B models. Used RoPE with their unique multi-query attention architecture.', color: 'var(--orange)' },
+  { name: 'Mistral', year: 2023, ctx: '8K→128K', detail: 'Mistral 7B used RoPE with sliding window attention. A landmark in efficient small models. Later extended context massively.', color: 'var(--red)' },
+  { name: 'Mixtral', year: 2023, ctx: '32K', detail: 'Mixture-of-Experts model. Combined RoPE with MoE architecture for efficient scaling.', color: 'var(--red)' },
+  { name: 'Qwen', year: 2023, ctx: '8K→32K', detail: 'Alibaba\'s model family. Used RoPE with NTK-aware scaling for dynamic context extension.', color: 'var(--purple)' },
+  { name: 'Phi', year: 2023, ctx: '2K→128K', detail: 'Microsoft\'s small model series. Demonstrated RoPE works excellently even at 1.3B scale.', color: 'var(--green)' },
+  { name: 'DeepSeek', year: 2024, ctx: '4K→128K', detail: 'Used RoPE with YaRN context extension. DeepSeek-V2 introduced Multi-head Latent Attention with RoPE.', color: 'var(--orange)' },
+  { name: 'Gemma', year: 2024, ctx: '8K', detail: 'Google\'s open model based on Gemini technology. Uses RoPE as the standard position encoding.', color: 'var(--green)' },
+];
+
+function renderAdoption() {
+  const grid = $('adoption-grid');
+  grid.innerHTML = '';
+  adoptionModels.forEach((model, i) => {
+    const card = document.createElement('div');
+    card.style.cssText = `padding: 14px; border: 2px solid var(--demo-border); border-radius: 8px; cursor: pointer; transition: all 0.2s; text-align: center; font-family: system-ui, sans-serif;`;
+    card.innerHTML = `<div style="font-weight: 700; font-size: 15px; color: ${model.color};">${model.name}</div><div style="font-size: 11px; color: var(--muted);">${model.year} · ${model.ctx}</div>`;
+    card.onmouseenter = () => { card.style.borderColor = model.color; card.style.transform = 'translateY(-3px)'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; };
+    card.onmouseleave = () => { card.style.borderColor = 'var(--demo-border)'; card.style.transform = 'none'; card.style.boxShadow = 'none'; };
+    card.onclick = () => {
+      const info = $('adoption-info');
+      info.style.display = 'block';
+      info.innerHTML = `<strong style="color: ${model.color};">${model.name}</strong> (${model.year}) — Context: ${model.ctx}<br>${model.detail}`;
+    };
+    grid.appendChild(card);
+  });
+}
+
+// ========== X. IMPLEMENTATION STEP-THROUGH ==========
+let implStepIdx = 0;
+const implSteps = [
+  {
+    title: 'Step 1: Compute Base Frequencies',
+    content: `<div class="math-block" style="text-align: left; font-size: 14px; line-height: 2;">
+      <span style="color: var(--muted);"># For each dimension pair i = 0, 1, ..., d/2 - 1:</span><br>
+      θᵢ = 10000<sup>−2i/d</sup><br><br>
+      <span style="color: var(--muted);"># Example with d = 8:</span><br>
+      θ₀ = 10000<sup>−0/8</sup> = 1.0000 &nbsp; <span style="color: var(--green);">← fastest rotation</span><br>
+      θ₁ = 10000<sup>−2/8</sup> = 0.1000<br>
+      θ₂ = 10000<sup>−4/8</sup> = 0.0100<br>
+      θ₃ = 10000<sup>−6/8</sup> = 0.0010 &nbsp; <span style="color: var(--green);">← slowest rotation</span>
+    </div>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-top: 12px;">These frequencies are computed once and cached. They span several orders of magnitude — from fast oscillations to very slow ones.</p>`
+  },
+  {
+    title: 'Step 2: Compute Position-Dependent Angles',
+    content: `<div class="math-block" style="text-align: left; font-size: 14px; line-height: 2;">
+      <span style="color: var(--muted);"># For position m, multiply each base frequency by m:</span><br>
+      angles = [m·θ₀, m·θ₁, m·θ₂, m·θ₃]<br><br>
+      <span style="color: var(--muted);"># Example: position m = 5</span><br>
+      angles = [5×1.0, 5×0.1, 5×0.01, 5×0.001]<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= [<span style="color: var(--accent);">5.0</span>, <span style="color: var(--accent);">0.5</span>, <span style="color: var(--accent);">0.05</span>, <span style="color: var(--accent);">0.005</span>] radians
+    </div>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-top: 12px;">Higher positions → larger angles. The first pair rotates fast (5 radians ≈ 286°), while the last pair barely moves (0.005 rad ≈ 0.3°).</p>`
+  },
+  {
+    title: 'Step 3: Pair Up Dimensions',
+    content: `<div style="text-align: center; margin: 16px 0;">
+      <div style="display: flex; justify-content: center; gap: 4px; flex-wrap: wrap;">
+        <div style="padding: 10px 12px; border-radius: 6px; background: rgba(37,99,235,0.15); font-family: monospace; font-size: 13px; border: 2px solid var(--accent);">
+          <div style="font-size: 10px; color: var(--accent); margin-bottom: 4px;">Pair 0</div>
+          q₀, q₁
+        </div>
+        <div style="padding: 10px 12px; border-radius: 6px; background: rgba(124,58,237,0.15); font-family: monospace; font-size: 13px; border: 2px solid var(--purple);">
+          <div style="font-size: 10px; color: var(--purple); margin-bottom: 4px;">Pair 1</div>
+          q₂, q₃
+        </div>
+        <div style="padding: 10px 12px; border-radius: 6px; background: rgba(22,163,74,0.15); font-family: monospace; font-size: 13px; border: 2px solid var(--green);">
+          <div style="font-size: 10px; color: var(--green); margin-bottom: 4px;">Pair 2</div>
+          q₄, q₅
+        </div>
+        <div style="padding: 10px 12px; border-radius: 6px; background: rgba(234,88,12,0.15); font-family: monospace; font-size: 13px; border: 2px solid var(--orange);">
+          <div style="font-size: 10px; color: var(--orange); margin-bottom: 4px;">Pair 3</div>
+          q₆, q₇
+        </div>
+      </div>
+    </div>
+    <div class="math-block" style="text-align: left; font-size: 14px; line-height: 2;">
+      <span style="color: var(--muted);"># View each pair as a complex number:</span><br>
+      z₀ = q₀ + i·q₁<br>
+      z₁ = q₂ + i·q₃<br>
+      z₂ = q₄ + i·q₅<br>
+      z₃ = q₆ + i·q₇
+    </div>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-top: 12px;">We group the d-dimensional vector into d/2 complex numbers. Each pair will be independently rotated.</p>`
+  },
+  {
+    title: 'Step 4: Rotate (Complex Multiplication)',
+    content: `<div class="math-block" style="text-align: left; font-size: 14px; line-height: 2;">
+      <span style="color: var(--muted);"># Multiply each complex pair by e^(imθᵢ):</span><br>
+      z₀' = z₀ · (cos(m·θ₀) + i·sin(m·θ₀))<br>
+      z₁' = z₁ · (cos(m·θ₁) + i·sin(m·θ₁))<br>
+      z₂' = z₂ · (cos(m·θ₂) + i·sin(m·θ₂))<br>
+      z₃' = z₃ · (cos(m·θ₃) + i·sin(m·θ₃))<br><br>
+      <span style="color: var(--muted);"># Expanding z₀' for example:</span><br>
+      q₀' = q₀·cos(m·θ₀) − q₁·sin(m·θ₀) &nbsp; <span style="color: var(--green);">← real part</span><br>
+      q₁' = q₀·sin(m·θ₀) + q₁·cos(m·θ₀) &nbsp; <span style="color: var(--green);">← imag part</span>
+    </div>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-top: 12px;">This is the heart of RoPE. Each pair is rotated by its own angle. The rotation preserves the magnitude of each pair — only the direction changes.</p>`
+  },
+  {
+    title: 'Step 5: Unpack & Return',
+    content: `<div class="math-block" style="text-align: left; font-size: 14px; line-height: 2;">
+      <span style="color: var(--muted);"># Convert complex numbers back to real pairs:</span><br>
+      q_rotated = [q₀', q₁', q₂', q₃', q₄', q₅', q₆', q₇']<br><br>
+      <span style="color: var(--muted);"># Same process for keys k:</span><br>
+      k_rotated = RoPE(k, position_n)<br><br>
+      <span style="color: var(--muted);"># Now compute attention as usual:</span><br>
+      attention = softmax(q_rotated · k_rotatedᵀ / √d)<br><br>
+      <span style="color: var(--green);">✓ Relative position information is now encoded!</span><br>
+      <span style="color: var(--green);">✓ No extra parameters needed!</span><br>
+      <span style="color: var(--green);">✓ Works for any sequence length!</span>
+    </div>
+    <p style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); margin-top: 12px;">That's it! The rotated q and k are used in standard attention. Values (v) are NOT rotated — they carry pure content.</p>`
+  }
+];
+
+function implStep(dir) {
+  implStepIdx = clamp(implStepIdx + dir, 0, implSteps.length - 1);
+  renderImplStep();
+}
+
+function renderImplStep() {
+  const step = implSteps[implStepIdx];
+  $('impl-step-label').textContent = `Step ${implStepIdx + 1} / ${implSteps.length}`;
+  $('impl-prev').disabled = implStepIdx === 0;
+  $('impl-next').disabled = implStepIdx === implSteps.length - 1;
+  $('impl-prev').style.opacity = implStepIdx === 0 ? '0.4' : '1';
+  $('impl-next').style.opacity = implStepIdx === implSteps.length - 1 ? '0.4' : '1';
+  $('impl-content').innerHTML = `<h3 style="font-size: 20px; margin-bottom: 16px; color: var(--accent);">${step.title}</h3>${step.content}`;
+}
+
+// ========== QUIZ ==========
+const quizQuestions = [
+  {
+    q: "Why are Transformers permutation-invariant without position encoding?",
+    options: [
+      "Because attention uses ReLU activation",
+      "Because the dot product between query and key doesn't depend on input order",
+      "Because of the softmax normalization",
+      "Because of the residual connections"
+    ],
+    correct: 1,
+    explanation: "The self-attention mechanism computes dot products between all pairs of tokens — an inherently order-independent (set) operation. Without position encoding, shuffling inputs produces the same outputs."
+  },
+  {
+    q: "What does RoPE do to the query and key vectors?",
+    options: [
+      "Adds a position-dependent vector to them",
+      "Multiplies them by a position-dependent scalar",
+      "Rotates them by position-dependent angles",
+      "Concatenates position information to them"
+    ],
+    correct: 2,
+    explanation: "RoPE rotates each pair of dimensions by a position-dependent angle. This is a multiplicative (rotation) operation, not an additive one — which is the key difference from earlier approaches."
+  },
+  {
+    q: "Why does the dot product of RoPE-encoded vectors depend only on relative position?",
+    options: [
+      "Because of the softmax normalization",
+      "Because R(m)ᵀ · R(n) = R(n−m) — composing rotations yields the relative rotation",
+      "Because the position vectors are orthogonal",
+      "Because of the layer normalization"
+    ],
+    correct: 1,
+    explanation: "The transpose of a rotation matrix inverts the rotation. So R(m)ᵀ · R(n) = R(-m) · R(n) = R(n-m). The attention score qᵀR(m)ᵀR(n)k = qᵀR(n-m)k depends only on the difference (n-m)."
+  },
+  {
+    q: "Which vectors does RoPE rotate?",
+    options: [
+      "Queries, keys, and values",
+      "Only queries",
+      "Only queries and keys",
+      "Only values"
+    ],
+    correct: 2,
+    explanation: "RoPE is applied only to queries and keys — the vectors involved in the attention score computation. Values are left unrotated because they carry content information that shouldn't be distorted by position encoding."
+  }
+];
+
+function renderQuiz() {
+  const area = $('quiz-area');
+  let html = '';
+  quizQuestions.forEach((q, qi) => {
+    html += `<div style="margin-bottom: 28px;">`;
+    html += `<p style="font-family: system-ui, sans-serif; font-size: 16px; font-weight: 600; margin-bottom: 12px;">${qi + 1}. ${q.q}</p>`;
+    q.options.forEach((opt, oi) => {
+      html += `<button class="quiz-option" id="q${qi}-o${oi}" onclick="checkQuiz(${qi}, ${oi})">${opt}</button>`;
+    });
+    html += `<div class="quiz-feedback" id="q${qi}-fb"></div>`;
+    html += `</div>`;
+  });
+  area.innerHTML = html;
+}
+
+function checkQuiz(qi, oi) {
+  const q = quizQuestions[qi];
+  const fb = $(`q${qi}-fb`);
+  // Reset all options for this question
+  q.options.forEach((_, i) => {
+    const btn = $(`q${qi}-o${i}`);
+    btn.classList.remove('correct', 'wrong');
+    btn.disabled = true;
+    btn.style.cursor = 'default';
+  });
+  // Mark correct/wrong
+  $(`q${qi}-o${q.correct}`).classList.add('correct');
+  if (oi !== q.correct) {
+    $(`q${qi}-o${oi}`).classList.add('wrong');
+  }
+  fb.style.display = 'block';
+  if (oi === q.correct) {
+    fb.style.background = '#dcfce7';
+    fb.innerHTML = `✅ <strong>Correct!</strong> ${q.explanation}`;
+  } else {
+    fb.style.background = '#fce4e4';
+    fb.innerHTML = `❌ <strong>Not quite.</strong> ${q.explanation}`;
+  }
+}
+
+// ========== INIT ==========
+function init() {
+  renderPermDemo();
+  renderAbsDemo();
+  updateSinDemo();
+  updateRotDemo();
+  updateMatDemo();
+  updateDotDemo();
+  updateDecayDemo();
+  setExtMethod('none');
+  renderAdoption();
+  renderImplStep();
+  renderQuiz();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

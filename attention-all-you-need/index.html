@@ -1,0 +1,2324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attention Is All You Need — The Transformer, Explained</title>
+<style>
+:root {
+  --bg: #fafaf8;
+  --text: #1a1a1a;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --muted: #6b7280;
+  --callout-bg: #f8f5f0;
+  --callout-border: #d4a574;
+  --demo-bg: #ffffff;
+  --demo-border: #e5e5e5;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warm: #f59e0b;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.container { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+.wide-container { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Hero ────────────────────────────────────── */
+.hero {
+  text-align: center;
+  padding: 100px 24px 80px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+.hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+.hero .subtitle {
+  font-size: 1.25rem;
+  color: var(--muted);
+  font-style: italic;
+  max-width: 540px;
+  margin: 0 auto 16px;
+  line-height: 1.5;
+}
+.hero .meta {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0.03em;
+}
+
+/* ── Table of Contents ───────────────────────── */
+.toc {
+  max-width: 540px;
+  margin: 0 auto 80px;
+  padding: 32px 36px;
+  background: var(--callout-bg);
+  border-radius: 8px;
+  border: 1px solid var(--demo-border);
+}
+.toc h2 {
+  font-family: system-ui, sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.toc ol { list-style: none; counter-reset: toc-counter; }
+.toc li { counter-increment: toc-counter; margin-bottom: 8px; }
+.toc li::before {
+  content: counter(toc-counter, upper-roman) ".";
+  font-family: system-ui, sans-serif;
+  font-size: 0.8rem;
+  color: var(--accent);
+  display: inline-block;
+  width: 40px;
+  font-weight: 600;
+}
+.toc a {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+.toc a:hover { color: var(--accent); }
+
+/* ── Section Dividers ────────────────────────── */
+.section-divider {
+  text-align: center;
+  margin: 80px 0 48px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+.section-divider::before, .section-divider::after {
+  content: '───';
+  margin: 0 12px;
+  color: var(--demo-border);
+}
+
+/* ── Headings ────────────────────────────────── */
+h2.section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  line-height: 1.25;
+}
+
+h3 {
+  font-size: 1.2rem;
+  margin: 32px 0 12px;
+}
+
+/* ── Paragraphs ──────────────────────────────── */
+.container p, .container ul, .container ol {
+  margin-bottom: 20px;
+}
+
+/* ── Callout ─────────────────────────────────── */
+.callout {
+  background: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  padding: 20px 24px;
+  margin: 28px 0;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.95rem;
+}
+.callout .callout-title {
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--callout-border);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+/* ── Demo Containers ─────────────────────────── */
+.demo-container {
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: 10px;
+  margin: 32px auto;
+  max-width: 780px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.demo-title-bar {
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--demo-border);
+  background: #fdfdfc;
+  font-weight: 600;
+}
+.demo-body { padding: 24px 20px; }
+.demo-caption {
+  font-family: system-ui, sans-serif;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-align: center;
+  padding: 12px 20px 16px;
+  line-height: 1.5;
+}
+
+/* ── Interactive Controls ────────────────────── */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+}
+.slider-row label { min-width: 120px; color: var(--muted); }
+.slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.slider-row .val {
+  min-width: 36px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text);
+}
+
+button.demo-btn {
+  font-family: system-ui, sans-serif;
+  font-size: 0.82rem;
+  padding: 8px 18px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+button.demo-btn:hover { background: #1d4ed8; }
+button.demo-btn.outline {
+  background: transparent;
+  color: var(--accent);
+}
+button.demo-btn.outline:hover { background: var(--accent-light); }
+
+.tag {
+  display: inline-block;
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
+  margin: 2px 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.tag:hover { background: var(--accent); color: white; }
+.tag.active { background: var(--accent); color: white; }
+
+/* ── Quote ───────────────────────────────────── */
+blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 8px 0 8px 24px;
+  margin: 28px 0;
+  font-style: italic;
+  color: var(--muted);
+}
+blockquote cite {
+  display: block;
+  font-style: normal;
+  font-size: 0.85rem;
+  margin-top: 8px;
+  color: var(--accent);
+}
+
+/* ── Inline code ─────────────────────────────── */
+code {
+  font-family: 'SF Mono', 'Menlo', monospace;
+  font-size: 0.85em;
+  background: #f0eeeb;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ── SVG styles ──────────────────────────────── */
+svg text {
+  font-family: system-ui, sans-serif;
+}
+
+/* ── Reveal boxes ────────────────────────────── */
+.reveal-box {
+  border: 1px dashed var(--demo-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+}
+.reveal-box:hover { border-color: var(--accent); background: var(--accent-light); }
+.reveal-box .reveal-prompt { color: var(--accent); font-weight: 600; }
+.reveal-box .reveal-content {
+  display: none;
+  margin-top: 12px;
+  font-family: Georgia, serif;
+  color: var(--text);
+}
+.reveal-box.open .reveal-content { display: block; }
+.reveal-box.open { border-style: solid; border-color: var(--accent); background: #f8faff; }
+
+/* ── Step indicator ──────────────────────────── */
+.step-indicator {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 16px 0;
+}
+.step-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--demo-border);
+  transition: all 0.3s;
+}
+.step-dot.active { background: var(--accent); transform: scale(1.3); }
+
+/* ── Token highlight ─────────────────────────── */
+.token-box {
+  display: inline-block;
+  padding: 4px 10px;
+  margin: 3px;
+  border-radius: 6px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s;
+  cursor: default;
+}
+
+/* ── Resources ───────────────────────────────── */
+.resource-list { list-style: none; }
+.resource-list li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--demo-border);
+  font-size: 0.95rem;
+}
+.resource-list li:last-child { border-bottom: none; }
+.resource-list a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.resource-list a:hover { text-decoration: underline; }
+.resource-list .resource-desc {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ── Footer ──────────────────────────────────── */
+footer {
+  text-align: center;
+  padding: 60px 24px 80px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ── Matrix visualization ────────────────────── */
+.matrix-grid {
+  display: inline-grid;
+  gap: 2px;
+  margin: 8px;
+  vertical-align: middle;
+}
+.matrix-cell {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  transition: all 0.4s;
+}
+
+/* ── Responsive ──────────────────────────────── */
+@media (max-width: 600px) {
+  body { font-size: 17px; }
+  .hero h1 { font-size: 1.9rem; }
+  .demo-body { padding: 16px 12px; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 100%; }
+}
+
+/* ── Animations ──────────────────────────────── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+.fade-in { animation: fadeIn 0.5s ease forwards; }
+
+/* ── Attention heatmap cell ──────────────────── */
+.attn-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px; height: 56px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  transition: all 0.3s;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.attn-cell:hover { transform: scale(1.15); z-index: 2; position: relative; }
+
+/* ── Progress bar ────────────────────────────── */
+.progress-bar-track {
+  height: 8px;
+  background: var(--demo-border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* ── Input field ─────────────────────────────── */
+.demo-input {
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  border: 1px solid var(--demo-border);
+  border-radius: 6px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.demo-input:focus { border-color: var(--accent); }
+
+/* ── Challenge box ───────────────────────────── */
+.challenge-box {
+  background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+  border: 1px solid #93c5fd;
+  border-radius: 10px;
+  padding: 20px;
+  margin: 20px 0;
+}
+.challenge-box .challenge-label {
+  font-family: system-ui, sans-serif;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* ── Tooltip ─────────────────────────────────── */
+.tooltip-container { position: relative; display: inline-block; }
+.tooltip-text {
+  visibility: hidden;
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: white;
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 10;
+}
+.tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
+
+/* ── Tab system ──────────────────────────────── */
+.tab-row {
+  display: flex;
+  border-bottom: 2px solid var(--demo-border);
+  margin-bottom: 16px;
+}
+.tab-btn {
+  font-family: system-ui, sans-serif;
+  font-size: 0.8rem;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ HERO ═══ -->
+<header class="hero">
+  <h1>Attention Is All You Need</h1>
+  <p class="subtitle">What if the secret to understanding language isn't reading word by word—but seeing everything at once?</p>
+  <p class="meta">A visual, interactive guide to the paper that changed AI forever · Vaswani et al., 2017</p>
+</header>
+
+<!-- ═══════════════════════════════════════════ TABLE OF CONTENTS ═══ -->
+<nav class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#sec-1">The Bottleneck — Why RNNs Had to Go</a></li>
+    <li><a href="#sec-2">The Big Idea — Attention as the Whole Story</a></li>
+    <li><a href="#sec-3">The Encoder-Decoder Blueprint</a></li>
+    <li><a href="#sec-4">Self-Attention — The Heart of the Machine</a></li>
+    <li><a href="#sec-5">Multi-Head Attention — Seeing in Parallel</a></li>
+    <li><a href="#sec-6">Positional Encoding — Teaching Order Without Sequence</a></li>
+    <li><a href="#sec-7">Feed-Forward Networks &amp; Layer Normalization</a></li>
+    <li><a href="#sec-8">The Decoder &amp; Masked Attention</a></li>
+    <li><a href="#sec-9">Training the Transformer</a></li>
+    <li><a href="#sec-10">Scaling &amp; Impact — The Cambrian Explosion</a></li>
+    <li><a href="#sec-summary">The Big Picture</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════════════════════════════════════════ OPENING HOOK ═══ -->
+<div class="container">
+  <p>Imagine you're reading a novel. Your eyes don't march rigidly left to right, one word at a time, waiting patiently for each sentence to reveal itself. No — you skip ahead, dart back, linger on a word that echoes something three chapters ago. You hold the whole page in your peripheral vision, and your brain somehow stitches meaning from all of it <em>simultaneously</em>.</p>
+
+  <p>For decades, the machines we built to process language couldn't do this. They were forced to read word by word, plodding through sentences like a tourist with a phrase book — each new word had to wait its turn. By 2017, researchers at Google had had enough. In a paper with the almost-audacious title <strong>"Attention Is All You Need,"</strong> eight authors proposed an architecture that threw away the sequential bottleneck entirely.</p>
+
+  <p>They called it the <strong>Transformer</strong>. It could look at every word in a sentence at once and decide — on the fly — which words matter most to which other words. The result? It learned language faster, it learned it better, and it did so at a scale that would, in the following years, give rise to GPT, BERT, PaLM, LLaMA, and every large language model you've ever heard of. This is the story of how that happened — and by the end, you'll understand it well enough to explain it at dinner.</p>
+
+  <blockquote>
+    "The Transformer is arguably the most impactful architecture innovation of the decade."
+    <cite>— Oriol Vinyals, DeepMind</cite>
+  </blockquote>
+</div>
+
+<!-- ═══════════════════════════════════════ I. THE BOTTLENECK ═══ -->
+<div class="section-divider" id="sec-1">I</div>
+<div class="container">
+  <h2 class="section-title">The Bottleneck — Why RNNs Had to Go</h2>
+
+  <p>Before the Transformer, the dominant architectures for language were <strong>Recurrent Neural Networks (RNNs)</strong> and their fancier cousin, the <strong>Long Short-Term Memory (LSTM)</strong>. Think of an RNN like a person listening to a long voicemail: they process each word in order, keeping a mental "summary" that they update with each new word.</p>
+
+  <p>That sounds reasonable — until the voicemail gets long. By the 200th word, the summary of word 3 is a faded ghost. Information decays. LSTMs added clever gates to fight this forgetting, but the fundamental problem remained: <strong>everything was sequential</strong>.</p>
+
+  <p>Sequential processing creates two brutal problems. First, it's <em>slow</em> — you can't process word 50 until you've finished word 49, which means you can't parallelize the computation. GPUs are built for parallel work; RNNs barely use them. Second, distant words struggle to influence each other. If a pronoun in position 80 refers to a noun in position 5, the signal has to survive 75 steps of compression and transformation.</p>
+
+  <p>By 2016, the AI community knew attention mechanisms — small modules that let a model "peek" at all positions — were powerful supplements to RNNs. The radical question the Transformer authors asked was: <em>What if attention isn't just the supplement? What if it's the entire thing?</em></p>
+</div>
+
+<!-- DEMO 1: RNN vs Transformer speed -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Sequential vs. Parallel Processing</div>
+  <div class="demo-body" id="demo-rnn-vs-transformer">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Drag the slider to change the sequence length, then watch how RNNs must process words one at a time while Transformers process them all at once.</p>
+    <div class="slider-row">
+      <label>Sequence length:</label>
+      <input type="range" id="seq-len-slider" min="3" max="16" value="8">
+      <span class="val" id="seq-len-val">8</span>
+    </div>
+    <div style="display: flex; gap: 20px; margin-top: 16px; flex-wrap: wrap;">
+      <div style="flex:1; min-width: 250px;">
+        <div style="font-family: system-ui, sans-serif; font-size: 0.78rem; font-weight: 600; margin-bottom: 8px; color: var(--danger);">RNN — Sequential</div>
+        <svg id="rnn-svg" width="100%" height="60" viewBox="0 0 340 60"></svg>
+        <div style="font-family: system-ui, sans-serif; font-size: 0.78rem; color: var(--muted);">Steps: <strong id="rnn-steps">8</strong></div>
+      </div>
+      <div style="flex:1; min-width: 250px;">
+        <div style="font-family: system-ui, sans-serif; font-size: 0.78rem; font-weight: 600; margin-bottom: 8px; color: var(--success);">Transformer — Parallel</div>
+        <svg id="transformer-svg" width="100%" height="60" viewBox="0 0 340 60"></svg>
+        <div style="font-family: system-ui, sans-serif; font-size: 0.78rem; color: var(--muted);">Steps: <strong id="transformer-steps">1</strong></div>
+      </div>
+    </div>
+    <div style="text-align: center; margin-top: 12px;">
+      <button class="demo-btn" id="btn-animate-seq">▶ Animate</button>
+    </div>
+  </div>
+  <div class="demo-caption">The RNN processes tokens one by one (O(n) steps). The Transformer processes all tokens simultaneously (O(1) layers, parallel).</div>
+</div>
+
+<div class="container">
+  <div class="callout">
+    <div class="callout-title">Technical Aside</div>
+    RNNs have O(n) sequential operations for a length-n sequence. Transformers have O(1) sequential operations per layer — all positions are computed in parallel. The trade-off? Transformers use O(n²) memory for attention, which we'll explore later.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ II. THE BIG IDEA ═══ -->
+<div class="section-divider" id="sec-2">II</div>
+<div class="container">
+  <h2 class="section-title">The Big Idea — Attention as the Whole Story</h2>
+
+  <p>Here's the core intuition of the Transformer: <strong>to understand a word, look at every other word and decide how much each one matters</strong>. That's it. That's the tweet.</p>
+
+  <p>Think of it like a cocktail party. You're standing in a room full of people talking. You can hear everyone, but you naturally <em>attend</em> to the voices most relevant to you — the person telling the joke you're laughing at, the friend waving from across the room, the waiter offering champagne. Your brain computes a kind of "relevance score" for each voice and tunes in accordingly.</p>
+
+  <p>The Transformer does exactly this, but with words. For every word in a sentence, it computes a relevance score with every other word. Those scores become <strong>attention weights</strong> — a distribution that sums to 1.0. Then it creates a new representation of that word by taking a weighted combination of all the other words' representations.</p>
+
+  <p>The result is that every output position has "seen" the entire input. No information bottleneck. No fading memory. Just: look at everything, focus on what matters.</p>
+</div>
+
+<!-- DEMO 2: Cocktail party attention -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · The Cocktail Party — Attention as Relevance</div>
+  <div class="demo-body" id="demo-cocktail">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Click on any word below to see which other words it "attends" to most strongly. The line thickness and opacity show the attention weight.</p>
+    <div id="cocktail-sentence" style="text-align: center; margin-bottom: 8px; min-height: 40px;"></div>
+    <svg id="cocktail-svg" width="100%" height="100" viewBox="0 0 680 100"></svg>
+    <div id="cocktail-weights" style="text-align: center; font-family: system-ui, sans-serif; font-size: 0.8rem; color: var(--muted); min-height: 24px;"></div>
+  </div>
+  <div class="demo-caption">Click a word to see simulated attention weights. Notice how "it" attends heavily to "cat" — this is how attention resolves pronoun references.</div>
+</div>
+
+<div class="container">
+  <p>This seemingly simple idea — weighted averaging over the whole sequence — turns out to be extraordinarily powerful. It lets the model capture long-range dependencies trivially (word 1 can attend to word 500 in a single step), and because every word is processed simultaneously, training on GPUs becomes dramatically faster.</p>
+
+  <div class="callout">
+    <div class="callout-title">Why "All You Need"?</div>
+    The paper's title is a deliberate provocation. Previous work used attention <em>on top of</em> RNNs (like the famous Bahdanau attention in seq2seq models). The Transformer says: throw away the RNN entirely. Attention, and attention alone, is sufficient. Bold claim. It was right.
+  </div>
+</div>
+
+<!-- ══════════════════════════ III. ENCODER-DECODER ═══ -->
+<div class="section-divider" id="sec-3">III</div>
+<div class="container">
+  <h2 class="section-title">The Encoder-Decoder Blueprint</h2>
+
+  <p>The original Transformer was designed for <strong>machine translation</strong> — turning an English sentence into French. This is a classic <strong>sequence-to-sequence</strong> task, and the architecture reflects it with two main halves: an <strong>encoder</strong> and a <strong>decoder</strong>.</p>
+
+  <p>Think of it like a relay race. The <strong>encoder</strong> reads the entire input sentence and builds a rich, contextual representation of every word. It's like a scholar carefully reading a document and highlighting every important connection. The <strong>decoder</strong> then uses those representations to generate the output sentence, one word at a time, consulting the encoder's notes at each step.</p>
+
+  <p>The encoder is a stack of N identical layers (the paper uses N = 6). Each layer has two sub-components: a <strong>multi-head self-attention</strong> mechanism and a <strong>position-wise feed-forward network</strong>. The decoder is also N layers, but with an extra sub-component: <strong>cross-attention</strong> that attends to the encoder's output.</p>
+
+  <p>Every sub-component is wrapped in a <strong>residual connection</strong> (add the input to the output) and <strong>layer normalization</strong>. These are the architectural tricks that make deep stacks of layers trainable.</p>
+</div>
+
+<!-- DEMO 3: Encoder-Decoder architecture explorer -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Encoder-Decoder Architecture Explorer</div>
+  <div class="demo-body">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Click on each component to learn what it does. Hover over arrows to see the data flow.</p>
+    <svg id="arch-svg" width="100%" height="520" viewBox="0 0 720 520"></svg>
+    <div id="arch-info" style="font-family: system-ui, sans-serif; font-size: 0.88rem; color: var(--text); min-height: 60px; padding: 12px; background: var(--accent-light); border-radius: 6px; margin-top: 12px; display: none;"></div>
+  </div>
+  <div class="demo-caption">The full Transformer architecture. Click blocks to explore. The encoder (left) processes the input; the decoder (right) generates the output.</div>
+</div>
+
+<div class="container">
+  <p>A key subtlety: the encoder processes the <em>entire</em> input in parallel, while the decoder generates output <em>autoregressively</em> — one token at a time. During training, the decoder uses a clever trick called <strong>masking</strong> to prevent it from peeking at future tokens (more on this in Section VIII).</p>
+</div>
+
+<!-- ════════════════════════ IV. SELF-ATTENTION ═══ -->
+<div class="section-divider" id="sec-4">IV</div>
+<div class="container">
+  <h2 class="section-title">Self-Attention — The Heart of the Machine</h2>
+
+  <p>Self-attention is where the magic lives. Let's break it down with surgical precision.</p>
+
+  <p>Every word in the input starts as an <strong>embedding</strong> — a vector of numbers that roughly encodes what the word means. Self-attention transforms these embeddings by mixing in information from every other word, weighted by relevance.</p>
+
+  <p>Here's the recipe. For each word, we create three vectors by multiplying the embedding by three learned weight matrices:</p>
+
+  <p>🔑 <strong>Query (Q)</strong> — "What am I looking for?" — like a search query.<br>
+  🗝️ <strong>Key (K)</strong> — "What do I contain?" — like a label on a filing cabinet.<br>
+  📄 <strong>Value (V)</strong> — "What information do I carry?" — like the file inside.</p>
+
+  <p>To compute attention for one word, we take its <strong>Query</strong> and dot-product it with every word's <strong>Key</strong>. This gives us a raw "compatibility score." We scale by <code>1/√d_k</code> (to prevent the dot products from getting too large), apply <strong>softmax</strong> to get a probability distribution, then multiply by the <strong>Values</strong>.</p>
+
+  <p>In equation form: <code style="font-size: 1rem;">Attention(Q, K, V) = softmax(QKᵀ / √d_k) · V</code></p>
+</div>
+
+<!-- DEMO 4: QKV interactive computation -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Query-Key-Value Computation — Step by Step</div>
+  <div class="demo-body" id="demo-qkv">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Step through the self-attention computation for a 4-word sentence. Click "Next Step" to advance.</p>
+    <div style="text-align: center; margin-bottom: 12px;">
+      <span class="tag active" style="pointer-events:none;">The</span>
+      <span class="tag active" style="pointer-events:none;">cat</span>
+      <span class="tag active" style="pointer-events:none;">sat</span>
+      <span class="tag active" style="pointer-events:none;">down</span>
+    </div>
+    <div class="step-indicator" id="qkv-steps"></div>
+    <div id="qkv-display" style="min-height: 200px;"></div>
+    <div style="text-align: center; margin-top: 16px;">
+      <button class="demo-btn outline" id="btn-qkv-prev">← Previous</button>
+      <button class="demo-btn" id="btn-qkv-next">Next Step →</button>
+    </div>
+  </div>
+  <div class="demo-caption">Watch how each word's query is compared against all keys, scaled, softmax'd, and finally used to weight the values.</div>
+</div>
+
+<div class="container">
+  <div class="callout">
+    <div class="callout-title">Why Scale by √d_k ?</div>
+    If d_k (the dimension of the key vectors) is large, the dot products can become very large in magnitude, pushing the softmax into regions where its gradient is tiny. Dividing by √d_k keeps the values in a "nice" range. For d_k = 64, that's dividing by 8. A small trick with huge consequences for training stability.
+  </div>
+
+  <p>The beauty of this formulation is that it's entirely made of matrix multiplications — <em>the thing GPUs are best at</em>. No loops, no sequential dependencies. Every word's attention can be computed simultaneously.</p>
+</div>
+
+<!-- ══════════════════ V. MULTI-HEAD ATTENTION ═══ -->
+<div class="section-divider" id="sec-5">V</div>
+<div class="container">
+  <h2 class="section-title">Multi-Head Attention — Seeing in Parallel</h2>
+
+  <p>One set of attention weights captures one type of relationship. But language is rich — a word might simultaneously need to know about its syntactic role, the subject of the sentence, the sentiment of the phrase, and the topic of the paragraph.</p>
+
+  <p><strong>Multi-head attention</strong> solves this by running several attention operations in parallel, each with its own learned Q, K, V weight matrices. It's like having multiple spotlights at a theater, each illuminating a different aspect of the scene.</p>
+
+  <p>The original Transformer uses <strong>8 heads</strong>. If the model dimension is 512, each head works in a 64-dimensional subspace (512 ÷ 8 = 64). After all heads compute their attention independently, their outputs are concatenated and multiplied by one final weight matrix to combine them.</p>
+
+  <p>In practice, different heads learn to attend to different things. One head might learn syntax (subject–verb relationships), another might learn coreference ("it" → "cat"), and yet another might focus on adjacent words for local structure.</p>
+</div>
+
+<!-- DEMO 5: Multi-head attention visualizer -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Multi-Head Attention Visualizer</div>
+  <div class="demo-body" id="demo-multihead">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Click on different attention heads to see how each one focuses on different relationships in the sentence <em>"The animal didn't cross the street because it was too tired."</em></p>
+    <div style="text-align: center; margin-bottom: 16px;" id="head-selector"></div>
+    <div id="multihead-display" style="overflow-x: auto;"></div>
+  </div>
+  <div class="demo-caption">Each head learns a different attention pattern. Head A captures coreference (it → animal), Head B captures local adjacency, and so on.</div>
+</div>
+
+<div class="container">
+  <blockquote>
+    "Multi-head attention allows the model to jointly attend to information from different representation subspaces at different positions."
+    <cite>— Vaswani et al., 2017</cite>
+  </blockquote>
+
+  <div class="reveal-box" onclick="this.classList.toggle('open')">
+    <div class="reveal-prompt">🤔 Click to reveal: Why not just use a bigger single head?</div>
+    <div class="reveal-content">
+      A single head with the same total dimensions would have the same parameter count. But multi-head attention is empirically much better because it allows the model to capture <em>different types</em> of relationships in parallel. It's the difference between having one very bright flashlight and eight moderate flashlights pointed in different directions — you illuminate more of the room with the latter.
+    </div>
+  </div>
+</div>
+
+<!-- ═════════════════ VI. POSITIONAL ENCODING ═══ -->
+<div class="section-divider" id="sec-6">VI</div>
+<div class="container">
+  <h2 class="section-title">Positional Encoding — Teaching Order Without Sequence</h2>
+
+  <p>Here's a puzzle. We've built an architecture that processes all words simultaneously, with no inherent notion of order. But "the cat sat on the mat" and "the mat sat on the cat" are very different sentences. How does the Transformer know which word comes first?</p>
+
+  <p>The answer is <strong>positional encoding</strong> — we literally <em>add</em> information about each word's position to its embedding before feeding it into the model. The Transformer uses a clever scheme based on <strong>sinusoidal functions</strong>:</p>
+
+  <p><code>PE(pos, 2i) = sin(pos / 10000^(2i/d_model))</code><br>
+  <code>PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))</code></p>
+
+  <p>Why sines and cosines? Because for any fixed offset <em>k</em>, the encoding at position <em>pos + k</em> can be expressed as a linear function of the encoding at position <em>pos</em>. This means the model can easily learn to attend to <strong>relative positions</strong> — "the word three spots to my left" — not just absolute positions.</p>
+
+  <p>It's like a clever address system: instead of just numbering houses 1, 2, 3, you encode each address as a pattern of frequencies that makes it trivial to compute "how far is house A from house B?"</p>
+</div>
+
+<!-- DEMO 6: Positional encoding explorer -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Positional Encoding Explorer</div>
+  <div class="demo-body" id="demo-posenc">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Explore the sinusoidal positional encoding. Drag the sliders to change position and dimension. Watch how different dimensions oscillate at different frequencies.</p>
+    <div class="slider-row">
+      <label>Position (pos):</label>
+      <input type="range" id="pos-slider" min="0" max="49" value="0">
+      <span class="val" id="pos-val">0</span>
+    </div>
+    <div class="slider-row">
+      <label>Model dim (d):</label>
+      <input type="range" id="dim-slider" min="8" max="128" value="64" step="8">
+      <span class="val" id="dim-val">64</span>
+    </div>
+    <canvas id="posenc-canvas" width="720" height="200" style="width: 100%; border-radius: 6px;"></canvas>
+    <div style="text-align: center; margin-top: 8px;">
+      <button class="demo-btn outline" id="btn-posenc-animate">▶ Animate Position Sweep</button>
+    </div>
+  </div>
+  <div class="demo-caption">Each row is a position (y-axis), each column is a dimension (x-axis). Low dimensions oscillate slowly; high dimensions oscillate rapidly. This creates a unique "fingerprint" for every position.</div>
+</div>
+
+<div class="container">
+  <div class="callout">
+    <div class="callout-title">Learned vs. Fixed Positional Encodings</div>
+    The original paper actually tested both sinusoidal (fixed) and learned positional encodings, finding nearly identical results. Later models like BERT and GPT use learned positional embeddings, while some newer architectures like RoPE (Rotary Position Embedding) return to clever mathematical formulations.
+  </div>
+</div>
+
+<!-- ════════════ VII. FEED-FORWARD & LAYER NORM ═══ -->
+<div class="section-divider" id="sec-7">VII</div>
+<div class="container">
+  <h2 class="section-title">Feed-Forward Networks &amp; Layer Normalization</h2>
+
+  <p>After each attention sub-layer comes a surprisingly simple component: a <strong>position-wise feed-forward network (FFN)</strong>. It's just two linear transformations with a ReLU activation in between:</p>
+
+  <p><code>FFN(x) = max(0, xW₁ + b₁)W₂ + b₂</code></p>
+
+  <p>Think of attention as the "communication" step — where words talk to each other — and the FFN as the "thinking" step — where each word privately processes the information it just gathered. Attention is inter-token; FFN is intra-token.</p>
+
+  <p>The inner dimension of the FFN is typically 4× the model dimension. For d_model = 512, the FFN expands to 2048, then projects back down to 512. This expansion gives the network a "wider workspace" to compute in before compressing back down.</p>
+
+  <p>Wrapping every sub-layer is <strong>layer normalization</strong> and a <strong>residual connection</strong>. The residual connection means the output of each sub-layer is <code>LayerNorm(x + SubLayer(x))</code>. Residual connections let gradients flow directly through the network — a critical trick borrowed from ResNets — and layer normalization stabilizes the magnitudes of the hidden states.</p>
+</div>
+
+<!-- DEMO 7: Residual + LayerNorm interactive -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Residual Connections &amp; Layer Normalization</div>
+  <div class="demo-body" id="demo-residual">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">This demo shows how residual connections preserve the input signal. Toggle them on/off and adjust the number of layers to see how signal degrades without residuals.</p>
+    <div class="slider-row">
+      <label>Number of layers:</label>
+      <input type="range" id="layers-slider" min="1" max="24" value="6">
+      <span class="val" id="layers-val">6</span>
+    </div>
+    <div style="text-align: center; margin: 12px 0;">
+      <button class="demo-btn" id="btn-residual-toggle">Residual Connections: ON ✓</button>
+      <button class="demo-btn outline" id="btn-layernorm-toggle" style="margin-left: 8px;">Layer Norm: ON ✓</button>
+    </div>
+    <canvas id="residual-canvas" width="720" height="220" style="width: 100%; border-radius: 6px;"></canvas>
+  </div>
+  <div class="demo-caption">Without residual connections, the original signal vanishes after many layers (vanishing gradient). With them, the signal — and the gradient — can flow freely.</div>
+</div>
+
+<div class="container">
+  <div class="callout">
+    <div class="callout-title">Where Most Parameters Live</div>
+    Surprisingly, the feed-forward layers contain the majority of the Transformer's parameters. In the base model (d=512, FFN=2048), each FFN sub-layer has 512 × 2048 + 2048 × 512 ≈ 2.1M parameters, versus about 1.05M for the attention sub-layer. Recent research suggests FFNs may serve as "memory banks" — storing factual knowledge.
+  </div>
+</div>
+
+<!-- ═══════════════ VIII. THE DECODER & MASKING ═══ -->
+<div class="section-divider" id="sec-8">VIII</div>
+<div class="container">
+  <h2 class="section-title">The Decoder &amp; Masked Attention</h2>
+
+  <p>The decoder is where output happens. It's tasked with generating the target sequence one token at a time, each time looking back at what it has generated so far <em>and</em> consulting the encoder's rich representation of the input.</p>
+
+  <p>The decoder has three sub-layers per block (compared to the encoder's two): <strong>masked self-attention</strong>, <strong>cross-attention</strong>, and the same <strong>feed-forward network</strong>.</p>
+
+  <p><strong>Masked self-attention</strong> is the key innovation here. When the decoder processes position <em>i</em>, it should only attend to positions ≤ <em>i</em>. Why? Because at test time, we don't have the future tokens — we're generating them! The mask sets all attention weights for future positions to −∞ before the softmax, effectively zeroing them out.</p>
+
+  <p><strong>Cross-attention</strong> (sometimes called encoder-decoder attention) is where the decoder asks questions of the encoder. The decoder provides the Queries (from its own hidden states), while the Keys and Values come from the encoder's output. This is how the decoder knows what the input said.</p>
+</div>
+
+<!-- DEMO 8: Masked attention -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Masked vs. Unmasked Attention</div>
+  <div class="demo-body" id="demo-mask">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Toggle between masked and unmasked attention matrices. In masked attention, future positions (upper-right triangle) are blocked — the model can't cheat by looking ahead!</p>
+    <div style="text-align: center; margin-bottom: 16px;">
+      <button class="demo-btn" id="btn-mask-toggle">Show Mask: OFF</button>
+    </div>
+    <div style="text-align: center;">
+      <canvas id="mask-canvas" width="420" height="420" style="border-radius: 8px; max-width: 100%;"></canvas>
+    </div>
+    <div id="mask-explanation" style="font-family: system-ui, sans-serif; font-size: 0.82rem; color: var(--muted); text-align: center; margin-top: 12px;">
+      Full self-attention: every position can attend to every other position.
+    </div>
+  </div>
+  <div class="demo-caption">The causal mask ensures the decoder can only attend to past and present tokens, never the future. This is essential for autoregressive generation.</div>
+</div>
+
+<div class="container">
+  <p>During training, a beautiful trick called <strong>teacher forcing</strong> lets us parallelize even the decoder. We feed the entire correct target sequence (shifted right) and use masking to prevent cheating. This means the entire model — encoder and decoder — can be trained with a single forward pass over the full sequences.</p>
+
+  <div class="reveal-box" onclick="this.classList.toggle('open')">
+    <div class="reveal-prompt">🤔 Click to reveal: What's "shifted right" mean?</div>
+    <div class="reveal-content">
+      The decoder input is the target sequence with a special &lt;start&gt; token prepended and shifted one position to the right. So if the target is "Je suis étudiant", the decoder receives "&lt;start&gt; Je suis étudiant" and tries to predict "Je suis étudiant &lt;end&gt;". Each position predicts the <em>next</em> token.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ IX. TRAINING ═══ -->
+<div class="section-divider" id="sec-9">IX</div>
+<div class="container">
+  <h2 class="section-title">Training the Transformer</h2>
+
+  <p>The original Transformer was trained on the <strong>WMT 2014 English-to-German</strong> and <strong>English-to-French</strong> translation benchmarks. The training regime introduced several innovations that would become standard practice.</p>
+
+  <p>The optimizer is <strong>Adam</strong> with a custom learning rate schedule: the learning rate warms up linearly for 4,000 steps, then decays proportionally to the inverse square root of the step number. This "warmup" prevents the model from making wild updates early in training when the parameters are random.</p>
+
+  <p>Regularization used three techniques: <strong>residual dropout</strong> (P_drop = 0.1) applied to each sub-layer's output and to the attention weights; and <strong>label smoothing</strong> (ε = 0.1), which prevents the model from becoming overconfident by spreading some probability mass to incorrect labels.</p>
+
+  <p>The base model (d_model = 512, 6 layers, 8 heads) has about <strong>65 million parameters</strong> and was trained on 8 NVIDIA P100 GPUs for 12 hours. The big model (d_model = 1024, 6 layers, 16 heads) has 213M parameters and trained for 3.5 days. These are modest numbers by today's standards — a testament to how efficient the architecture is.</p>
+</div>
+
+<!-- DEMO 9: Learning rate schedule -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Learning Rate Schedule Explorer</div>
+  <div class="demo-body" id="demo-lr">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Adjust the warmup steps and model dimension to see how the learning rate schedule changes. The schedule balances a linear warmup with inverse-square-root decay.</p>
+    <div class="slider-row">
+      <label>Warmup steps:</label>
+      <input type="range" id="warmup-slider" min="1000" max="8000" value="4000" step="500">
+      <span class="val" id="warmup-val">4000</span>
+    </div>
+    <div class="slider-row">
+      <label>d_model:</label>
+      <input type="range" id="dmodel-slider" min="128" max="1024" value="512" step="64">
+      <span class="val" id="dmodel-val">512</span>
+    </div>
+    <canvas id="lr-canvas" width="720" height="240" style="width: 100%; border-radius: 6px;"></canvas>
+  </div>
+  <div class="demo-caption">The learning rate rises linearly during warmup, then decays. Larger d_model → smaller peak learning rate. The formula: lr = d_model⁻⁰·⁵ · min(step⁻⁰·⁵, step · warmup⁻¹·⁵)</div>
+</div>
+
+<div class="container">
+  <div class="callout">
+    <div class="callout-title">Label Smoothing</div>
+    Instead of training the model to predict the correct token with probability 1.0, label smoothing targets 0.9 for the correct answer and distributes the remaining 0.1 across all other tokens. This hurts perplexity slightly but improves BLEU score (the actual translation quality metric) by making the model less "peaky" and more robust.
+  </div>
+
+  <p>The results were stunning. The Transformer achieved a <strong>BLEU score of 28.4</strong> on English-to-German translation, beating all previous models including heavily-tuned ensembles. On English-to-French, it scored <strong>41.0 BLEU</strong> — a new state of the art. And it did this while requiring a fraction of the training compute.</p>
+</div>
+
+<!-- ═══════════════ X. IMPACT ═══ -->
+<div class="section-divider" id="sec-10">X</div>
+<div class="container">
+  <h2 class="section-title">Scaling &amp; Impact — The Cambrian Explosion</h2>
+
+  <p>The Transformer didn't just win a benchmark. It detonated an explosion.</p>
+
+  <p>Within a year, <strong>BERT</strong> (2018) took the encoder half and showed that pre-training on massive text corpora created universal language representations. <strong>GPT</strong> (2018) took the decoder half and showed that autoregressive pre-training could generate startlingly coherent text. <strong>GPT-2</strong> (2019) scaled it up and made headlines with its writing ability. <strong>GPT-3</strong> (2020) scaled it to 175 billion parameters and showed emergent few-shot learning.</p>
+
+  <p>But the Transformer's reach extends far beyond language. <strong>Vision Transformers (ViT)</strong> showed it could match or beat CNNs on image classification. <strong>AlphaFold 2</strong> used a modified Transformer to solve protein folding. <strong>DALL-E</strong> and <strong>Stable Diffusion</strong> use Transformers for image generation. <strong>Decision Transformers</strong> frame reinforcement learning as sequence prediction.</p>
+
+  <p>It turns out that self-attention is a universal computation primitive. Anywhere you have a set of elements that need to interact, the Transformer pattern works. It is, in some sense, the <em>for loop of deep learning</em>.</p>
+
+  <blockquote>
+    "The Transformer architecture is one of those rare innovations that is simultaneously elegant, practical, and transformative."
+    <cite>— Yann LeCun</cite>
+  </blockquote>
+</div>
+
+<!-- DEMO 10: Timeline of Transformer impact -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · The Transformer Family Tree</div>
+  <div class="demo-body" id="demo-timeline">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Click on any milestone to learn more about it. Hover to see the parameter count scale.</p>
+    <div id="timeline-display"></div>
+  </div>
+  <div class="demo-caption">From 65M parameters in 2017 to trillions today — the Transformer family tree keeps branching.</div>
+</div>
+
+<div class="container">
+  <p>As of 2025, every frontier AI model — GPT-4, Claude, Gemini, LLaMA, Mistral — is built on the Transformer architecture or its close descendants. The eight authors of the 2017 paper have scattered across the industry, founding companies like Cohere, Adept, Character.AI, and Essential AI. Their paper has been cited over 130,000 times.</p>
+
+  <div class="callout">
+    <div class="callout-title">The Scaling Hypothesis</div>
+    Perhaps the most surprising discovery post-Transformer was that simply making the model bigger, training it on more data, and using more compute reliably improved performance. This "scaling law" (Kaplan et al., 2020) suggested that intelligence might be, in part, a product of scale — a philosophically provocative idea that the Transformer's efficiency made possible to test.
+  </div>
+</div>
+
+<!-- DEMO 11: Scaling law simulator -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Scaling Law Simulator</div>
+  <div class="demo-body" id="demo-scaling">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Adjust model size and training data to see how loss (error) decreases. Notice the smooth power-law relationship — more compute reliably means better performance.</p>
+    <div class="slider-row">
+      <label>Parameters (log):</label>
+      <input type="range" id="params-slider" min="6" max="12" value="8" step="0.1">
+      <span class="val" id="params-val">100M</span>
+    </div>
+    <div class="slider-row">
+      <label>Training tokens (log):</label>
+      <input type="range" id="tokens-slider" min="8" max="13" value="10" step="0.1">
+      <span class="val" id="tokens-val">10B</span>
+    </div>
+    <canvas id="scaling-canvas" width="720" height="260" style="width: 100%; border-radius: 6px;"></canvas>
+    <div id="scaling-result" style="text-align: center; font-family: system-ui, sans-serif; font-size: 0.9rem; color: var(--text); margin-top: 8px; font-weight: 600;"></div>
+  </div>
+  <div class="demo-caption">Based on the Chinchilla scaling laws (Hoffmann et al., 2022). Loss ∝ N^(−0.076) + D^(−0.095) + constant. More parameters + more data = lower loss.</div>
+</div>
+
+<!-- ═══════════════ SUMMARY ═══ -->
+<div class="section-divider" id="sec-summary">✦</div>
+<div class="container">
+  <h2 class="section-title">The Big Picture</h2>
+
+  <p>Let's step back and marvel at what we've built in our minds.</p>
+
+  <p>The Transformer is, at its core, a machine for computing <strong>dynamic, context-dependent representations</strong>. Every word gets to look at every other word and decide what's relevant. This happens across multiple "heads" in parallel, each capturing a different facet of meaning. Positional encodings inject order without sacrificing parallelism. Feed-forward networks add computational depth. Residual connections and layer normalization keep everything stable.</p>
+
+  <p>The result is a model that can:</p>
+  <ul style="margin-left: 24px;">
+    <li>Capture dependencies across thousands of tokens in a single step</li>
+    <li>Be trained in parallel on modern hardware, dramatically reducing training time</li>
+    <li>Scale predictably — bigger models reliably learn more</li>
+    <li>Generalize across tasks — one architecture for translation, generation, classification, reasoning, and beyond</li>
+  </ul>
+
+  <p>The 2017 paper didn't just introduce a new architecture. It introduced a new <em>paradigm</em>. The age of crafting task-specific architectures gave way to the age of <em>scaling general-purpose Transformers</em>. And we're still riding that wave.</p>
+
+  <p>If there's one idea to take away, it's this: <strong>attention — the ability to dynamically focus on what matters — really is all you need</strong>. At least, it's enough to build the most capable AI systems the world has ever seen.</p>
+</div>
+
+<!-- DEMO 12: Build your own Transformer config -->
+<div class="demo-container">
+  <div class="demo-title-bar">Interactive · Build Your Own Transformer</div>
+  <div class="demo-body" id="demo-builder">
+    <p style="font-family: system-ui, sans-serif; font-size: 0.85rem; color: var(--muted); margin-bottom: 16px;">Configure a Transformer and see the parameter count, memory, and compute requirements in real time.</p>
+    <div class="slider-row">
+      <label>d_model:</label>
+      <input type="range" id="b-dmodel" min="64" max="4096" value="512" step="64">
+      <span class="val" id="b-dmodel-val">512</span>
+    </div>
+    <div class="slider-row">
+      <label>Layers (N):</label>
+      <input type="range" id="b-layers" min="1" max="96" value="6">
+      <span class="val" id="b-layers-val">6</span>
+    </div>
+    <div class="slider-row">
+      <label>Heads (h):</label>
+      <input type="range" id="b-heads" min="1" max="64" value="8">
+      <span class="val" id="b-heads-val">8</span>
+    </div>
+    <div class="slider-row">
+      <label>FFN multiplier:</label>
+      <input type="range" id="b-ffn" min="1" max="8" value="4">
+      <span class="val" id="b-ffn-val">4×</span>
+    </div>
+    <div class="slider-row">
+      <label>Seq length:</label>
+      <input type="range" id="b-seq" min="128" max="131072" value="2048" step="128">
+      <span class="val" id="b-seq-val">2048</span>
+    </div>
+    <div id="builder-results" style="margin-top: 16px;"></div>
+  </div>
+  <div class="demo-caption">Play with the hyperparameters to build configurations from GPT-2 small to GPT-3 scale. Watch how parameter count and memory grow.</div>
+</div>
+
+<!-- ═══════════════ RESOURCES ═══ -->
+<div class="section-divider">✦</div>
+<div class="container">
+  <h2 class="section-title">Further Resources</h2>
+  <ul class="resource-list">
+    <li>
+      <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need (Vaswani et al., 2017)</a>
+      <span class="resource-desc">The original paper. Clearly written and worth reading end-to-end.</span>
+    </li>
+    <li>
+      <a href="https://jalammar.github.io/illustrated-transformer/">The Illustrated Transformer — Jay Alammar</a>
+      <span class="resource-desc">The gold-standard visual walkthrough. Beautifully diagrammed.</span>
+    </li>
+    <li>
+      <a href="https://nlp.seas.harvard.edu/annotated-transformer/">The Annotated Transformer — Harvard NLP</a>
+      <span class="resource-desc">Line-by-line PyTorch implementation with annotations. Learn by reading code.</span>
+    </li>
+    <li>
+      <a href="https://arxiv.org/abs/2304.13712">A Survey of Transformers (Lin et al., 2022)</a>
+      <span class="resource-desc">Comprehensive survey of Transformer variants: efficient attention, architectural modifications, and applications.</span>
+    </li>
+    <li>
+      <a href="https://arxiv.org/abs/2001.08361">Scaling Laws for Neural Language Models (Kaplan et al., 2020)</a>
+      <span class="resource-desc">The empirical study that formalized how Transformer performance scales with compute, data, and parameters.</span>
+    </li>
+    <li>
+      <a href="https://karpathy.github.io/2023/05/28/nanogpt/">Let's build GPT from scratch — Andrej Karpathy</a>
+      <span class="resource-desc">Brilliant video lecture building a small GPT from the ground up in Python. Best way to truly understand.</span>
+    </li>
+    <li>
+      <a href="https://arxiv.org/abs/2203.15556">Training Compute-Optimal Large Language Models (Hoffmann et al., 2022)</a>
+      <span class="resource-desc">The "Chinchilla" paper: how to optimally balance model size and training data.</span>
+    </li>
+  </ul>
+</div>
+
+<!-- ═══════════════ FOOTER ═══ -->
+<footer>
+  <p>Built with care. Inspired by <a href="https://explainers.blog" style="color: var(--accent); text-decoration: none;">explainers.blog</a>.</p>
+  <p style="margin-top: 8px;">All interactive demos are self-contained visualizations for educational purposes.</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT — All interactive demos
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+// ────────────────────────────────────────────────
+// DEMO 1: RNN vs Transformer Sequential/Parallel
+// ────────────────────────────────────────────────
+(function() {
+  const slider = document.getElementById('seq-len-slider');
+  const valEl = document.getElementById('seq-len-val');
+  const rnnSteps = document.getElementById('rnn-steps');
+  const tSteps = document.getElementById('transformer-steps');
+  const rnnSvg = document.getElementById('rnn-svg');
+  const tSvg = document.getElementById('transformer-svg');
+  const btn = document.getElementById('btn-animate-seq');
+  let animId = null;
+
+  function render(n, highlight) {
+    highlight = highlight || 0;
+    const w = 340, h = 60, boxW = Math.min(30, (w - 20) / n - 4), gap = boxW + 4;
+    const startX = (w - n * gap + 4) / 2;
+    // RNN
+    let rnnHtml = '';
+    for (let i = 0; i < n; i++) {
+      const lit = i < highlight;
+      const active = i === highlight - 1;
+      rnnHtml += `<rect x="${startX + i * gap}" y="15" width="${boxW}" height="${boxW}" rx="4" 
+        fill="${lit ? (active ? '#dc2626' : '#fca5a5') : '#e5e5e5'}" 
+        stroke="${active ? '#dc2626' : 'none'}" stroke-width="${active ? 2 : 0}"/>`;
+      if (i < n - 1) {
+        rnnHtml += `<line x1="${startX + i * gap + boxW}" y1="${15 + boxW/2}" x2="${startX + (i+1) * gap}" y2="${15 + boxW/2}" 
+          stroke="${lit && i < highlight - 1 ? '#dc2626' : '#ccc'}" stroke-width="1.5" marker-end="url(#arrowR)"/>`;
+      }
+    }
+    rnnHtml = `<defs><marker id="arrowR" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#999"/></marker></defs>` + rnnHtml;
+    rnnSvg.innerHTML = rnnHtml;
+    // Transformer
+    let tHtml = '';
+    for (let i = 0; i < n; i++) {
+      const lit = highlight > 0;
+      tHtml += `<rect x="${startX + i * gap}" y="15" width="${boxW}" height="${boxW}" rx="4" 
+        fill="${lit ? '#16a34a' : '#e5e5e5'}"/>`;
+    }
+    tSvg.innerHTML = tHtml;
+  }
+
+  function update() {
+    const n = +slider.value;
+    valEl.textContent = n;
+    rnnSteps.textContent = n;
+    tSteps.textContent = 1;
+    render(n, 0);
+  }
+
+  slider.addEventListener('input', update);
+
+  btn.addEventListener('click', function() {
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    const n = +slider.value;
+    let step = 0;
+    function tick() {
+      step++;
+      render(n, Math.min(step, n));
+      if (step <= n) animId = requestAnimationFrame(() => setTimeout(tick, 200));
+    }
+    render(n, 0);
+    setTimeout(tick, 200);
+  });
+
+  update();
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 2: Cocktail Party Attention
+// ────────────────────────────────────────────────
+(function() {
+  const sentence = ["The", "cat", "sat", "on", "the", "mat", "because", "it", "was", "tired"];
+  const container = document.getElementById('cocktail-sentence');
+  const svg = document.getElementById('cocktail-svg');
+  const weightsDiv = document.getElementById('cocktail-weights');
+
+  // Simulated attention weights - carefully designed
+  const attnWeights = {
+    0: [0.3, 0.15, 0.05, 0.05, 0.2, 0.1, 0.05, 0.05, 0.03, 0.02],
+    1: [0.25, 0.2, 0.15, 0.05, 0.05, 0.1, 0.02, 0.1, 0.05, 0.03],
+    2: [0.05, 0.35, 0.2, 0.1, 0.05, 0.1, 0.02, 0.05, 0.05, 0.03],
+    3: [0.05, 0.05, 0.3, 0.15, 0.05, 0.25, 0.02, 0.05, 0.05, 0.03],
+    4: [0.2, 0.05, 0.05, 0.05, 0.3, 0.2, 0.02, 0.05, 0.05, 0.03],
+    5: [0.05, 0.1, 0.2, 0.25, 0.15, 0.1, 0.02, 0.05, 0.05, 0.03],
+    6: [0.05, 0.1, 0.15, 0.05, 0.05, 0.1, 0.2, 0.15, 0.1, 0.05],
+    7: [0.05, 0.4, 0.05, 0.02, 0.05, 0.08, 0.1, 0.1, 0.1, 0.05],
+    8: [0.02, 0.1, 0.1, 0.02, 0.02, 0.05, 0.05, 0.3, 0.2, 0.14],
+    9: [0.02, 0.15, 0.1, 0.02, 0.02, 0.05, 0.05, 0.15, 0.3, 0.14]
+  };
+
+  let tokenEls = [];
+  let selected = -1;
+
+  function buildTokens() {
+    container.innerHTML = '';
+    tokenEls = [];
+    sentence.forEach((w, i) => {
+      const span = document.createElement('span');
+      span.className = 'tag';
+      span.textContent = w;
+      span.addEventListener('click', () => selectToken(i));
+      container.appendChild(span);
+      tokenEls.push(span);
+    });
+  }
+
+  function selectToken(idx) {
+    selected = idx;
+    tokenEls.forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+    });
+    drawAttention(idx);
+  }
+
+  function drawAttention(idx) {
+    const weights = attnWeights[idx];
+    const n = sentence.length;
+    const svgW = 680;
+    const gap = svgW / (n + 1);
+    let html = '';
+
+    // Draw connections
+    const srcX = gap * (idx + 1);
+    for (let i = 0; i < n; i++) {
+      const tgtX = gap * (i + 1);
+      const w = weights[i];
+      const opacity = Math.max(0.08, w);
+      const thickness = 1 + w * 8;
+      html += `<line x1="${srcX}" y1="10" x2="${tgtX}" y2="80" 
+        stroke="var(--accent)" stroke-width="${thickness}" stroke-opacity="${opacity}" stroke-linecap="round"/>`;
+    }
+
+    // Draw circles
+    for (let i = 0; i < n; i++) {
+      const cx = gap * (i + 1);
+      const r = 6 + weights[i] * 18;
+      html += `<circle cx="${cx}" cy="80" r="${r}" fill="var(--accent)" opacity="${0.15 + weights[i] * 0.7}"/>`;
+      html += `<text x="${cx}" y="98" text-anchor="middle" font-size="10" fill="var(--muted)">${(weights[i] * 100).toFixed(0)}%</text>`;
+    }
+
+    // Source marker
+    html += `<circle cx="${srcX}" cy="10" r="6" fill="var(--accent)"/>`;
+
+    svg.innerHTML = html;
+
+    // Weights text
+    const topIdx = weights.map((w, i) => [w, i]).sort((a, b) => b[0] - a[0]).slice(0, 3);
+    weightsDiv.innerHTML = `"<strong>${sentence[idx]}</strong>" attends most to: ${topIdx.map(([w, i]) => `"<strong>${sentence[i]}</strong>" (${(w*100).toFixed(0)}%)`).join(', ')}`;
+  }
+
+  buildTokens();
+  selectToken(7); // Start with "it" to show it attends to "cat"
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 3: Architecture Explorer
+// ────────────────────────────────────────────────
+(function() {
+  const svg = document.getElementById('arch-svg');
+  const info = document.getElementById('arch-info');
+
+  const blocks = [
+    { id: 'enc-emb', x: 40, y: 440, w: 200, h: 40, label: 'Input Embedding + Pos Enc', color: '#dbeafe', 
+      info: '<strong>Input Embedding + Positional Encoding:</strong> Each input token is converted to a 512-dimensional vector, then positional encoding is added element-wise to inject position information.' },
+    { id: 'enc-attn1', x: 40, y: 340, w: 200, h: 50, label: 'Multi-Head Self-Attention', color: '#fef3c7',
+      info: '<strong>Encoder Self-Attention:</strong> Each position attends to all positions in the input. This is where the encoder builds contextual representations — every word "sees" every other word.' },
+    { id: 'enc-ff1', x: 40, y: 240, w: 200, h: 50, label: 'Feed-Forward Network', color: '#d1fae5',
+      info: '<strong>Position-wise FFN:</strong> Two linear layers with ReLU: FFN(x) = max(0, xW₁ + b₁)W₂ + b₂. Applied independently to each position. Inner dimension is 4× the model dimension (2048 for d=512).' },
+    { id: 'enc-repeat', x: 40, y: 170, w: 200, h: 30, label: '× N layers (N=6)', color: '#f3e8ff',
+      info: '<strong>Layer stacking:</strong> The encoder stacks N=6 identical layers. Each layer has a self-attention sub-layer and a feed-forward sub-layer, each with residual connections and layer normalization.' },
+    { id: 'enc-out', x: 40, y: 110, w: 200, h: 30, label: 'Encoder Output', color: '#e0f2fe',
+      info: '<strong>Encoder Output:</strong> A sequence of 512-dimensional vectors, one per input position. These rich, contextual representations are sent to the decoder\'s cross-attention layers.' },
+
+    { id: 'dec-emb', x: 480, y: 440, w: 200, h: 40, label: 'Output Embedding + Pos Enc', color: '#dbeafe',
+      info: '<strong>Output Embedding + Positional Encoding:</strong> The decoder\'s input: the target sequence shifted right by one position. During inference, this is the sequence generated so far.' },
+    { id: 'dec-attn1', x: 480, y: 350, w: 200, h: 40, label: 'Masked Self-Attention', color: '#fee2e2',
+      info: '<strong>Masked Self-Attention:</strong> Like encoder self-attention, but with a causal mask: position i can only attend to positions ≤ i. This prevents the decoder from "cheating" by looking at future tokens.' },
+    { id: 'dec-cross', x: 480, y: 270, w: 200, h: 40, label: 'Cross-Attention', color: '#fef3c7',
+      info: '<strong>Cross-Attention (Encoder-Decoder):</strong> Queries come from the decoder, but Keys and Values come from the encoder output. This is how the decoder "reads" the input. Every decoder position can attend to every encoder position.' },
+    { id: 'dec-ff', x: 480, y: 190, w: 200, h: 40, label: 'Feed-Forward Network', color: '#d1fae5',
+      info: '<strong>Position-wise FFN:</strong> Same structure as in the encoder. Processes each position independently after the attention steps.' },
+    { id: 'dec-repeat', x: 480, y: 130, w: 200, h: 30, label: '× N layers (N=6)', color: '#f3e8ff',
+      info: '<strong>Decoder stacking:</strong> N=6 identical decoder layers. Each has masked self-attention, cross-attention, and a feed-forward sub-layer.' },
+    { id: 'dec-linear', x: 480, y: 70, w: 200, h: 30, label: 'Linear + Softmax', color: '#fce7f3',
+      info: '<strong>Output Head:</strong> A linear projection to vocabulary size, followed by softmax. Produces a probability distribution over the entire vocabulary for the next token prediction.' },
+  ];
+
+  let html = '';
+
+  // Draw cross-attention arrow from encoder to decoder
+  html += `<line x1="240" y1="125" x2="480" y2="290" stroke="var(--accent)" stroke-width="2" stroke-dasharray="6,4" opacity="0.5"/>`;
+  html += `<polygon points="476,288 480,296 488,290" fill="var(--accent)" opacity="0.5"/>`;
+  html += `<text x="360" y="195" text-anchor="middle" font-size="10" fill="var(--accent)" font-weight="600">K, V from encoder</text>`;
+
+  // Encoder label
+  html += `<text x="140" y="90" text-anchor="middle" font-size="13" fill="var(--muted)" font-weight="700" letter-spacing="0.1em">ENCODER</text>`;
+  html += `<text x="580" y="50" text-anchor="middle" font-size="13" fill="var(--muted)" font-weight="700" letter-spacing="0.1em">DECODER</text>`;
+
+  // Vertical arrows
+  function arrow(x, y1, y2) {
+    html += `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="#999" stroke-width="1.5"/>`;
+    html += `<polygon points="${x-4},${y2} ${x},${y2-6} ${x+4},${y2}" fill="#999"/>`;
+  }
+  // Encoder arrows
+  arrow(140, 440, 395);
+  arrow(140, 340, 295);
+  arrow(140, 240, 205);
+  // Decoder arrows
+  arrow(580, 440, 395);
+  arrow(580, 350, 315);
+  arrow(580, 270, 235);
+  arrow(580, 190, 165);
+  arrow(580, 130, 105);
+
+  // Draw blocks
+  blocks.forEach(b => {
+    html += `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="6" fill="${b.color}" 
+      stroke="#ccc" stroke-width="1" style="cursor:pointer;" data-id="${b.id}"/>`;
+    html += `<text x="${b.x + b.w/2}" y="${b.y + b.h/2 + 4}" text-anchor="middle" font-size="11" fill="var(--text)" 
+      font-weight="600" style="pointer-events:none;">${b.label}</text>`;
+  });
+
+  // Input/output labels
+  html += `<text x="140" y="500" text-anchor="middle" font-size="11" fill="var(--muted)" font-style="italic">Input: "The cat sat"</text>`;
+  html += `<text x="580" y="500" text-anchor="middle" font-size="11" fill="var(--muted)" font-style="italic">Output: "Le chat assis"</text>`;
+
+  svg.innerHTML = html;
+
+  svg.addEventListener('click', function(e) {
+    const el = e.target.closest('[data-id]');
+    if (!el) return;
+    const block = blocks.find(b => b.id === el.dataset.id);
+    if (block) {
+      info.style.display = 'block';
+      info.innerHTML = block.info;
+    }
+  });
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 4: QKV Step-through
+// ────────────────────────────────────────────────
+(function() {
+  const words = ['The', 'cat', 'sat', 'down'];
+  const display = document.getElementById('qkv-display');
+  const stepsEl = document.getElementById('qkv-steps');
+  const btnPrev = document.getElementById('btn-qkv-prev');
+  const btnNext = document.getElementById('btn-qkv-next');
+
+  const steps = [
+    {
+      title: '1. Start with embeddings',
+      html: () => {
+        let h = '<p style="font-family:system-ui,sans-serif;font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Each word is converted to an embedding vector (here simplified to 4 dimensions):</p>';
+        const embeddings = [[0.2, 0.8, -0.1, 0.5], [0.9, -0.3, 0.7, 0.1], [-0.4, 0.6, 0.3, -0.8], [0.1, -0.5, 0.9, 0.4]];
+        words.forEach((w, i) => {
+          h += `<div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+            <span class="tag active" style="pointer-events:none;min-width:50px;text-align:center;">${w}</span>
+            <span style="font-family:monospace;font-size:0.8rem;">[${embeddings[i].join(', ')}]</span>
+          </div>`;
+        });
+        return h;
+      }
+    },
+    {
+      title: '2. Project to Q, K, V',
+      html: () => `<p style="font-family:system-ui,sans-serif;font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Multiply each embedding by three weight matrices to get Query, Key, and Value vectors:</p>
+        <div style="text-align:center;">
+        <svg width="500" height="180" viewBox="0 0 500 180">
+          <rect x="20" y="70" width="80" height="40" rx="6" fill="var(--accent-light)" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="60" y="95" text-anchor="middle" font-size="12" fill="var(--accent)" font-weight="700">Embed</text>
+          <line x1="100" y1="75" x2="180" y2="30" stroke="#999" stroke-width="1.5"/>
+          <line x1="100" y1="90" x2="180" y2="90" stroke="#999" stroke-width="1.5"/>
+          <line x1="100" y1="105" x2="180" y2="150" stroke="#999" stroke-width="1.5"/>
+          <rect x="180" y="10" width="60" height="35" rx="6" fill="#dbeafe" stroke="var(--accent)"/>
+          <text x="210" y="32" text-anchor="middle" font-size="11" fill="var(--accent)" font-weight="700">× W_Q</text>
+          <rect x="180" y="72" width="60" height="35" rx="6" fill="#fef3c7" stroke="#f59e0b"/>
+          <text x="210" y="94" text-anchor="middle" font-size="11" fill="#92400e" font-weight="700">× W_K</text>
+          <rect x="180" y="133" width="60" height="35" rx="6" fill="#d1fae5" stroke="#16a34a"/>
+          <text x="210" y="155" text-anchor="middle" font-size="11" fill="#166534" font-weight="700">× W_V</text>
+          <line x1="240" y1="28" x2="300" y2="28" stroke="var(--accent)" stroke-width="1.5"/>
+          <line x1="240" y1="90" x2="300" y2="90" stroke="#f59e0b" stroke-width="1.5"/>
+          <line x1="240" y1="150" x2="300" y2="150" stroke="#16a34a" stroke-width="1.5"/>
+          <text x="340" y="32" text-anchor="middle" font-size="13" fill="var(--accent)" font-weight="700">🔑 Query</text>
+          <text x="340" y="94" text-anchor="middle" font-size="13" fill="#92400e" font-weight="700">🗝️ Key</text>
+          <text x="340" y="154" text-anchor="middle" font-size="13" fill="#166534" font-weight="700">📄 Value</text>
+        </svg></div>`
+    },
+    {
+      title: '3. Compute attention scores (QKᵀ)',
+      html: () => {
+        const scores = [[2.1, -0.3, 0.8, 1.2], [-0.3, 3.4, 0.5, -0.7], [0.8, 0.5, 2.8, 1.5], [1.2, -0.7, 1.5, 2.2]];
+        let h = '<p style="font-family:system-ui,sans-serif;font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Dot product of each Query with every Key. Higher score = more relevant:</p>';
+        h += '<div style="overflow-x:auto;text-align:center;"><table style="margin:0 auto;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:0.8rem;">';
+        h += '<tr><td></td>' + words.map(w => `<td style="padding:6px 10px;font-weight:700;color:var(--muted);">${w}</td>`).join('') + '</tr>';
+        scores.forEach((row, i) => {
+          h += '<tr>';
+          h += `<td style="padding:6px 10px;font-weight:700;color:var(--accent);">${words[i]}</td>`;
+          row.forEach(v => {
+            const bg = v > 2 ? '#dbeafe' : v > 1 ? '#eff6ff' : '#fff';
+            h += `<td style="padding:6px 10px;background:${bg};border:1px solid #e5e5e5;text-align:center;font-weight:600;">${v.toFixed(1)}</td>`;
+          });
+          h += '</tr>';
+        });
+        h += '</table></div>';
+        return h;
+      }
+    },
+    {
+      title: '4. Scale by 1/√d_k',
+      html: () => {
+        const scores = [[2.1, -0.3, 0.8, 1.2], [-0.3, 3.4, 0.5, -0.7], [0.8, 0.5, 2.8, 1.5], [1.2, -0.7, 1.5, 2.2]];
+        const scaled = scores.map(row => row.map(v => v / 2)); // sqrt(4) = 2
+        let h = '<p style="font-family:system-ui,sans-serif;font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Divide by √d_k = √4 = 2 to keep gradients stable:</p>';
+        h += '<div style="overflow-x:auto;text-align:center;"><table style="margin:0 auto;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:0.8rem;">';
+        h += '<tr><td></td>' + words.map(w => `<td style="padding:6px 10px;font-weight:700;color:var(--muted);">${w}</td>`).join('') + '</tr>';
+        scaled.forEach((row, i) => {
+          h += '<tr>';
+          h += `<td style="padding:6px 10px;font-weight:700;color:var(--accent);">${words[i]}</td>`;
+          row.forEach(v => {
+            const bg = v > 1 ? '#dbeafe' : v > 0.5 ? '#eff6ff' : '#fff';
+            h += `<td style="padding:6px 10px;background:${bg};border:1px solid #e5e5e5;text-align:center;font-weight:600;">${v.toFixed(2)}</td>`;
+          });
+          h += '</tr>';
+        });
+        h += '</table></div>';
+        h += '<p style="text-align:center;font-family:system-ui,sans-serif;font-size:0.82rem;color:var(--accent);margin-top:8px;">÷ √d_k = ÷ 2</p>';
+        return h;
+      }
+    },
+    {
+      title: '5. Apply softmax → attention weights',
+      html: () => {
+        const weights = [[0.42, 0.06, 0.16, 0.36], [0.04, 0.72, 0.14, 0.10], [0.14, 0.10, 0.50, 0.26], [0.24, 0.04, 0.30, 0.42]];
+        let h = '<p style="font-family:system-ui,sans-serif;font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Softmax normalizes each row to sum to 1.0 — now we have a probability distribution:</p>';
+        h += '<div style="overflow-x:auto;text-align:center;"><table style="margin:0 auto;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:0.8rem;">';
+        h += '<tr><td></td>' + words.map(w => `<td style="padding:6px 10px;font-weight:700;color:var(--muted);">${w}</td>`).join('') + '</tr>';
+        weights.forEach((row, i) => {
+          h += '<tr>';
+          h += `<td style="padding:6px 10px;font-weight:700;color:var(--accent);">${words[i]}</td>`;
+          row.forEach(v => {
+            const intensity = Math.round(v * 255);
+            const bg = `rgba(37, 99, 235, ${v * 0.6})`;
+            const color = v > 0.35 ? 'white' : 'var(--text)';
+            h += `<td style="padding:6px 10px;background:${bg};color:${color};border:1px solid #e5e5e5;text-align:center;font-weight:700;">${(v*100).toFixed(0)}%</td>`;
+          });
+          h += '</tr>';
+        });
+        h += '</table></div>';
+        h += '<p style="text-align:center;font-family:system-ui,sans-serif;font-size:0.82rem;color:var(--success);margin-top:8px;">Each row sums to 100% ✓</p>';
+        return h;
+      }
+    },
+    {
+      title: '6. Weighted sum of Values → output',
+      html: () => `<p style="font-family:system-ui,sans-serif;font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Multiply attention weights by Value vectors. Each word's output is a weighted combination of all Values:</p>
+        <div style="text-align:center;padding:20px;">
+          <svg width="440" height="140" viewBox="0 0 440 140">
+            <text x="30" y="30" font-size="12" fill="var(--accent)" font-weight="700">"cat" output =</text>
+            <text x="30" y="60" font-size="11" fill="var(--muted)">4% × V("The")</text>
+            <rect x="170" y="48" width="16" height="14" rx="2" fill="var(--accent)" opacity="0.04"/>
+            <text x="30" y="80" font-size="11" fill="var(--text)" font-weight="700">72% × V("cat")</text>
+            <rect x="170" y="68" width="252" height="14" rx="2" fill="var(--accent)" opacity="0.72"/>
+            <text x="30" y="100" font-size="11" fill="var(--muted)">14% × V("sat")</text>
+            <rect x="170" y="88" width="49" height="14" rx="2" fill="var(--accent)" opacity="0.3"/>
+            <text x="30" y="120" font-size="11" fill="var(--muted)">10% × V("down")</text>
+            <rect x="170" y="108" width="35" height="14" rx="2" fill="var(--accent)" opacity="0.2"/>
+          </svg>
+        </div>
+        <p style="font-family:system-ui,sans-serif;font-size:0.85rem;color:var(--text);text-align:center;">The output for "cat" is mostly itself (72%) but also mixes in context from "sat" (14%) and "down" (10%). <strong>This is self-attention!</strong></p>`
+    }
+  ];
+
+  let currentStep = 0;
+
+  function renderSteps() {
+    stepsEl.innerHTML = '';
+    steps.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'step-dot' + (i === currentStep ? ' active' : '');
+      stepsEl.appendChild(dot);
+    });
+  }
+
+  function renderStep() {
+    renderSteps();
+    display.innerHTML = `<div style="font-family:system-ui,sans-serif;font-size:0.85rem;font-weight:700;color:var(--accent);margin-bottom:12px;">${steps[currentStep].title}</div>` + steps[currentStep].html();
+  }
+
+  btnNext.addEventListener('click', () => { currentStep = Math.min(currentStep + 1, steps.length - 1); renderStep(); });
+  btnPrev.addEventListener('click', () => { currentStep = Math.max(currentStep - 1, 0); renderStep(); });
+
+  renderStep();
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 5: Multi-Head Attention Visualizer
+// ────────────────────────────────────────────────
+(function() {
+  const words = ["The", "animal", "didn't", "cross", "the", "street", "because", "it", "was", "tired"];
+  const selectorEl = document.getElementById('head-selector');
+  const displayEl = document.getElementById('multihead-display');
+
+  const heads = {
+    'Head A: Coreference': {
+      desc: 'This head learns to resolve pronouns — "it" attends heavily to "animal".',
+      weights: [
+        [0.40,0.15,0.05,0.05,0.15,0.05,0.05,0.05,0.03,0.02],
+        [0.10,0.40,0.05,0.10,0.05,0.10,0.05,0.10,0.03,0.02],
+        [0.05,0.15,0.35,0.15,0.05,0.10,0.05,0.05,0.03,0.02],
+        [0.05,0.10,0.05,0.40,0.05,0.20,0.05,0.05,0.03,0.02],
+        [0.30,0.05,0.05,0.05,0.30,0.10,0.05,0.05,0.03,0.02],
+        [0.05,0.05,0.05,0.15,0.15,0.35,0.05,0.05,0.05,0.05],
+        [0.05,0.05,0.10,0.05,0.05,0.10,0.40,0.10,0.05,0.05],
+        [0.03,0.55,0.03,0.03,0.03,0.05,0.08,0.10,0.05,0.05],
+        [0.02,0.10,0.05,0.05,0.02,0.05,0.05,0.30,0.25,0.11],
+        [0.02,0.20,0.05,0.05,0.02,0.05,0.05,0.15,0.25,0.16]
+      ]
+    },
+    'Head B: Adjacent': {
+      desc: 'This head attends to immediately neighboring words — capturing local syntax.',
+      weights: [
+        [0.30,0.50,0.05,0.03,0.03,0.03,0.02,0.02,0.01,0.01],
+        [0.35,0.20,0.35,0.03,0.02,0.02,0.01,0.01,0.01,0.00],
+        [0.05,0.35,0.20,0.30,0.03,0.02,0.02,0.01,0.01,0.01],
+        [0.03,0.05,0.30,0.22,0.30,0.03,0.02,0.02,0.02,0.01],
+        [0.03,0.03,0.05,0.30,0.22,0.30,0.02,0.02,0.02,0.01],
+        [0.02,0.02,0.03,0.05,0.30,0.23,0.28,0.03,0.02,0.02],
+        [0.02,0.02,0.02,0.03,0.05,0.28,0.23,0.28,0.04,0.03],
+        [0.01,0.01,0.02,0.02,0.03,0.05,0.28,0.23,0.28,0.07],
+        [0.01,0.01,0.01,0.02,0.02,0.03,0.05,0.28,0.25,0.32],
+        [0.01,0.01,0.01,0.01,0.02,0.02,0.03,0.05,0.34,0.50]
+      ]
+    },
+    'Head C: Verb-Subject': {
+      desc: 'This head connects verbs to their subjects — "cross" attends to "animal".',
+      weights: [
+        [0.35,0.20,0.10,0.10,0.10,0.05,0.03,0.03,0.02,0.02],
+        [0.15,0.35,0.10,0.10,0.10,0.05,0.05,0.05,0.03,0.02],
+        [0.10,0.35,0.15,0.15,0.05,0.05,0.05,0.05,0.03,0.02],
+        [0.10,0.40,0.10,0.15,0.05,0.05,0.05,0.05,0.03,0.02],
+        [0.30,0.05,0.05,0.05,0.35,0.05,0.05,0.05,0.03,0.02],
+        [0.05,0.10,0.05,0.35,0.15,0.15,0.05,0.05,0.03,0.02],
+        [0.05,0.10,0.15,0.10,0.05,0.10,0.25,0.10,0.05,0.05],
+        [0.05,0.30,0.05,0.05,0.05,0.05,0.10,0.15,0.15,0.05],
+        [0.05,0.10,0.05,0.05,0.05,0.05,0.05,0.30,0.20,0.10],
+        [0.05,0.15,0.05,0.05,0.05,0.05,0.05,0.20,0.20,0.15]
+      ]
+    },
+    'Head D: Negation': {
+      desc: 'This head tracks negation — "cross" and "tired" both attend to "didn\'t".',
+      weights: [
+        [0.35,0.15,0.15,0.10,0.10,0.05,0.03,0.03,0.02,0.02],
+        [0.10,0.30,0.20,0.10,0.10,0.05,0.05,0.05,0.03,0.02],
+        [0.10,0.10,0.40,0.15,0.05,0.05,0.05,0.05,0.03,0.02],
+        [0.05,0.10,0.35,0.20,0.05,0.10,0.05,0.05,0.03,0.02],
+        [0.15,0.05,0.15,0.05,0.30,0.15,0.05,0.05,0.03,0.02],
+        [0.05,0.05,0.20,0.15,0.15,0.20,0.05,0.05,0.05,0.05],
+        [0.05,0.05,0.20,0.05,0.05,0.10,0.30,0.10,0.05,0.05],
+        [0.05,0.10,0.25,0.05,0.05,0.05,0.10,0.15,0.10,0.10],
+        [0.05,0.05,0.20,0.05,0.05,0.05,0.10,0.10,0.20,0.15],
+        [0.05,0.05,0.25,0.05,0.05,0.05,0.05,0.10,0.15,0.20]
+      ]
+    }
+  };
+
+  let activeHead = Object.keys(heads)[0];
+
+  function buildSelector() {
+    selectorEl.innerHTML = '';
+    Object.keys(heads).forEach(name => {
+      const btn = document.createElement('span');
+      btn.className = 'tag' + (name === activeHead ? ' active' : '');
+      btn.textContent = name;
+      btn.addEventListener('click', () => {
+        activeHead = name;
+        buildSelector();
+        renderHead();
+      });
+      selectorEl.appendChild(btn);
+    });
+  }
+
+  function renderHead() {
+    const head = heads[activeHead];
+    const n = words.length;
+    let h = `<p style="font-family:system-ui,sans-serif;font-size:0.82rem;color:var(--muted);margin-bottom:12px;text-align:center;">${head.desc}</p>`;
+    h += '<div style="text-align:center;overflow-x:auto;">';
+    h += '<table style="margin:0 auto;border-collapse:collapse;">';
+    h += '<tr><td style="width:50px;"></td>';
+    words.forEach(w => {
+      h += `<td style="padding:3px 2px;font-family:system-ui,sans-serif;font-size:0.65rem;font-weight:600;color:var(--muted);text-align:center;writing-mode:vertical-rl;height:60px;">${w}</td>`;
+    });
+    h += '</tr>';
+    head.weights.forEach((row, i) => {
+      h += '<tr>';
+      h += `<td style="padding:3px 6px;font-family:system-ui,sans-serif;font-size:0.72rem;font-weight:600;color:var(--accent);text-align:right;">${words[i]}</td>`;
+      row.forEach(v => {
+        const bg = `rgba(37, 99, 235, ${v})`;
+        const color = v > 0.3 ? 'white' : (v > 0.15 ? '#1a1a1a' : '#999');
+        h += `<td class="attn-cell" style="background:${bg};color:${color};width:46px;height:46px;">${(v*100).toFixed(0)}</td>`;
+      });
+      h += '</tr>';
+    });
+    h += '</table></div>';
+    displayEl.innerHTML = h;
+  }
+
+  buildSelector();
+  renderHead();
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 6: Positional Encoding Explorer
+// ────────────────────────────────────────────────
+(function() {
+  const posSlider = document.getElementById('pos-slider');
+  const dimSlider = document.getElementById('dim-slider');
+  const posVal = document.getElementById('pos-val');
+  const dimVal = document.getElementById('dim-val');
+  const canvas = document.getElementById('posenc-canvas');
+  const ctx = canvas.getContext('2d');
+  const btnAnimate = document.getElementById('btn-posenc-animate');
+  let animating = false;
+  let animId = null;
+
+  function pe(pos, i, d) {
+    const angle = pos / Math.pow(10000, (2 * Math.floor(i/2)) / d);
+    return i % 2 === 0 ? Math.sin(angle) : Math.cos(angle);
+  }
+
+  function render(highlightPos) {
+    const d = +dimSlider.value;
+    const maxPos = 50;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const cellW = w / d;
+    const cellH = h / maxPos;
+
+    for (let pos = 0; pos < maxPos; pos++) {
+      for (let i = 0; i < d; i++) {
+        const val = pe(pos, i, d);
+        // Map [-1, 1] to color
+        const r = val > 0 ? Math.round(37 + val * 50) : Math.round(37);
+        const g = val > 0 ? Math.round(99 + val * 100) : Math.round(99);
+        const b = val > 0 ? Math.round(235) : Math.round(235 + val * 100);
+        const alpha = Math.abs(val) * 0.7 + 0.1;
+
+        if (val > 0) {
+          ctx.fillStyle = `rgba(37, 99, 235, ${alpha})`;
+        } else {
+          ctx.fillStyle = `rgba(220, 38, 38, ${Math.abs(val) * 0.7 + 0.1})`;
+        }
+        ctx.fillRect(i * cellW, pos * cellH, cellW + 0.5, cellH + 0.5);
+      }
+    }
+
+    // Highlight selected position
+    const hp = highlightPos !== undefined ? highlightPos : +posSlider.value;
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, hp * cellH, w, cellH);
+
+    // Labels
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.fillText('pos=' + hp, 4, hp * cellH - 4 > 10 ? hp * cellH - 4 : hp * cellH + cellH + 12);
+    ctx.fillText('dim →', w - 45, h - 4);
+    ctx.fillText('pos ↓', 4, 12);
+
+    // Legend
+    ctx.fillStyle = 'rgba(37, 99, 235, 0.7)';
+    ctx.fillRect(w - 100, 4, 12, 12);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.fillText('+1 (sin/cos)', w - 84, 14);
+    ctx.fillStyle = 'rgba(220, 38, 38, 0.7)';
+    ctx.fillRect(w - 100, 20, 12, 12);
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillText('-1 (sin/cos)', w - 84, 30);
+  }
+
+  posSlider.addEventListener('input', () => { posVal.textContent = posSlider.value; render(); });
+  dimSlider.addEventListener('input', () => { dimVal.textContent = dimSlider.value; render(); });
+
+  btnAnimate.addEventListener('click', () => {
+    if (animating) {
+      animating = false;
+      cancelAnimationFrame(animId);
+      btnAnimate.textContent = '▶ Animate Position Sweep';
+      return;
+    }
+    animating = true;
+    btnAnimate.textContent = '⏸ Stop';
+    let pos = 0;
+    function tick() {
+      posSlider.value = pos;
+      posVal.textContent = pos;
+      render(pos);
+      pos = (pos + 1) % 50;
+      if (animating) animId = requestAnimationFrame(() => setTimeout(tick, 80));
+    }
+    tick();
+  });
+
+  render();
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 7: Residual Connections
+// ────────────────────────────────────────────────
+(function() {
+  const layersSlider = document.getElementById('layers-slider');
+  const layersVal = document.getElementById('layers-val');
+  const btnResidual = document.getElementById('btn-residual-toggle');
+  const btnLayerNorm = document.getElementById('btn-layernorm-toggle');
+  const canvas = document.getElementById('residual-canvas');
+  const ctx = canvas.getContext('2d');
+
+  let useResidual = true;
+  let useLayerNorm = true;
+
+  function simulate(nLayers, residual, layerNorm) {
+    // Simulate signal magnitude through layers
+    let signal = 1.0;
+    const signals = [signal];
+    for (let l = 0; l < nLayers; l++) {
+      let transform = signal * (0.6 + Math.random() * 0.3); // Random shrinkage
+      if (layerNorm) transform = transform * 0.95 + 0.05; // Stabilize
+      if (residual) {
+        signal = signal + transform; // Add residual
+        if (layerNorm) signal = signal / Math.max(1, Math.abs(signal)) * 1.0; // Normalize
+      } else {
+        signal = transform;
+      }
+      signals.push(Math.abs(signal));
+    }
+    return signals;
+  }
+
+  function render() {
+    const nLayers = +layersSlider.value;
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    // Run multiple trials for a smoother view
+    const trials = 10;
+    const allSignals = [];
+    for (let t = 0; t < trials; t++) {
+      allSignals.push(simulate(nLayers, useResidual, useLayerNorm));
+    }
+    // Average
+    const avg = [];
+    for (let i = 0; i <= nLayers; i++) {
+      avg.push(allSignals.reduce((s, a) => s + a[i], 0) / trials);
+    }
+
+    const maxVal = Math.max(...avg, 1.5);
+    const padX = 60, padY = 30;
+    const plotW = w - padX - 20;
+    const plotH = h - padY * 2;
+
+    // Grid
+    ctx.strokeStyle = '#e5e5e5';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padY + plotH - (i / 4) * plotH;
+      ctx.beginPath();
+      ctx.moveTo(padX, y);
+      ctx.lineTo(padX + plotW, y);
+      ctx.stroke();
+      ctx.fillStyle = '#999';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText((maxVal * i / 4).toFixed(1), padX - 8, y + 4);
+    }
+
+    // Axes labels
+    ctx.fillStyle = '#999';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Layer', padX + plotW / 2, h - 4);
+    ctx.save();
+    ctx.translate(14, padY + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Signal Magnitude', 0, 0);
+    ctx.restore();
+
+    // Plot line
+    ctx.strokeStyle = useResidual ? 'var(--accent)' : 'var(--danger)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    avg.forEach((v, i) => {
+      const x = padX + (i / nLayers) * plotW;
+      const y = padY + plotH - (v / maxVal) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Dots
+    avg.forEach((v, i) => {
+      const x = padX + (i / nLayers) * plotW;
+      const y = padY + plotH - (v / maxVal) * plotH;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = useResidual ? 'var(--accent)' : 'var(--danger)';
+      ctx.fill();
+    });
+
+    // Reference line at 1.0
+    const refY = padY + plotH - (1.0 / maxVal) * plotH;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#16a34a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padX, refY);
+    ctx.lineTo(padX + plotW, refY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#16a34a';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('ideal = 1.0', padX + plotW + 2, refY + 4);
+  }
+
+  layersSlider.addEventListener('input', () => {
+    layersVal.textContent = layersSlider.value;
+    render();
+  });
+
+  btnResidual.addEventListener('click', () => {
+    useResidual = !useResidual;
+    btnResidual.textContent = `Residual Connections: ${useResidual ? 'ON ✓' : 'OFF ✗'}`;
+    btnResidual.classList.toggle('outline', !useResidual);
+    render();
+  });
+
+  btnLayerNorm.addEventListener('click', () => {
+    useLayerNorm = !useLayerNorm;
+    btnLayerNorm.textContent = `Layer Norm: ${useLayerNorm ? 'ON ✓' : 'OFF ✗'}`;
+    btnLayerNorm.classList.toggle('outline', !useLayerNorm);
+    render();
+  });
+
+  render();
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 8: Masked Attention
+// ────────────────────────────────────────────────
+(function() {
+  const btn = document.getElementById('btn-mask-toggle');
+  const canvas = document.getElementById('mask-canvas');
+  const ctx = canvas.getContext('2d');
+  const explanation = document.getElementById('mask-explanation');
+
+  const tokens = ['<start>', 'Le', 'chat', 'est', 'assis', '<end>'];
+  const n = tokens.length;
+  let masked = false;
+
+  // Generate fake attention weights
+  function getWeights(mask) {
+    const w = [];
+    for (let i = 0; i < n; i++) {
+      const row = [];
+      for (let j = 0; j < n; j++) {
+        if (mask && j > i) row.push(0);
+        else row.push(0.05 + Math.random() * 0.4);
+      }
+      // Normalize row
+      const sum = row.reduce((a, b) => a + b, 0);
+      for (let j = 0; j < n; j++) row[j] = row[j] / sum;
+      w.push(row);
+    }
+    return w;
+  }
+
+  function render() {
+    const weights = getWeights(masked);
+    const cw = canvas.width, ch = canvas.height;
+    ctx.clearRect(0, 0, cw, ch);
+
+    const pad = 70;
+    const cellSize = (cw - pad) / n;
+
+    // Column labels (top)
+    ctx.fillStyle = '#999';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    tokens.forEach((t, i) => {
+      ctx.save();
+      ctx.translate(pad + i * cellSize + cellSize / 2, pad - 8);
+      ctx.rotate(-Math.PI / 4);
+      ctx.fillText(t, 0, 0);
+      ctx.restore();
+    });
+
+    // Row labels (left)
+    ctx.textAlign = 'right';
+    tokens.forEach((t, i) => {
+      ctx.fillStyle = '#999';
+      ctx.fillText(t, pad - 8, pad + i * cellSize + cellSize / 2 + 4);
+    });
+
+    // Cells
+    weights.forEach((row, i) => {
+      row.forEach((v, j) => {
+        const x = pad + j * cellSize;
+        const y = pad + i * cellSize;
+
+        if (masked && j > i) {
+          // Blocked
+          ctx.fillStyle = '#fee2e2';
+          ctx.fillRect(x, y, cellSize - 1, cellSize - 1);
+          ctx.fillStyle = '#dc2626';
+          ctx.font = '16px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('✕', x + cellSize / 2, y + cellSize / 2 + 6);
+        } else {
+          ctx.fillStyle = `rgba(37, 99, 235, ${v})`;
+          ctx.fillRect(x, y, cellSize - 1, cellSize - 1);
+          ctx.fillStyle = v > 0.25 ? 'white' : '#333';
+          ctx.font = '10px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText((v * 100).toFixed(0) + '%', x + cellSize / 2, y + cellSize / 2 + 4);
+        }
+      });
+    });
+
+    // Labels
+    ctx.fillStyle = '#999';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Keys →', pad + (cw - pad) / 2, pad - 40);
+    ctx.save();
+    ctx.translate(pad - 48, pad + (ch - pad) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Queries →', 0, 0);
+    ctx.restore();
+  }
+
+  btn.addEventListener('click', () => {
+    masked = !masked;
+    btn.textContent = `Show Mask: ${masked ? 'ON' : 'OFF'}`;
+    btn.classList.toggle('outline', !masked);
+    explanation.textContent = masked
+      ? 'Masked (causal) attention: each position can only attend to positions at or before it. Future tokens are blocked (✕).'
+      : 'Full self-attention: every position can attend to every other position.';
+    render();
+  });
+
+  render();
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 9: Learning Rate Schedule
+// ────────────────────────────────────────────────
+(function() {
+  const warmupSlider = document.getElementById('warmup-slider');
+  const dmodelSlider = document.getElementById('dmodel-slider');
+  const warmupVal = document.getElementById('warmup-val');
+  const dmodelVal = document.getElementById('dmodel-val');
+  const canvas = document.getElementById('lr-canvas');
+  const ctx = canvas.getContext('2d');
+
+  function lrSchedule(step, warmup, dmodel) {
+    return Math.pow(dmodel, -0.5) * Math.min(Math.pow(step, -0.5), step * Math.pow(warmup, -1.5));
+  }
+
+  function render() {
+    const warmup = +warmupSlider.value;
+    const dmodel = +dmodelSlider.value;
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const maxSteps = 40000;
+    const padX = 60, padY = 30;
+    const plotW = w - padX - 20;
+    const plotH = h - padY * 2;
+
+    // Compute values
+    const points = [];
+    let maxLr = 0;
+    for (let s = 1; s <= maxSteps; s += 100) {
+      const lr = lrSchedule(s, warmup, dmodel);
+      points.push({ x: s, y: lr });
+      maxLr = Math.max(maxLr, lr);
+    }
+
+    // Grid
+    ctx.strokeStyle = '#e5e5e5';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padY + plotH - (i / 4) * plotH;
+      ctx.beginPath();
+      ctx.moveTo(padX, y);
+      ctx.lineTo(padX + plotW, y);
+      ctx.stroke();
+      ctx.fillStyle = '#999';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText((maxLr * i / 4).toExponential(1), padX - 8, y + 4);
+    }
+
+    // Warmup line
+    const warmupX = padX + (warmup / maxSteps) * plotW;
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(warmupX, padY);
+    ctx.lineTo(warmupX, padY + plotH);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('warmup', warmupX, padY + plotH + 14);
+
+    // Plot
+    ctx.strokeStyle = 'var(--accent)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      const x = padX + (p.x / maxSteps) * plotW;
+      const y = padY + plotH - (p.y / maxLr) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Fill under curve
+    ctx.lineTo(padX + plotW, padY + plotH);
+    ctx.lineTo(padX, padY + plotH);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(37, 99, 235, 0.08)';
+    ctx.fill();
+
+    // Labels
+    ctx.fillStyle = '#999';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Training Step', padX + plotW / 2, h - 4);
+    ctx.save();
+    ctx.translate(14, padY + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Learning Rate', 0, 0);
+    ctx.restore();
+
+    // Peak annotation
+    const peakLr = lrSchedule(warmup, warmup, dmodel);
+    const peakX = padX + (warmup / maxSteps) * plotW;
+    const peakY = padY + plotH - (peakLr / maxLr) * plotH;
+    ctx.fillStyle = 'var(--accent)';
+    ctx.font = '10px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`peak: ${peakLr.toExponential(2)}`, peakX + 6, peakY - 6);
+    ctx.beginPath();
+    ctx.arc(peakX, peakY, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  warmupSlider.addEventListener('input', () => { warmupVal.textContent = warmupSlider.value; render(); });
+  dmodelSlider.addEventListener('input', () => { dmodelVal.textContent = dmodelSlider.value; render(); });
+  render();
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 10: Timeline
+// ────────────────────────────────────────────────
+(function() {
+  const container = document.getElementById('timeline-display');
+
+  const milestones = [
+    { year: '2017', name: 'Transformer', params: '65M', desc: 'The original paper. Encoder-decoder for machine translation. 6 layers, 512 dims, 8 heads.' },
+    { year: '2018', name: 'BERT', params: '340M', desc: 'Encoder-only Transformer pre-trained with masked language modeling. Revolutionized NLP benchmarks.' },
+    { year: '2018', name: 'GPT', params: '117M', desc: 'Decoder-only Transformer with autoregressive pre-training. Showed that generative pre-training works.' },
+    { year: '2019', name: 'GPT-2', params: '1.5B', desc: 'Scaled up GPT. Generated shockingly coherent text. OpenAI initially withheld the full model.' },
+    { year: '2020', name: 'GPT-3', params: '175B', desc: '100× bigger than GPT-2. Demonstrated emergent few-shot learning from prompts alone.' },
+    { year: '2020', name: 'ViT', params: '632M', desc: 'Vision Transformer. Applied the Transformer to image patches, matching CNNs on ImageNet.' },
+    { year: '2021', name: 'AlphaFold 2', params: '~93M', desc: 'Used a modified Transformer (Evoformer) to solve protein structure prediction. Nobel Prize-worthy.' },
+    { year: '2022', name: 'ChatGPT', params: '~175B+', desc: 'GPT-3.5 fine-tuned with RLHF. Brought large language models to the mainstream public.' },
+    { year: '2023', name: 'GPT-4', params: '~1.8T (est.)', desc: 'Multimodal Transformer. Could process text and images. Dramatic improvement in reasoning.' },
+    { year: '2024', name: 'LLaMA 3', params: '405B', desc: 'Open-weight Transformer from Meta. Made frontier-quality models accessible to researchers.' },
+  ];
+
+  let html = '<div style="position: relative; padding-left: 24px;">';
+  milestones.forEach((m, i) => {
+    html += `<div style="position: relative; padding: 12px 0 12px 28px; border-left: 2px solid var(--demo-border); cursor: pointer;" 
+      onmouseenter="this.querySelector('.tl-detail').style.display='block'" 
+      onmouseleave="this.querySelector('.tl-detail').style.display='none'"
+      onclick="this.querySelector('.tl-detail').style.display=this.querySelector('.tl-detail').style.display==='block'?'none':'block'">
+      <div style="position: absolute; left: -7px; top: 18px; width: 12px; height: 12px; border-radius: 50%; background: ${i === 0 ? 'var(--accent)' : 'var(--demo-border)'}; border: 2px solid white;"></div>
+      <div style="font-family: system-ui, sans-serif; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <span style="font-size: 0.72rem; font-weight: 700; color: var(--accent); min-width: 36px;">${m.year}</span>
+        <span style="font-size: 0.9rem; font-weight: 700; color: var(--text);">${m.name}</span>
+        <span style="font-size: 0.72rem; color: var(--muted); background: var(--callout-bg); padding: 2px 8px; border-radius: 10px;">${m.params} params</span>
+      </div>
+      <div class="tl-detail" style="display: none; font-family: system-ui, sans-serif; font-size: 0.82rem; color: var(--muted); margin-top: 6px; line-height: 1.5;">${m.desc}</div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 11: Scaling Law Simulator
+// ────────────────────────────────────────────────
+(function() {
+  const paramsSlider = document.getElementById('params-slider');
+  const tokensSlider = document.getElementById('tokens-slider');
+  const paramsVal = document.getElementById('params-val');
+  const tokensVal = document.getElementById('tokens-val');
+  const canvas = document.getElementById('scaling-canvas');
+  const ctx = canvas.getContext('2d');
+  const result = document.getElementById('scaling-result');
+
+  function formatNum(n) {
+    if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(0) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+    return n.toFixed(0);
+  }
+
+  function computeLoss(logN, logD) {
+    // Chinchilla-style: L ≈ A/N^alpha + B/D^beta + E
+    const N = Math.pow(10, logN);
+    const D = Math.pow(10, logD);
+    const loss = 406.4 / Math.pow(N, 0.34) + 410.7 / Math.pow(D, 0.28) + 1.69;
+    return loss;
+  }
+
+  function render() {
+    const logN = +paramsSlider.value;
+    const logD = +tokensSlider.value;
+    const N = Math.pow(10, logN);
+    const D = Math.pow(10, logD);
+    paramsVal.textContent = formatNum(N);
+    tokensVal.textContent = formatNum(D);
+
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    const padX = 60, padY = 30;
+    const plotW = w - padX - 40;
+    const plotH = h - padY * 2;
+
+    // Plot loss vs params for fixed D
+    const minLogN = 6, maxLogN = 12;
+    ctx.strokeStyle = 'var(--accent)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    let maxLoss = 0, minLoss = Infinity;
+    const pts = [];
+    for (let ln = minLogN; ln <= maxLogN; ln += 0.1) {
+      const loss = computeLoss(ln, logD);
+      pts.push({ ln, loss });
+      maxLoss = Math.max(maxLoss, loss);
+      minLoss = Math.min(minLoss, loss);
+    }
+    maxLoss *= 1.1;
+    minLoss *= 0.9;
+
+    // Grid
+    ctx.strokeStyle = '#e5e5e5';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padY + plotH - (i / 4) * plotH;
+      ctx.beginPath();
+      ctx.moveTo(padX, y);
+      ctx.lineTo(padX + plotW, y);
+      ctx.stroke();
+      const lossVal = minLoss + (maxLoss - minLoss) * i / 4;
+      ctx.fillStyle = '#999';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(lossVal.toFixed(1), padX - 8, y + 4);
+    }
+
+    // Curve
+    ctx.strokeStyle = 'var(--accent)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const x = padX + ((p.ln - minLogN) / (maxLogN - minLogN)) * plotW;
+      const y = padY + plotH - ((p.loss - minLoss) / (maxLoss - minLoss)) * plotH;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Current point
+    const curLoss = computeLoss(logN, logD);
+    const curX = padX + ((logN - minLogN) / (maxLogN - minLogN)) * plotW;
+    const curY = padY + plotH - ((curLoss - minLoss) / (maxLoss - minLoss)) * plotH;
+    ctx.beginPath();
+    ctx.arc(curX, curY, 7, 0, Math.PI * 2);
+    ctx.fillStyle = 'var(--accent)';
+    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = 'var(--text)';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Loss: ${curLoss.toFixed(2)}`, curX, curY - 14);
+
+    // Axes
+    ctx.fillStyle = '#999';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Parameters (log scale) →', padX + plotW / 2, h - 4);
+    ctx.save();
+    ctx.translate(14, padY + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Loss (lower is better)', 0, 0);
+    ctx.restore();
+
+    // X-axis labels
+    [6, 8, 10, 12].forEach(ln => {
+      const x = padX + ((ln - minLogN) / (maxLogN - minLogN)) * plotW;
+      ctx.fillStyle = '#999';
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(formatNum(Math.pow(10, ln)), x, padY + plotH + 14);
+    });
+
+    result.textContent = `${formatNum(N)} parameters trained on ${formatNum(D)} tokens → estimated loss: ${curLoss.toFixed(2)}`;
+  }
+
+  paramsSlider.addEventListener('input', render);
+  tokensSlider.addEventListener('input', render);
+  render();
+})();
+
+// ────────────────────────────────────────────────
+// DEMO 12: Build Your Own Transformer
+// ────────────────────────────────────────────────
+(function() {
+  const dmodelSlider = document.getElementById('b-dmodel');
+  const layersSlider = document.getElementById('b-layers');
+  const headsSlider = document.getElementById('b-heads');
+  const ffnSlider = document.getElementById('b-ffn');
+  const seqSlider = document.getElementById('b-seq');
+  const dmodelVal = document.getElementById('b-dmodel-val');
+  const layersVal = document.getElementById('b-layers-val');
+  const headsVal = document.getElementById('b-heads-val');
+  const ffnVal = document.getElementById('b-ffn-val');
+  const seqVal = document.getElementById('b-seq-val');
+  const results = document.getElementById('builder-results');
+
+  function formatNum(n) {
+    if (n >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+    return n.toFixed(0);
+  }
+
+  function formatBytes(bytes) {
+    if (bytes >= 1e12) return (bytes / 1e12).toFixed(1) + ' TB';
+    if (bytes >= 1e9) return (bytes / 1e9).toFixed(1) + ' GB';
+    if (bytes >= 1e6) return (bytes / 1e6).toFixed(1) + ' MB';
+    return (bytes / 1e3).toFixed(1) + ' KB';
+  }
+
+  function compute() {
+    const d = +dmodelSlider.value;
+    const N = +layersSlider.value;
+    const h = +headsSlider.value;
+    const ffnMult = +ffnSlider.value;
+    const seq = +seqSlider.value;
+
+    dmodelVal.textContent = d;
+    layersVal.textContent = N;
+    headsVal.textContent = h;
+    ffnVal.textContent = ffnMult + '×';
+    seqVal.textContent = seq >= 1024 ? (seq / 1024) + 'K' : seq;
+
+    const dff = d * ffnMult;
+    const dk = d / h;
+
+    // Parameters per encoder layer
+    const attnParams = 4 * d * d; // Wq, Wk, Wv, Wo (each d × d)
+    const ffnParams = 2 * d * dff; // W1 (d × dff) + W2 (dff × d)
+    const lnParams = 4 * d; // 2 layer norms × 2 params each
+    const layerParams = attnParams + ffnParams + lnParams;
+
+    // Total (encoder only for simplicity)
+    const totalParams = layerParams * N;
+
+    // Memory (fp16 = 2 bytes per param)
+    const paramMemory = totalParams * 2;
+
+    // Attention memory: n × n × h per layer
+    const attnMemory = seq * seq * h * 2 * N;
+
+    // Activations memory (rough): 2 × seq × d × N
+    const actMemory = 2 * seq * d * 2 * N;
+
+    // FLOPS per forward pass (rough): 2 × params × seq + 2 × n² × d × N
+    const flops = 2 * totalParams * seq + 2 * seq * seq * d * N;
+
+    // Famous model comparison
+    let comparison = '';
+    if (totalParams < 50e6) comparison = '≈ small experimental model';
+    else if (totalParams < 200e6) comparison = '≈ Transformer base / GPT-1 scale';
+    else if (totalParams < 500e6) comparison = '≈ BERT-Large / GPT-2 small scale';
+    else if (totalParams < 2e9) comparison = '≈ GPT-2 / T5-Large scale';
+    else if (totalParams < 20e9) comparison = '≈ GPT-2 XL / LLaMA-7B scale';
+    else if (totalParams < 100e9) comparison = '≈ GPT-3 / LLaMA-65B scale';
+    else if (totalParams < 500e9) comparison = '≈ PaLM / GPT-4 scale (estimated)';
+    else comparison = '≈ beyond current frontier models!';
+
+    const headDim = Math.floor(d / h);
+    const headValid = d % h === 0;
+
+    results.innerHTML = `
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; font-family: system-ui, sans-serif;">
+        <div style="background: var(--accent-light); padding: 16px; border-radius: 8px;">
+          <div style="font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;">Total Parameters</div>
+          <div style="font-size: 1.4rem; font-weight: 700; color: var(--accent);">${formatNum(totalParams)}</div>
+        </div>
+        <div style="background: #f0fdf4; padding: 16px; border-radius: 8px;">
+          <div style="font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;">Model Memory (fp16)</div>
+          <div style="font-size: 1.4rem; font-weight: 700; color: var(--success);">${formatBytes(paramMemory)}</div>
+        </div>
+        <div style="background: #fef3c7; padding: 16px; border-radius: 8px;">
+          <div style="font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;">Attention Memory</div>
+          <div style="font-size: 1.4rem; font-weight: 700; color: #92400e;">${formatBytes(attnMemory)}</div>
+        </div>
+        <div style="background: #fce7f3; padding: 16px; border-radius: 8px;">
+          <div style="font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;">Head dimension (d_k)</div>
+          <div style="font-size: 1.4rem; font-weight: 700; color: ${headValid ? '#be185d' : 'var(--danger)'};">${headValid ? headDim : '⚠ ' + (d/h).toFixed(1)}</div>
+        </div>
+      </div>
+      <div style="text-align: center; margin-top: 16px; font-family: system-ui, sans-serif; font-size: 0.9rem; color: var(--muted);">
+        ${comparison}
+        ${!headValid ? '<br><span style="color: var(--danger); font-weight: 600;">⚠ d_model must be divisible by h (number of heads)</span>' : ''}
+      </div>
+    `;
+  }
+
+  [dmodelSlider, layersSlider, headsSlider, ffnSlider, seqSlider].forEach(s => s.addEventListener('input', compute));
+  compute();
+})();
+</script>
+
+</body>
+</html>

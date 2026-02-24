@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLaMA: Open and Efficient Foundation Language Models — An Interactive Explainer</title>
+<style>
+:root {
+  --bg: #fafaf8;
+  --text: #1a1a1a;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --muted: #6b7280;
+  --callout-bg: #f8f5f0;
+  --callout-border: #d4a574;
+  --demo-bg: #ffffff;
+  --demo-border: #e5e5e5;
+  --green: #16a34a;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --purple: #7c3aed;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+.content {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 100px 24px 60px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+.hero h1 {
+  font-family: Georgia, serif;
+  font-size: 48px;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  letter-spacing: -1px;
+  color: var(--text);
+}
+.hero .subtitle {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 18px;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.hero .meta {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+}
+.hero .llama-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+  display: block;
+}
+
+/* TOC */
+.toc {
+  max-width: 680px;
+  margin: 0 auto 50px;
+  padding: 30px 32px;
+  background: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  border-radius: 6px;
+}
+.toc h2 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.toc ol {
+  list-style: upper-roman;
+  padding-left: 28px;
+}
+.toc li {
+  font-size: 16px;
+  line-height: 1.9;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.toc a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.toc a:hover { border-bottom-color: var(--accent); }
+
+/* Sections */
+section {
+  margin-bottom: 60px;
+}
+h2.section-title {
+  font-family: Georgia, serif;
+  font-size: 32px;
+  line-height: 1.25;
+  margin: 60px 0 20px;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+h3 {
+  font-family: Georgia, serif;
+  font-size: 24px;
+  margin: 30px 0 14px;
+  color: var(--text);
+}
+p {
+  margin-bottom: 18px;
+}
+strong { color: var(--text); }
+a { color: var(--accent); }
+
+/* Callout */
+.callout {
+  background: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  padding: 20px 24px;
+  margin: 28px 0;
+  border-radius: 4px;
+  font-size: 17px;
+}
+.callout strong { color: var(--text); }
+.callout-emoji { margin-right: 6px; }
+
+/* Demo Containers */
+.demo-container {
+  max-width: 780px;
+  margin: 32px auto;
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: 10px;
+  padding: 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.demo-container h4 {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.demo-caption {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 14px;
+  line-height: 1.5;
+}
+
+/* Buttons & Controls */
+.btn {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  padding: 8px 18px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn:hover { background: #1d4ed8; }
+.btn-outline {
+  background: transparent;
+  color: var(--accent);
+}
+.btn-outline:hover { background: var(--accent-light); }
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+.slider-group label {
+  min-width: 130px;
+  color: var(--muted);
+}
+.slider-group input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.slider-group .val {
+  min-width: 70px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Data table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  margin: 16px 0;
+}
+.data-table th, .data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--demo-border);
+  text-align: left;
+}
+.data-table th {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+.data-table tr:hover { background: #f9f9f6; }
+.data-table .highlight { background: var(--accent-light); font-weight: 600; }
+
+/* Bar chart helpers */
+.bar-row {
+  display: flex;
+  align-items: center;
+  margin: 8px 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+}
+.bar-label {
+  width: 120px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.bar-track {
+  flex: 1;
+  height: 28px;
+  background: #f0f0ee;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.bar-value {
+  width: 50px;
+  text-align: right;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+/* Quiz */
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  padding: 12px 16px;
+  margin: 6px 0;
+  border: 2px solid var(--demo-border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.quiz-option:hover { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.correct { border-color: var(--green); background: #dcfce7; }
+.quiz-option.wrong { border-color: var(--red); background: #fef2f2; }
+.quiz-feedback {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  display: none;
+}
+
+/* Step indicator */
+.step-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0 8px;
+}
+.step-dots {
+  display: flex;
+  gap: 6px;
+}
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ddd;
+  transition: background 0.3s;
+}
+.step-dot.active { background: var(--accent); }
+
+/* Tag */
+.tag {
+  display: inline-block;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
+  margin: 2px 4px;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 60px 24px 40px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+  border-top: 1px solid var(--demo-border);
+  max-width: 680px;
+  margin: 40px auto 0;
+}
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Model card */
+.model-card {
+  display: inline-block;
+  background: #fff;
+  border: 2px solid var(--demo-border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+  min-width: 110px;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.model-card:hover, .model-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(37,99,235,0.12);
+  transform: translateY(-2px);
+}
+.model-card .model-size {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.model-card .model-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Animated typing */
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--accent);
+  animation: blink 0.8s infinite;
+  vertical-align: text-bottom;
+  margin-left: 2px;
+}
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Token viz */
+.token {
+  display: inline-block;
+  padding: 2px 6px;
+  margin: 2px;
+  border-radius: 4px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 14px;
+  transition: all 0.3s;
+  cursor: default;
+}
+
+/* Data pie chart labels */
+.pie-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.pie-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.pie-legend-item:hover { background: #f0f0ee; }
+.pie-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* SVG tooltip */
+.svg-tooltip {
+  position: absolute;
+  background: var(--text);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+/* Comparison grid */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+.compare-card {
+  background: #f9f9f6;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+.compare-card .big-num {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1.2;
+}
+.compare-card .small-label {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Timeline */
+.timeline {
+  position: relative;
+  padding-left: 30px;
+  margin: 20px 0;
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent-light);
+  border-radius: 2px;
+}
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid var(--demo-border);
+  border-radius: 8px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  opacity: 0.5;
+}
+.timeline-item.revealed {
+  opacity: 1;
+  border-color: var(--accent);
+}
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -26px;
+  top: 16px;
+  width: 14px;
+  height: 14px;
+  background: var(--demo-border);
+  border-radius: 50%;
+  border: 3px solid var(--bg);
+  transition: background 0.3s;
+}
+.timeline-item.revealed::before {
+  background: var(--accent);
+}
+.timeline-date {
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.timeline-desc { color: var(--text); }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .hero h1 { font-size: 32px; }
+  h2.section-title { font-size: 26px; }
+  .demo-container { padding: 18px; margin: 24px -12px; }
+  .compare-grid { grid-template-columns: 1fr; }
+  body { font-size: 17px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- HERO -->
+<!-- ============================================================ -->
+<div class="hero">
+  <span class="llama-icon">🦙</span>
+  <h1>LLaMA: Open and Efficient Foundation Language Models</h1>
+  <p class="subtitle">How Meta trained smaller models on more data—and accidentally launched the open-source AI revolution</p>
+  <p class="meta">Touvron et al., 2023 · Interactive Explainer · ~25 min read</p>
+</div>
+
+<!-- ============================================================ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ============================================================ -->
+<nav class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#sec-hook">The Llama That Escaped the Lab</a></li>
+    <li><a href="#sec-philosophy">The Chinchilla Insight: More Data, Smaller Model</a></li>
+    <li><a href="#sec-family">The LLaMA Family: 7B to 65B</a></li>
+    <li><a href="#sec-architecture">Architectural Innovations</a></li>
+    <li><a href="#sec-data">Training Data: Publicly Available Only</a></li>
+    <li><a href="#sec-tokenizer">The Tokenizer: BPE via SentencePiece</a></li>
+    <li><a href="#sec-benchmarks">Benchmarks: David vs. Goliath</a></li>
+    <li><a href="#sec-training">Training Infrastructure &amp; Efficiency</a></li>
+    <li><a href="#sec-leak">The Leak Heard Round the World</a></li>
+    <li><a href="#sec-ecosystem">The Open-Source Explosion</a></li>
+    <li><a href="#sec-impact">Impact: Democratizing AI</a></li>
+    <li><a href="#sec-summary">Summary &amp; Key Takeaways</a></li>
+  </ol>
+</nav>
+
+<div class="content">
+
+<!-- ============================================================ -->
+<!-- SECTION I: Hook -->
+<!-- ============================================================ -->
+<section id="sec-hook">
+<h2 class="section-title">I. The Llama That Escaped the Lab</h2>
+
+<p>In February 2023, Meta AI quietly released a research paper describing a family of language models called <strong>LLaMA</strong> (Large Language Model Meta AI). The paper made a bold claim: you don't need 175 billion parameters to get GPT-3-level performance. You just need to train a <em>smaller</em> model on a <em>lot</em> more data.</p>
+
+<p>Within a week, the model weights leaked onto the internet. Within a month, the open-source community had built chatbots, instruction-following models, and multimodal systems on top of it. <strong>LLaMA didn't just challenge the "bigger is better" paradigm</strong>—it accidentally detonated the open-source AI revolution.</p>
+
+<p>But before we get to the dramatic leak, let's understand <em>why</em> this paper matters technically. It turns out Meta's researchers had a genuinely profound insight about the relationship between model size, data, and compute.</p>
+
+<div class="callout">
+  <span class="callout-emoji">🎯</span>
+  <strong>The big idea:</strong> Instead of training a massive model for one pass over the data, train a smaller model for <em>many</em> passes over much more data. The result: a 13B-parameter model that beats GPT-3's 175B parameters on most benchmarks—and runs on a single GPU.
+</div>
+
+<div class="demo-container" id="demo-intro-quiz">
+  <h4>🧠 Prediction Challenge</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Before we dive in—test your intuition. How many parameters does a model need to match GPT-3 (175B) on common sense reasoning?</p>
+  <button class="quiz-option" onclick="checkIntroQuiz(this, false)">A) At least 100 billion</button>
+  <button class="quiz-option" onclick="checkIntroQuiz(this, false)">B) About 65 billion</button>
+  <button class="quiz-option" onclick="checkIntroQuiz(this, true)">C) Just 13 billion</button>
+  <button class="quiz-option" onclick="checkIntroQuiz(this, false)">D) Fewer than 1 billion</button>
+  <div class="quiz-feedback" id="intro-quiz-fb"></div>
+  <p class="demo-caption">LLaMA challenged the assumption that parameter count is destiny</p>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION II: Chinchilla Philosophy -->
+<!-- ============================================================ -->
+<section id="sec-philosophy">
+<h2 class="section-title">II. The Chinchilla Insight: More Data, Smaller Model</h2>
+
+<p>To understand LLaMA, you need to understand the <strong>Chinchilla paper</strong> (Hoffmann et al., 2022). The Chinchilla team at DeepMind discovered that most large language models were dramatically <em>undertrained</em>. Given a fixed compute budget, the optimal strategy isn't to make the model as big as possible—it's to <strong>balance model size and training data</strong>.</p>
+
+<p>The Chinchilla scaling law roughly says: for every doubling of model parameters, you should also double the training tokens. GPT-3 was trained on 300 billion tokens. The Chinchilla-optimal amount for 175B parameters? About <strong>3.5 trillion tokens</strong>. GPT-3 saw barely 10% of what it should have.</p>
+
+<p>Meta's insight went one step further. Chinchilla optimized for a fixed <strong>training compute budget</strong>. But LLaMA optimized for <strong>inference cost</strong>. A model that's smaller but trained on more data is cheaper to <em>run</em>—and that's what matters when millions of people want to use it.</p>
+
+<div class="callout">
+  <span class="callout-emoji">💡</span>
+  <strong>Key distinction:</strong> Chinchilla asks "given X GPU-hours for training, what's the best model?" LLaMA asks "given that we want the best 13B model <em>possible</em>, how much data should we use?" The answer: train way past the Chinchilla-optimal point.
+</div>
+
+<div class="demo-container" id="demo-scaling">
+  <h4>📊 Interactive: Compute Budget Allocator</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">You have a fixed compute budget. How would you allocate it between model size and training tokens? Drag the slider to explore the trade-off.</p>
+  
+  <div class="slider-group">
+    <label>Model size bias →</label>
+    <input type="range" id="scaling-slider" min="0" max="100" value="50" oninput="updateScalingDemo()">
+    <span class="val" id="scaling-val">50%</span>
+  </div>
+  
+  <div style="display: flex; gap: 16px; margin: 20px 0;">
+    <div style="flex:1; text-align:center; padding: 16px; background: var(--accent-light); border-radius: 8px;">
+      <div style="font-family: system-ui,sans-serif; font-size: 13px; color: var(--muted);">Parameters</div>
+      <div id="scaling-params" style="font-family: system-ui,sans-serif; font-size: 28px; font-weight: 700; color: var(--accent);">35B</div>
+    </div>
+    <div style="flex:1; text-align:center; padding: 16px; background: #f0fdf4; border-radius: 8px;">
+      <div style="font-family: system-ui,sans-serif; font-size: 13px; color: var(--muted);">Training tokens</div>
+      <div id="scaling-tokens" style="font-family: system-ui,sans-serif; font-size: 28px; font-weight: 700; color: var(--green);">700B</div>
+    </div>
+  </div>
+  
+  <div style="text-align: center; margin: 16px 0;">
+    <svg id="scaling-svg" width="100%" height="200" viewBox="0 0 500 200"></svg>
+  </div>
+
+  <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 10px;">
+    <span class="tag" style="cursor:pointer;" onclick="setScalingPreset(85)">GPT-3 style (big model)</span>
+    <span class="tag" style="cursor:pointer;" onclick="setScalingPreset(50)">Chinchilla optimal</span>
+    <span class="tag" style="cursor:pointer;" onclick="setScalingPreset(20)">LLaMA style (more data)</span>
+  </div>
+  
+  <div id="scaling-verdict" style="font-family: system-ui,sans-serif; font-size: 14px; text-align:center; margin-top: 14px; color: var(--muted); min-height: 40px;"></div>
+  <p class="demo-caption">The optimal strategy depends on whether you optimize for training cost or inference cost</p>
+</div>
+
+<p>The LLaMA team trained their 7B model on <strong>1 trillion tokens</strong>, and their larger models on <strong>1.4 trillion tokens</strong>. For context, the Chinchilla-optimal data for a 7B model would be around 140B tokens. LLaMA used <em>7× more data</em> than Chinchilla would recommend for that model size. And the loss was still decreasing.</p>
+
+<p>This is the central message: <strong>small models aren't done learning.</strong> If you keep feeding them data, they keep getting better—well past the "optimal" point defined by training efficiency alone.</p>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION III: The LLaMA Family -->
+<!-- ============================================================ -->
+<section id="sec-family">
+<h2 class="section-title">III. The LLaMA Family: 7B to 65B</h2>
+
+<p>LLaMA isn't a single model—it's a family of four, spanning a wide range of sizes. Think of them as different vehicles: the 7B is a nimble motorcycle, the 13B is a practical sedan, the 33B is a powerful SUV, and the 65B is a semi-truck. Each has its sweet spot.</p>
+
+<div class="demo-container" id="demo-family">
+  <h4>🏗️ Interactive: Explore the LLaMA Family</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 16px;">Click on each model to see its specifications:</p>
+  
+  <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 20px;">
+    <div class="model-card selected" onclick="selectModel(0)" id="mc-0">
+      <div class="model-size">7B</div>
+      <div class="model-label">LLaMA-7B</div>
+    </div>
+    <div class="model-card" onclick="selectModel(1)" id="mc-1">
+      <div class="model-size">13B</div>
+      <div class="model-label">LLaMA-13B</div>
+    </div>
+    <div class="model-card" onclick="selectModel(2)" id="mc-2">
+      <div class="model-size">33B</div>
+      <div class="model-label">LLaMA-33B</div>
+    </div>
+    <div class="model-card" onclick="selectModel(3)" id="mc-3">
+      <div class="model-size">65B</div>
+      <div class="model-label">LLaMA-65B</div>
+    </div>
+  </div>
+
+  <div id="model-details" style="background: #f9f9f6; border-radius: 8px; padding: 20px; font-family: system-ui, sans-serif; font-size: 14px;">
+    <!-- filled by JS -->
+  </div>
+  
+  <div style="margin-top: 16px;">
+    <svg id="family-svg" width="100%" height="120" viewBox="0 0 600 120"></svg>
+  </div>
+  <p class="demo-caption">All models share the same architecture—only the dimensions change</p>
+</div>
+
+<p>A few things jump out from this table. First, <strong>all models use the same vocabulary size</strong> of 32,000 tokens—a relatively small vocabulary compared to GPT-3's 50,257. Second, the smaller models were trained on 1.0T tokens while the larger ones got 1.4T. Third, the total training compute ranges from about 82 GPU-hours×10⁶ for the 7B to 1,022 GPU-hours×10⁶ for the 65B—a 12× difference in compute for a 9× difference in parameters.</p>
+
+<p>The most important model in the family? Arguably the <strong>13B</strong>. It's the one that proved a model small enough to run on a single consumer GPU could rival GPT-3. That's the model that changed everything.</p>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION IV: Architecture -->
+<!-- ============================================================ -->
+<section id="sec-architecture">
+<h2 class="section-title">IV. Architectural Innovations</h2>
+
+<p>LLaMA doesn't reinvent the Transformer from scratch. Instead, it cherry-picks the <strong>best improvements</strong> from the last few years of research. Think of it as a "greatest hits" architecture—every component has been upgraded from the original GPT design, but the overall structure remains a <strong>decoder-only Transformer</strong>.</p>
+
+<p>Three key modifications stand out:</p>
+
+<h3>1. Pre-Normalization with RMSNorm</h3>
+
+<p>The original Transformer applies <strong>Layer Normalization</strong> (LayerNorm) after each sub-layer. LLaMA instead uses <strong>RMSNorm</strong> (Root Mean Square Normalization) applied <em>before</em> each sub-layer—a technique called <strong>pre-normalization</strong>, inspired by GPT-3.</p>
+
+<p>Why RMSNorm instead of regular LayerNorm? <strong>Speed.</strong> LayerNorm computes both the mean and variance of activations, then centers and scales them. RMSNorm skips the mean-centering step and just divides by the root mean square. It's simpler, faster, and empirically works just as well.</p>
+
+<h3>2. SwiGLU Activation Function</h3>
+
+<p>The feed-forward network in each Transformer block normally uses a ReLU or GeLU activation. LLaMA uses <strong>SwiGLU</strong>, introduced by Noam Shazeer in 2020. SwiGLU combines a <strong>Swish</strong> activation (a smooth, self-gated function) with a <strong>Gated Linear Unit</strong>. The result is a richer, more expressive activation that consistently improves performance.</p>
+
+<p>The catch? SwiGLU has <em>three</em> weight matrices in the FFN instead of the usual two, making it more parameter-heavy per block. To compensate, LLaMA uses a slightly smaller hidden dimension (⅔ of 4d, rounded to the nearest multiple of 256).</p>
+
+<h3>3. Rotary Position Embeddings (RoPE)</h3>
+
+<p>Instead of absolute or learned positional embeddings, LLaMA uses <strong>Rotary Position Embeddings</strong> (RoPE), developed by Su et al. (2021). RoPE encodes position information by <em>rotating</em> the query and key vectors in the attention mechanism. The beauty of RoPE is that the dot product between rotated queries and keys naturally decays with distance—giving the model an elegant, continuous notion of relative position.</p>
+
+<div class="demo-container" id="demo-arch">
+  <h4>🔧 Interactive: Architecture Explorer</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Click on each architectural component to see how it compares to the standard Transformer:</p>
+  
+  <div style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;">
+    <button class="btn btn-outline" onclick="showArch('rmsnorm')" id="arch-btn-rmsnorm">RMSNorm</button>
+    <button class="btn btn-outline" onclick="showArch('swiglu')" id="arch-btn-swiglu">SwiGLU</button>
+    <button class="btn btn-outline" onclick="showArch('rope')" id="arch-btn-rope">RoPE</button>
+  </div>
+  
+  <div id="arch-display" style="min-height: 280px;">
+    <svg id="arch-svg" width="100%" height="280" viewBox="0 0 700 280"></svg>
+  </div>
+  
+  <div id="arch-explanation" style="font-family: system-ui, sans-serif; font-size: 14px; background: #f9f9f6; border-radius: 8px; padding: 16px; margin-top: 12px; min-height: 60px;">
+    <em>Click a component above to explore ↑</em>
+  </div>
+  <p class="demo-caption">LLaMA's architecture is a "greatest hits" of Transformer improvements</p>
+</div>
+
+<div class="callout">
+  <span class="callout-emoji">🧮</span>
+  <strong>Fun math:</strong> The RMSNorm formula is simply: <code>x̂ᵢ = xᵢ / RMS(x)</code> where <code>RMS(x) = √(1/n · Σxᵢ²)</code>. No mean subtraction, no β shift parameter. Just scale by the root mean square. Elegant and fast.
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION V: Training Data -->
+<!-- ============================================================ -->
+<section id="sec-data">
+<h2 class="section-title">V. Training Data: Publicly Available Only</h2>
+
+<p>Here's something remarkable about LLaMA: <strong>it was trained entirely on publicly available data.</strong> No proprietary datasets, no secret web scrapes, no licensed content. Meta explicitly chose this approach to show that competitive language models can be built without data moats.</p>
+
+<p>The training mix combines seven sources, each preprocessed differently:</p>
+
+<div class="demo-container" id="demo-data">
+  <h4>📚 Interactive: Training Data Composition</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Hover over each slice to see details. The data mix matters—different sources contribute different capabilities.</p>
+  
+  <div style="text-align: center; position: relative;">
+    <svg id="pie-svg" width="320" height="320" viewBox="0 0 320 320" style="margin: 0 auto; display: block;"></svg>
+    <div class="svg-tooltip" id="pie-tooltip"></div>
+  </div>
+  
+  <div class="pie-legend" id="pie-legend"></div>
+  
+  <div id="data-detail" style="font-family: system-ui, sans-serif; font-size: 14px; background: #f9f9f6; border-radius: 8px; padding: 16px; margin-top: 16px; text-align: center; min-height: 70px; color: var(--muted);">
+    Hover over a slice or click a legend item to learn more about each data source
+  </div>
+  <p class="demo-caption">Total training set: ~1.4 trillion tokens from publicly available sources</p>
+</div>
+
+<p><strong>CommonCrawl</strong> is the largest slice at 67%—but it's heavily filtered. Meta used a CCNet pipeline to deduplicate content, ran a language classifier to keep only high-quality English text, and used a linear classifier trained on Wikipedia references to filter for quality. Even after all that processing, most of the training data comes from the raw web.</p>
+
+<p><strong>C4</strong> (Colossal Clean Crawled Corpus) provides another 15%. Originally created for the T5 model, it applies aggressive heuristic filtering to CommonCrawl. LLaMA includes it as a complement to their own CCNet-processed CommonCrawl data.</p>
+
+<p>The specialized sources—<strong>GitHub</strong> (4.5%), <strong>Wikipedia</strong> (4.5%), <strong>Books</strong> (4.5%), <strong>ArXiv</strong> (2.5%), and <strong>StackExchange</strong> (2%)—are small in percentage but outsized in impact. Code data helps with reasoning. ArXiv improves scientific understanding. StackExchange teaches the model to explain and answer questions.</p>
+
+<div class="callout">
+  <span class="callout-emoji">🔄</span>
+  <strong>Epochs matter:</strong> Not all data is seen the same number of times. Wikipedia and Books are sampled ~2× during training, while CommonCrawl is used for roughly 1 epoch. The team explicitly noted that a small amount of repetition for high-quality sources didn't hurt performance.
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION VI: Tokenizer -->
+<!-- ============================================================ -->
+<section id="sec-tokenizer">
+<h2 class="section-title">VI. The Tokenizer: BPE via SentencePiece</h2>
+
+<p>LLaMA uses <strong>Byte-Pair Encoding (BPE)</strong>, implemented through Google's <strong>SentencePiece</strong> library. The vocabulary size is <strong>32,000 tokens</strong>—significantly smaller than GPT-3's 50,257 or GPT-4's 100,000+.</p>
+
+<p>A key design choice: LLaMA's tokenizer <strong>splits all numbers into individual digits</strong>. The number "2023" becomes four tokens: "2", "0", "2", "3". This hurts efficiency (numbers take more tokens) but dramatically improves arithmetic reasoning, because the model learns digit-level operations instead of memorizing number tokens.</p>
+
+<p>Another important feature: <strong>unknown characters are decomposed into UTF-8 bytes.</strong> This means the model can handle any language or script, even if it's underrepresented in training—it just falls back to byte-level processing.</p>
+
+<div class="demo-container" id="demo-tokenizer">
+  <h4>🔤 Interactive: Tokenizer Simulator</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Type text below to see how LLaMA's BPE tokenizer might split it into tokens. (This is a simplified simulation—the real tokenizer uses learned merge rules.)</p>
+  
+  <input type="text" id="token-input" placeholder="Try: The LLaMA model has 13000000000 parameters" value="The LLaMA model has 13000000000 parameters" 
+    style="width: 100%; padding: 12px 16px; border: 2px solid var(--demo-border); border-radius: 8px; font-size: 15px; font-family: system-ui, sans-serif; margin-bottom: 12px; outline: none; transition: border-color 0.2s;"
+    onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--demo-border)'"
+    oninput="tokenizeText()">
+  
+  <div id="token-output" style="min-height: 50px; padding: 12px; background: #f9f9f6; border-radius: 8px; line-height: 2.2;"></div>
+  
+  <div style="display: flex; justify-content: space-between; margin-top: 10px; font-family: system-ui, sans-serif; font-size: 13px; color: var(--muted);">
+    <span>Tokens: <strong id="token-count">0</strong></span>
+    <span>Characters: <strong id="char-count">0</strong></span>
+    <span>Ratio: <strong id="token-ratio">0</strong> chars/token</span>
+  </div>
+  
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+    <span class="tag" style="cursor:pointer;" onclick="document.getElementById('token-input').value='Hello world! How are you?';tokenizeText();">Simple English</span>
+    <span class="tag" style="cursor:pointer;" onclick="document.getElementById('token-input').value='def fibonacci(n): return n if n<=1 else fibonacci(n-1)+fibonacci(n-2)';tokenizeText();">Python code</span>
+    <span class="tag" style="cursor:pointer;" onclick="document.getElementById('token-input').value='The answer is 3.14159265358979';tokenizeText();">Numbers</span>
+    <span class="tag" style="cursor:pointer;" onclick="document.getElementById('token-input').value='🦙🦙🦙 LLaMA!';tokenizeText();">Emoji</span>
+  </div>
+  <p class="demo-caption">LLaMA splits numbers into individual digits for better arithmetic reasoning</p>
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION VII: Benchmarks -->
+<!-- ============================================================ -->
+<section id="sec-benchmarks">
+<h2 class="section-title">VII. Benchmarks: David vs. Goliath</h2>
+
+<p>Now for the headline result. <strong>LLaMA-13B outperforms GPT-3 (175B) on most benchmarks.</strong> Read that again. A model with <em>13.5× fewer parameters</em> beats the model that shocked the world in 2020. And LLaMA-65B is competitive with Chinchilla-70B and PaLM-540B.</p>
+
+<p>Let's look at the numbers across key benchmarks:</p>
+
+<div class="demo-container" id="demo-benchmarks">
+  <h4>📈 Interactive: Benchmark Comparison</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Select a benchmark category to compare LLaMA against GPT-3 and other models:</p>
+  
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+    <button class="btn btn-outline" onclick="showBenchmark('commonsense')" id="bench-btn-commonsense">Common Sense</button>
+    <button class="btn btn-outline" onclick="showBenchmark('reading')" id="bench-btn-reading">Reading Comp.</button>
+    <button class="btn btn-outline" onclick="showBenchmark('math')" id="bench-btn-math">Math</button>
+    <button class="btn btn-outline" onclick="showBenchmark('code')" id="bench-btn-code">Code</button>
+  </div>
+  
+  <div id="benchmark-chart" style="min-height: 220px;"></div>
+  
+  <div id="benchmark-insight" style="font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); text-align: center; margin-top: 12px; min-height: 30px;"></div>
+  <p class="demo-caption">LLaMA-13B consistently matches or exceeds GPT-3 175B across diverse tasks</p>
+</div>
+
+<p>The results are especially striking on <strong>common sense reasoning</strong> tasks like HellaSwag, WinoGrande, and ARC. These tasks test whether a model understands everyday cause-and-effect, physics, and social dynamics. LLaMA-13B matches or beats GPT-3 on all of them.</p>
+
+<p>On <strong>code generation</strong> (HumanEval), LLaMA performs reasonably well despite code being only 4.5% of its training data. On <strong>math</strong> (GSM8K, MATH), it's decent but not exceptional—math remains a weakness for models of this size.</p>
+
+<div class="callout">
+  <span class="callout-emoji">🏆</span>
+  <strong>The real story:</strong> LLaMA-65B is competitive with Chinchilla-70B (which has similar parameter count) and PaLM-540B (which has 8× more parameters). This suggests that training on more tokens was the right call—the extra data more than compensated for the smaller model size.
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION VIII: Training Infrastructure -->
+<!-- ============================================================ -->
+<section id="sec-training">
+<h2 class="section-title">VIII. Training Infrastructure & Efficiency</h2>
+
+<p>Training LLaMA-65B on 1.4 trillion tokens is no small feat. Meta used <strong>2,048 NVIDIA A100 80GB GPUs</strong> and trained for approximately <strong>21 days</strong>. The total compute budget was roughly <strong>1,022,362 GPU-hours</strong>—about 1 million A100-hours.</p>
+
+<p>To make this efficient, they used several optimizations:</p>
+
+<p><strong>Efficient attention:</strong> They used an efficient implementation of the causal multi-head attention mechanism to reduce memory usage and computation—similar in spirit to what would later be popularized as FlashAttention. This avoids materializing the full attention matrix, saving both memory and FLOPs.</p>
+
+<p><strong>Gradient checkpointing:</strong> Instead of storing all activations for the backward pass, they recompute some activations during backpropagation. This trades compute for memory, allowing larger batch sizes.</p>
+
+<p><strong>Mixed precision:</strong> Training used a mix of float16 and bfloat16 arithmetic where possible, roughly doubling throughput compared to full float32.</p>
+
+<div class="demo-container" id="demo-training">
+  <h4>⚡ Interactive: Training Cost Calculator</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Explore how training cost scales with model size and data. Adjust the sliders to see estimated GPU-hours and cost.</p>
+  
+  <div class="slider-group">
+    <label>Model size:</label>
+    <input type="range" id="train-size" min="1" max="65" value="13" oninput="updateTrainingCalc()">
+    <span class="val" id="train-size-val">13B</span>
+  </div>
+  
+  <div class="slider-group">
+    <label>Training tokens:</label>
+    <input type="range" id="train-tokens" min="100" max="3000" value="1000" step="100" oninput="updateTrainingCalc()">
+    <span class="val" id="train-tokens-val">1.0T</span>
+  </div>
+  
+  <div class="compare-grid" style="margin-top: 16px;">
+    <div class="compare-card">
+      <div class="big-num" id="calc-gpuhours">135K</div>
+      <div class="small-label">A100 GPU-hours</div>
+    </div>
+    <div class="compare-card">
+      <div class="big-num" id="calc-cost">$270K</div>
+      <div class="small-label">Estimated cost @ $2/hr</div>
+    </div>
+    <div class="compare-card">
+      <div class="big-num" id="calc-days">3</div>
+      <div class="small-label">Days on 2048 GPUs</div>
+    </div>
+    <div class="compare-card">
+      <div class="big-num" id="calc-co2">31</div>
+      <div class="small-label">Tons CO₂ estimated</div>
+    </div>
+  </div>
+  
+  <div id="training-comparison" style="font-family: system-ui, sans-serif; font-size: 14px; text-align: center; color: var(--muted); margin-top: 12px;"></div>
+  <p class="demo-caption">Training cost scales roughly linearly with both model size and token count</p>
+</div>
+
+<p>For context, training GPT-3 reportedly cost between $4–12 million. LLaMA-65B's estimated cost was around <strong>$2–5 million</strong> in A100 GPU time. Not cheap—but remarkably cost-effective for a model that matches much larger competitors.</p>
+
+<p>The carbon footprint? Meta estimated <strong>2,638 MWh</strong> of energy for the full LLaMA training run (all four models), producing approximately <strong>1,015 tons of CO₂</strong>. They noted that the data center was powered partly by renewable energy, reducing the net emissions.</p>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION IX: The Leak -->
+<!-- ============================================================ -->
+<section id="sec-leak">
+<h2 class="section-title">IX. The Leak Heard Round the World</h2>
+
+<p>Meta released LLaMA under a <strong>noncommercial research license</strong>. Researchers had to apply for access, and usage was restricted to academic purposes. The intent was clear: this was a <em>research artifact</em>, not a product.</p>
+
+<p>Then, within a week of release, the model weights were <strong>leaked on 4chan</strong> and spread via BitTorrent. Suddenly, anyone in the world could download a GPT-3-class language model and run it on their own hardware. The genie was out of the bottle.</p>
+
+<p>Meta's response was measured—they didn't aggressively pursue takedowns. In retrospect, many believe the leak (while unintended) <strong>massively accelerated open-source AI development</strong> and ultimately benefited Meta's position as the center of the open-source LLM ecosystem.</p>
+
+<div class="callout">
+  <span class="callout-emoji">🤔</span>
+  <strong>The irony:</strong> A paper about efficient, accessible language models became <em>truly</em> accessible only because of a leak. Some speculate the loose security was not entirely accidental—but that's firmly in conspiracy theory territory. What's undeniable is the result.
+</div>
+
+<div class="demo-container" id="demo-leak-timeline">
+  <h4>📅 Interactive: Timeline of the LLaMA Effect</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Click "Reveal Next" to step through the events that followed LLaMA's release. The pace of innovation was breathtaking.</p>
+  
+  <div class="timeline" id="leak-timeline">
+    <div class="timeline-item" data-idx="0">
+      <div class="timeline-date">Feb 24, 2023</div>
+      <div class="timeline-desc">Meta releases LLaMA paper and grants researcher access</div>
+    </div>
+    <div class="timeline-item" data-idx="1">
+      <div class="timeline-date">Mar 2, 2023</div>
+      <div class="timeline-desc">LLaMA weights leaked online via a pull request link, then spread to 4chan and torrents</div>
+    </div>
+    <div class="timeline-item" data-idx="2">
+      <div class="timeline-date">Mar 13, 2023</div>
+      <div class="timeline-desc"><strong>Stanford Alpaca</strong> released — instruction-tuned LLaMA-7B for $600 using GPT-3.5 distillation</div>
+    </div>
+    <div class="timeline-item" data-idx="3">
+      <div class="timeline-date">Mar 14, 2023</div>
+      <div class="timeline-desc"><strong>llama.cpp</strong> by Georgi Gerganov enables LLaMA inference on a MacBook CPU</div>
+    </div>
+    <div class="timeline-item" data-idx="4">
+      <div class="timeline-date">Mar 19, 2023</div>
+      <div class="timeline-desc"><strong>GPT4All</strong> trains a chatbot on curated data, runs locally on laptops</div>
+    </div>
+    <div class="timeline-item" data-idx="5">
+      <div class="timeline-date">Mar 30, 2023</div>
+      <div class="timeline-desc"><strong>Vicuna-13B</strong> — fine-tuned on ShareGPT conversations, achieves ~90% of ChatGPT quality</div>
+    </div>
+    <div class="timeline-item" data-idx="6">
+      <div class="timeline-date">Apr 3, 2023</div>
+      <div class="timeline-desc"><strong>Koala</strong> from UC Berkeley — trained on dialogue data from the web</div>
+    </div>
+    <div class="timeline-item" data-idx="7">
+      <div class="timeline-date">Apr 28, 2023</div>
+      <div class="timeline-desc"><strong>Open Assistant</strong> releases a full open-source ChatGPT alternative with RLHF</div>
+    </div>
+    <div class="timeline-item" data-idx="8">
+      <div class="timeline-date">May 2023+</div>
+      <div class="timeline-desc">Dozens more: WizardLM, Guanaco, Orca, LLaMA-Adapter, and hundreds of community fine-tunes flood Hugging Face</div>
+    </div>
+  </div>
+  
+  <div style="text-align: center; margin-top: 12px;">
+    <button class="btn" onclick="revealNextTimeline()" id="timeline-btn">Reveal Next Event</button>
+    <button class="btn btn-outline" onclick="resetTimeline()" style="margin-left: 8px;">Reset</button>
+  </div>
+  <div style="font-family: system-ui, sans-serif; font-size: 14px; text-align: center; color: var(--muted); margin-top: 10px;" id="timeline-counter">0 of 9 events revealed</div>
+  <p class="demo-caption">The entire open-source LLM ecosystem bootstrapped in under 3 months</p>
+</div>
+
+<p>The speed was staggering. Stanford's <strong>Alpaca</strong> team showed you could instruction-tune LLaMA-7B for <strong>less than $600</strong> by distilling from GPT-3.5's outputs. <strong>Vicuna</strong> (from LMSYS) was even better, achieving reportedly 90% of ChatGPT's quality. <strong>llama.cpp</strong> by Georgi Gerganov showed you could run LLaMA on a <em>CPU</em>—even on a Raspberry Pi.</p>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION X: The Open-Source Explosion -->
+<!-- ============================================================ -->
+<section id="sec-ecosystem">
+<h2 class="section-title">X. The Open-Source Explosion</h2>
+
+<p>LLaMA's leak catalyzed a Cambrian explosion of open-source language models. Before LLaMA, open models were limited to GPT-J (6B), GPT-NeoX (20B), and BLOOM (176B)—none of which matched the closed-source frontier. After LLaMA, the floodgates opened.</p>
+
+<p>The pattern was remarkably consistent: take LLaMA's base weights, add high-quality instruction-following data (often distilled from ChatGPT/GPT-4), fine-tune with LoRA or full fine-tuning, and release. This "<strong>LLaMA + fine-tune</strong>" recipe became the standard playbook for open-source LLM development.</p>
+
+<div class="demo-container" id="demo-ecosystem">
+  <h4>🌳 Interactive: The LLaMA Ecosystem Tree</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Click on each descendant to see how it builds on LLaMA. This is just a fraction of the models spawned from LLaMA's release.</p>
+  
+  <svg id="tree-svg" width="100%" height="400" viewBox="0 0 720 400"></svg>
+  
+  <div id="tree-detail" style="font-family: system-ui, sans-serif; font-size: 14px; background: #f9f9f6; border-radius: 8px; padding: 16px; margin-top: 12px; min-height: 60px; text-align: center; color: var(--muted);">
+    Click on any model node to learn more about it
+  </div>
+  <p class="demo-caption">LLaMA spawned an entire ecosystem of specialized models in weeks</p>
+</div>
+
+<p>Key innovations that emerged from this ecosystem:</p>
+
+<p><strong>LoRA (Low-Rank Adaptation)</strong> became the default fine-tuning technique. Instead of updating all parameters, LoRA adds small trainable matrices to each attention layer—reducing the compute needed for fine-tuning by 10–100×.</p>
+
+<p><strong>Quantization</strong> (GPTQ, GGML/GGUF) made it possible to compress LLaMA from 16-bit to 4-bit precision with minimal quality loss. A 4-bit quantized LLaMA-13B fits in about 8GB of RAM—runnable on a gaming laptop.</p>
+
+<p><strong>Multimodal extensions</strong> like LLaMA-Adapter and LLaVA added vision capabilities to LLaMA, creating open-source alternatives to GPT-4V months before that model was released.</p>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION XI: Impact -->
+<!-- ============================================================ -->
+<section id="sec-impact">
+<h2 class="section-title">XI. Impact: Democratizing AI</h2>
+
+<p>LLaMA's impact goes far beyond benchmark numbers. It fundamentally shifted the <strong>power dynamics of AI research</strong>. Before LLaMA, state-of-the-art language models were exclusively controlled by a handful of companies: OpenAI, Google, and Anthropic. Researchers outside these organizations could only study these models through APIs—black boxes with unknown architectures, data, and training procedures.</p>
+
+<p>LLaMA changed the equation. Suddenly, a PhD student with a single GPU could:</p>
+
+<p>• <strong>Study</strong> a frontier-class model's weights and representations<br>
+• <strong>Fine-tune</strong> it for specific tasks or languages<br>
+• <strong>Run it locally</strong> without API costs or data privacy concerns<br>
+• <strong>Modify</strong> the architecture and experiment freely</p>
+
+<div class="demo-container" id="demo-impact">
+  <h4>⚖️ Interactive: The Accessibility Revolution</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Use the slider to see how hardware requirements for running a GPT-3-class model have changed since LLaMA and its community innovations:</p>
+  
+  <div class="slider-group">
+    <label>Optimization level:</label>
+    <input type="range" id="access-slider" min="0" max="4" value="0" oninput="updateAccessDemo()">
+    <span class="val" id="access-val" style="min-width: 120px;">Original</span>
+  </div>
+  
+  <div id="access-display" style="margin: 20px 0;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <div style="background: #f9f9f6; border-radius: 8px; padding: 16px; text-align: center;">
+        <div style="font-family: system-ui,sans-serif; font-size: 13px; color: var(--muted);">Memory Required</div>
+        <div id="access-mem" style="font-family: system-ui,sans-serif; font-size: 32px; font-weight: 700; color: var(--red);">350 GB</div>
+      </div>
+      <div style="background: #f9f9f6; border-radius: 8px; padding: 16px; text-align: center;">
+        <div style="font-family: system-ui,sans-serif; font-size: 13px; color: var(--muted);">Hardware Cost</div>
+        <div id="access-cost" style="font-family: system-ui,sans-serif; font-size: 32px; font-weight: 700; color: var(--red);">$150K+</div>
+      </div>
+      <div style="background: #f9f9f6; border-radius: 8px; padding: 16px; text-align: center;">
+        <div style="font-family: system-ui,sans-serif; font-size: 13px; color: var(--muted);">Hardware</div>
+        <div id="access-hw" style="font-family: system-ui,sans-serif; font-size: 16px; font-weight: 700; color: var(--accent);">8× A100 80GB</div>
+      </div>
+      <div style="background: #f9f9f6; border-radius: 8px; padding: 16px; text-align: center;">
+        <div style="font-family: system-ui,sans-serif; font-size: 13px; color: var(--muted);">Who Can Run It</div>
+        <div id="access-who" style="font-family: system-ui,sans-serif; font-size: 16px; font-weight: 700; color: var(--accent);">Big Tech Labs</div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="access-stage" style="font-family: system-ui, sans-serif; font-size: 14px; text-align: center; color: var(--muted); padding: 8px; background: var(--accent-light); border-radius: 8px;">
+    <strong>Stage:</strong> GPT-3 175B at FP16 — requires a server rack
+  </div>
+  <p class="demo-caption">From $150K server clusters to a $500 laptop—in under a year</p>
+</div>
+
+<p>Meta clearly recognized this dynamic. When they released <strong>LLaMA 2</strong> in July 2023 (just 5 months later), they made it fully open-source with a permissive commercial license. The original LLaMA had proved the concept; LLaMA 2 embraced it as strategy. The message was clear: <strong>open-source AI isn't a leak—it's a moat.</strong></p>
+
+<div class="callout">
+  <span class="callout-emoji">🌎</span>
+  <strong>Global impact:</strong> LLaMA derivatives were quickly adapted for languages underserved by English-centric models—Chinese (Chinese-LLaMA), Japanese, Arabic, and many more. Communities that couldn't afford API costs suddenly had powerful language models in their own languages.
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- SECTION XII: Summary -->
+<!-- ============================================================ -->
+<section id="sec-summary">
+<h2 class="section-title">XII. Summary & Key Takeaways</h2>
+
+<p>Let's distill what we've learned:</p>
+
+<div class="demo-container" id="demo-summary">
+  <h4>🎯 Interactive: Key Takeaways Quiz</h4>
+  <p style="font-family: system-ui, sans-serif; font-size: 15px; margin-bottom: 14px;">Test your understanding. Answer these questions to solidify the key concepts:</p>
+  
+  <div id="summary-quiz">
+    <div class="sq-question" data-q="0">
+      <p style="font-family: system-ui, sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 8px;">1. What was LLaMA's key training philosophy?</p>
+      <button class="quiz-option" onclick="checkSummaryQuiz(0, this, 0)">A) Train the largest possible model on limited data</button>
+      <button class="quiz-option" onclick="checkSummaryQuiz(0, this, 1)">B) Train smaller models on significantly more data than Chinchilla-optimal</button>
+      <button class="quiz-option" onclick="checkSummaryQuiz(0, this, 2)">C) Use reinforcement learning from human feedback</button>
+      <div class="quiz-feedback" id="sq-fb-0"></div>
+    </div>
+    
+    <div class="sq-question" data-q="1" style="margin-top: 20px;">
+      <p style="font-family: system-ui, sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 8px;">2. What three architectural innovations does LLaMA use?</p>
+      <button class="quiz-option" onclick="checkSummaryQuiz(1, this, 0)">A) Flash Attention, Mixture of Experts, Sparse attention</button>
+      <button class="quiz-option" onclick="checkSummaryQuiz(1, this, 1)">B) RMSNorm, SwiGLU, Rotary Position Embeddings</button>
+      <button class="quiz-option" onclick="checkSummaryQuiz(1, this, 2)">C) Group Query Attention, GELU, ALiBi</button>
+      <div class="quiz-feedback" id="sq-fb-1"></div>
+    </div>
+    
+    <div class="sq-question" data-q="2" style="margin-top: 20px;">
+      <p style="font-family: system-ui, sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 8px;">3. What was special about LLaMA's training data?</p>
+      <button class="quiz-option" onclick="checkSummaryQuiz(2, this, 0)">A) It used proprietary datasets from Meta's platforms</button>
+      <button class="quiz-option" onclick="checkSummaryQuiz(2, this, 1)">B) It was entirely synthetically generated</button>
+      <button class="quiz-option" onclick="checkSummaryQuiz(2, this, 2)">C) It used only publicly available data sources</button>
+      <div class="quiz-feedback" id="sq-fb-2"></div>
+    </div>
+  </div>
+  
+  <div id="quiz-score" style="font-family: system-ui, sans-serif; font-size: 16px; text-align: center; margin-top: 20px; display: none; padding: 16px; background: #f0fdf4; border-radius: 8px; font-weight: 600; color: var(--green);"></div>
+</div>
+
+<p><strong>The core takeaways from the LLaMA paper:</strong></p>
+
+<p>1. <strong>Data scales better than parameters</strong> for inference-optimized models. A 13B model trained on 1T tokens beats a 175B model trained on 300B tokens.</p>
+
+<p>2. <strong>Publicly available data is sufficient</strong> to train competitive foundation models. No secret sauce required.</p>
+
+<p>3. <strong>Architectural refinements matter</strong>—RMSNorm, SwiGLU, and RoPE each contribute meaningfully to efficiency and performance.</p>
+
+<p>4. <strong>Open models accelerate research</strong> at a pace that closed models simply cannot match. The LLaMA ecosystem produced more innovation in 3 months than any single lab could achieve.</p>
+
+<p>5. <strong>AI democratization is inevitable.</strong> Once the weights exist, the community will find ways to make them accessible. The question isn't whether to open-source—it's how to do it responsibly.</p>
+
+<div class="callout">
+  <span class="callout-emoji">🦙</span>
+  <strong>In one sentence:</strong> LLaMA proved that the path to powerful AI isn't exclusively through scale—it's through <strong>efficiency, openness, and the relentless ingenuity of the open-source community</strong>.
+</div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- FURTHER RESOURCES -->
+<!-- ============================================================ -->
+<section id="sec-resources">
+<h2 class="section-title">Further Resources</h2>
+
+<p><strong>The Paper:</strong> <a href="https://arxiv.org/abs/2302.13971" target="_blank">LLaMA: Open and Efficient Foundation Language Models</a> (Touvron et al., 2023)</p>
+
+<p><strong>Related Papers:</strong></p>
+<p>• <a href="https://arxiv.org/abs/2203.15556" target="_blank">Chinchilla: Training Compute-Optimal Large Language Models</a> (Hoffmann et al., 2022)<br>
+• <a href="https://arxiv.org/abs/2104.09864" target="_blank">RoPE: Rotary Position Embedding</a> (Su et al., 2021)<br>
+• <a href="https://arxiv.org/abs/2002.05202" target="_blank">SwiGLU Activation</a> (Shazeer, 2020)<br>
+• <a href="https://arxiv.org/abs/1910.07467" target="_blank">RMSNorm</a> (Zhang & Sennrich, 2019)</p>
+
+<p><strong>Community Projects:</strong></p>
+<p>• <a href="https://github.com/ggerganov/llama.cpp" target="_blank">llama.cpp</a> — CPU inference for LLaMA<br>
+• <a href="https://crfm.stanford.edu/2023/03/13/alpaca.html" target="_blank">Stanford Alpaca</a> — Instruction-tuned LLaMA<br>
+• <a href="https://lmsys.org/blog/2023-03-30-vicuna/" target="_blank">Vicuna</a> — ChatGPT-quality open chatbot</p>
+
+<p><strong>Follow-ups:</strong></p>
+<p>• <a href="https://arxiv.org/abs/2307.09288" target="_blank">LLaMA 2</a> (Touvron et al., 2023) — The fully open-source sequel</p>
+
+</section>
+
+</div><!-- end .content -->
+
+<!-- ============================================================ -->
+<!-- FOOTER -->
+<!-- ============================================================ -->
+<footer>
+  <p>Built with care. Inspired by <a href="https://explainers.blog" target="_blank" style="color: var(--accent);">explainers.blog</a>.</p>
+  <p style="margin-top: 8px;">An interactive explainer about the paper that launched a thousand llamas. 🦙</p>
+</footer>
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT -->
+<!-- ============================================================ -->
+<script>
+// =========================================================
+// Section I: Intro Quiz
+// =========================================================
+function checkIntroQuiz(btn, correct) {
+  const options = btn.parentElement.querySelectorAll('.quiz-option');
+  options.forEach(o => { o.disabled = true; o.style.pointerEvents = 'none'; });
+  const fb = document.getElementById('intro-quiz-fb');
+  if (correct) {
+    btn.classList.add('correct');
+    fb.style.display = 'block';
+    fb.style.background = '#dcfce7';
+    fb.style.color = '#166534';
+    fb.textContent = '✅ Correct! LLaMA-13B — with just 13 billion parameters — outperforms GPT-3 (175B) on most benchmarks. That\'s the power of training on more data.';
+  } else {
+    btn.classList.add('wrong');
+    options[2].classList.add('correct');
+    fb.style.display = 'block';
+    fb.style.background = '#fef2f2';
+    fb.style.color = '#991b1b';
+    fb.textContent = '❌ Not quite! The answer is C — LLaMA-13B, with just 13 billion parameters, outperforms GPT-3\'s 175 billion on most benchmarks.';
+  }
+}
+
+// =========================================================
+// Section II: Scaling Demo
+// =========================================================
+function updateScalingDemo() {
+  const v = parseInt(document.getElementById('scaling-slider').value);
+  document.getElementById('scaling-val').textContent = v + '%';
+  
+  // Map slider to params and tokens
+  const maxParams = 175;
+  const maxTokens = 3500;
+  const paramBias = v / 100;
+  const params = Math.round(maxParams * (0.04 + 0.96 * paramBias));
+  const tokens = Math.round(maxTokens * (0.04 + 0.96 * (1 - paramBias)));
+  
+  document.getElementById('scaling-params').textContent = params >= 1000 ? (params/1000).toFixed(1)+'T' : params + 'B';
+  document.getElementById('scaling-tokens').textContent = tokens >= 1000 ? (tokens/1000).toFixed(1)+'T' : tokens + 'B';
+  
+  // Draw simple visualization
+  const svg = document.getElementById('scaling-svg');
+  const pW = Math.max(20, 460 * paramBias);
+  const tW = Math.max(20, 460 * (1 - paramBias));
+  
+  svg.innerHTML = `
+    <rect x="20" y="30" width="${pW}" height="60" rx="6" fill="#2563eb" opacity="0.8"/>
+    <text x="${20 + pW/2}" y="67" fill="#fff" font-family="system-ui,sans-serif" font-size="14" font-weight="600" text-anchor="middle">Parameters</text>
+    <rect x="20" y="110" width="${tW}" height="60" rx="6" fill="#16a34a" opacity="0.8"/>
+    <text x="${20 + tW/2}" y="147" fill="#fff" font-family="system-ui,sans-serif" font-size="14" font-weight="600" text-anchor="middle">Training Data</text>
+    <text x="250" y="20" fill="#6b7280" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle">Fixed compute budget allocation</text>
+  `;
+  
+  // Verdict
+  const verdict = document.getElementById('scaling-verdict');
+  if (v > 70) {
+    verdict.innerHTML = '🔴 <strong>GPT-3 approach:</strong> Big model, less data. Expensive to run, undertrained.';
+  } else if (v > 35) {
+    verdict.innerHTML = '🟡 <strong>Chinchilla approach:</strong> Balanced allocation. Optimal for training compute.';
+  } else {
+    verdict.innerHTML = '🟢 <strong>LLaMA approach:</strong> Smaller model, much more data. Cheaper to run, better inference economics.';
+  }
+}
+
+function setScalingPreset(val) {
+  document.getElementById('scaling-slider').value = val;
+  updateScalingDemo();
+}
+
+// =========================================================
+// Section III: Model Family
+// =========================================================
+const modelData = [
+  { name:'LLaMA-7B', params:'6.7B', dim:4096, heads:32, layers:32, tokens:'1.0T', gpuHrs:'82K', context:2048, analogy:'🏍️ Nimble motorcycle — fast, efficient, fits anywhere' },
+  { name:'LLaMA-13B', params:'13.0B', dim:5120, heads:40, layers:40, tokens:'1.0T', gpuHrs:'135K', context:2048, analogy:'🚗 Practical sedan — beats GPT-3 on a single GPU' },
+  { name:'LLaMA-33B', params:'32.5B', dim:6656, heads:52, layers:60, tokens:'1.4T', gpuHrs:'530K', context:2048, analogy:'🚙 Powerful SUV — matches Chinchilla-70B territory' },
+  { name:'LLaMA-65B', params:'65.2B', dim:8192, heads:64, layers:80, tokens:'1.4T', gpuHrs:'1,022K', context:2048, analogy:'🚛 Heavy lifter — competitive with PaLM-540B' }
+];
+
+function selectModel(idx) {
+  document.querySelectorAll('.model-card').forEach((c,i) => c.classList.toggle('selected', i===idx));
+  const m = modelData[idx];
+  document.getElementById('model-details').innerHTML = `
+    <div style="margin-bottom: 10px; font-size: 16px; font-weight: 600; color: var(--accent);">${m.name}</div>
+    <table class="data-table">
+      <tr><td style="color:var(--muted);">Parameters</td><td style="font-weight:600;">${m.params}</td></tr>
+      <tr><td style="color:var(--muted);">Dimension</td><td>${m.dim}</td></tr>
+      <tr><td style="color:var(--muted);">Attention Heads</td><td>${m.heads}</td></tr>
+      <tr><td style="color:var(--muted);">Layers</td><td>${m.layers}</td></tr>
+      <tr><td style="color:var(--muted);">Training Tokens</td><td>${m.tokens}</td></tr>
+      <tr><td style="color:var(--muted);">GPU-hours (A100)</td><td>${m.gpuHrs}</td></tr>
+      <tr><td style="color:var(--muted);">Context Length</td><td>${m.context}</td></tr>
+    </table>
+    <div style="margin-top: 12px; font-size: 15px;">${m.analogy}</div>
+  `;
+  
+  // Draw relative size bars
+  const svg = document.getElementById('family-svg');
+  const maxDim = 8192;
+  const colors = ['#93c5fd','#60a5fa','#3b82f6','#2563eb'];
+  let html = '';
+  modelData.forEach((model, i) => {
+    const w = (parseInt(model.dim) / maxDim) * 540;
+    const y = i * 28 + 5;
+    const opacity = i === idx ? 1 : 0.4;
+    html += `<rect x="50" y="${y}" width="${w}" height="22" rx="4" fill="${colors[i]}" opacity="${opacity}" />`;
+    html += `<text x="44" y="${y+16}" fill="#6b7280" font-family="system-ui,sans-serif" font-size="11" text-anchor="end">${model.name.replace('LLaMA-','')}</text>`;
+    html += `<text x="${55+w}" y="${y+16}" fill="#6b7280" font-family="system-ui,sans-serif" font-size="11">d=${model.dim}</text>`;
+  });
+  svg.innerHTML = html;
+}
+
+// =========================================================
+// Section IV: Architecture Explorer
+// =========================================================
+function showArch(component) {
+  document.querySelectorAll('[id^="arch-btn-"]').forEach(b => {
+    b.classList.toggle('btn-outline', true);
+    b.style.background = '';
+    b.style.color = '';
+  });
+  const btn = document.getElementById('arch-btn-' + component);
+  btn.classList.remove('btn-outline');
+  btn.style.background = 'var(--accent)';
+  btn.style.color = '#fff';
+  
+  const svg = document.getElementById('arch-svg');
+  const exp = document.getElementById('arch-explanation');
+  
+  if (component === 'rmsnorm') {
+    svg.innerHTML = `
+      <text x="350" y="20" fill="#6b7280" font-family="system-ui,sans-serif" font-size="13" text-anchor="middle">Pre-Normalization with RMSNorm vs Post-Normalization with LayerNorm</text>
+      <!-- Standard Transformer -->
+      <text x="175" y="50" fill="#6b7280" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle" font-weight="600">Standard Transformer</text>
+      <rect x="75" y="60" width="200" height="36" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+      <text x="175" y="83" font-family="system-ui,sans-serif" font-size="13" fill="#991b1b" text-anchor="middle">Self-Attention</text>
+      <text x="175" y="110" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280" text-anchor="middle">↓ Add & LayerNorm (after)</text>
+      <rect x="75" y="120" width="200" height="36" rx="6" fill="#fef2f2" stroke="#fca5a5" stroke-width="1.5"/>
+      <text x="175" y="143" font-family="system-ui,sans-serif" font-size="13" fill="#991b1b" text-anchor="middle">Feed-Forward</text>
+      <text x="175" y="170" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280" text-anchor="middle">↓ Add & LayerNorm (after)</text>
+      <!-- LLaMA -->
+      <text x="525" y="50" fill="var(--accent)" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle" font-weight="600">LLaMA</text>
+      <rect x="425" y="60" width="200" height="24" rx="6" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="525" y="77" font-family="system-ui,sans-serif" font-size="12" fill="#1e40af" text-anchor="middle">RMSNorm (before) ⚡</text>
+      <rect x="425" y="92" width="200" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="525" y="115" font-family="system-ui,sans-serif" font-size="13" fill="#1e40af" text-anchor="middle">Self-Attention</text>
+      <text x="525" y="142" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280" text-anchor="middle">↓ Residual Add</text>
+      <rect x="425" y="152" width="200" height="24" rx="6" fill="#dbeafe" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="525" y="169" font-family="system-ui,sans-serif" font-size="12" fill="#1e40af" text-anchor="middle">RMSNorm (before) ⚡</text>
+      <rect x="425" y="184" width="200" height="36" rx="6" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+      <text x="525" y="207" font-family="system-ui,sans-serif" font-size="13" fill="#1e40af" text-anchor="middle">Feed-Forward (SwiGLU)</text>
+      <text x="525" y="234" font-family="system-ui,sans-serif" font-size="11" fill="#6b7280" text-anchor="middle">↓ Residual Add</text>
+    `;
+    exp.innerHTML = `<strong>RMSNorm</strong> normalizes by the root mean square only: <code>x̂ = x / √(mean(x²) + ε) · γ</code>. It skips the mean-centering step of standard LayerNorm, making it ~10-15% faster with no loss in quality. Applying normalization <em>before</em> each sub-layer (pre-norm) improves training stability—gradients flow more smoothly through the residual connections.`;
+  } else if (component === 'swiglu') {
+    svg.innerHTML = `
+      <text x="350" y="20" fill="#6b7280" font-family="system-ui,sans-serif" font-size="13" text-anchor="middle">Feed-Forward Network: Standard ReLU vs SwiGLU</text>
+      <!-- Standard FFN -->
+      <text x="175" y="50" fill="#6b7280" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle" font-weight="600">Standard FFN (2 matrices)</text>
+      <rect x="100" y="70" width="150" height="30" rx="6" fill="#fef2f2" stroke="#fca5a5"/>
+      <text x="175" y="90" font-family="system-ui,sans-serif" font-size="12" fill="#991b1b" text-anchor="middle">W₁ (d → 4d)</text>
+      <text x="175" y="115" font-family="system-ui,sans-serif" font-size="11" fill="#ea580c" text-anchor="middle" font-weight="600">ReLU / GeLU</text>
+      <rect x="100" y="125" width="150" height="30" rx="6" fill="#fef2f2" stroke="#fca5a5"/>
+      <text x="175" y="145" font-family="system-ui,sans-serif" font-size="12" fill="#991b1b" text-anchor="middle">W₂ (4d → d)</text>
+      <!-- SwiGLU FFN -->
+      <text x="525" y="50" fill="var(--accent)" font-family="system-ui,sans-serif" font-size="12" text-anchor="middle" font-weight="600">SwiGLU FFN (3 matrices)</text>
+      <rect x="440" y="70" width="80" height="30" rx="6" fill="#dbeafe" stroke="#93c5fd"/>
+      <text x="480" y="90" font-family="system-ui,sans-serif" font-size="11" fill="#1e40af" text-anchor="middle">W₁ (gate)</text>
+      <rect x="530" y="70" width="80" height="30" rx="6" fill="#dbeafe" stroke="#93c5fd"/>
+      <text x="570" y="90" font-family="system-ui,sans-serif" font-size="11" fill="#1e40af" text-anchor="middle">W₃ (up)</text>
+      <text x="525" y="120" font-family="system-ui,sans-serif" font-size="11" fill="#ea580c" text-anchor="middle" font-weight="600">Swish(W₁·x) ⊙ W₃·x</text>
+      <text x="525" y="138" font-family="system-ui,sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">element-wise multiply (gating)</text>
+      <rect x="465" y="148" width="120" height="30" rx="6" fill="#dbeafe" stroke="#93c5fd"/>
+      <text x="525" y="168" font-family="system-ui,sans-serif" font-size="11" fill="#1e40af" text-anchor="middle">W₂ (⅔·4d → d)</text>
+      <!-- Activation plots -->
+      <text x="175" y="185" fill="#6b7280" font-family="system-ui,sans-serif" font-size="11" text-anchor="middle">ReLU: max(0, x)</text>
+      <line x1="100" y1="240" x2="250" y2="240" stroke="#ddd" stroke-width="1"/>
+      <line x1="175" y1="200" x2="175" y2="270" stroke="#ddd" stroke-width="1"/>
+      <polyline points="100,240 175,240 250,200" fill="none" stroke="#dc2626" stroke-width="2"/>
+      <text x="525" y="205" fill="#6b7280" font-family="system-ui,sans-serif" font-size="11" text-anchor="middle">Swish: x · σ(βx)</text>
+      <line x1="450" y1="250" x2="600" y2="250" stroke="#ddd" stroke-width="1"/>
+      <line x1="525" y1="210" x2="525" y2="275" stroke="#ddd" stroke-width="1"/>
+      <polyline points="450,258 470,256 490,254 505,253 515,252 525,250 535,246 550,237 570,224 590,208 600,200" fill="none" stroke="#2563eb" stroke-width="2"/>
+    `;
+    exp.innerHTML = `<strong>SwiGLU</strong> replaces the standard two-matrix FFN with a <em>gated</em> three-matrix design. The gate branch (W₁) passes through a Swish activation and multiplies element-wise with the up-projection (W₃). This gating mechanism lets the network learn which features to amplify. The Swish function (x·σ(x)) is smooth and non-monotonic, unlike ReLU — it can suppress small negative values while boosting positive ones. To keep parameter count similar, the hidden dimension is reduced to ⅔·4d.`;
+  } else if (component === 'rope') {
+    svg.innerHTML = `
+      <text x="350" y="20" fill="#6b7280" font-family="system-ui,sans-serif" font-size="13" text-anchor="middle">Rotary Position Embeddings: Encoding position through rotation</text>
+      <!-- Rotation visualization -->
+      <circle cx="180" cy="160" r="90" fill="none" stroke="#e5e5e5" stroke-width="1.5"/>
+      <circle cx="180" cy="160" r="60" fill="none" stroke="#e5e5e5" stroke-width="1" stroke-dasharray="4"/>
+      <circle cx="180" cy="160" r="3" fill="#6b7280"/>
+      <!-- Position 0 vector -->
+      <line x1="180" y1="160" x2="270" y2="160" stroke="#2563eb" stroke-width="2.5"/>
+      <circle cx="270" cy="160" r="5" fill="#2563eb"/>
+      <text x="278" y="157" font-family="system-ui,sans-serif" font-size="11" fill="#2563eb" font-weight="600">pos 0</text>
+      <!-- Position 1 vector (rotated ~30deg) -->
+      <line x1="180" y1="160" x2="${180+90*Math.cos(-0.5)}" y2="${160+90*Math.sin(-0.5)}" stroke="#16a34a" stroke-width="2.5"/>
+      <circle cx="${180+90*Math.cos(-0.5)}" cy="${160+90*Math.sin(-0.5)}" r="5" fill="#16a34a"/>
+      <text x="${185+90*Math.cos(-0.5)}" y="${157+90*Math.sin(-0.5)}" font-family="system-ui,sans-serif" font-size="11" fill="#16a34a" font-weight="600">pos 1</text>
+      <!-- Position 2 vector -->
+      <line x1="180" y1="160" x2="${180+90*Math.cos(-1.0)}" y2="${160+90*Math.sin(-1.0)}" stroke="#ea580c" stroke-width="2.5"/>
+      <circle cx="${180+90*Math.cos(-1.0)}" cy="${160+90*Math.sin(-1.0)}" r="5" fill="#ea580c"/>
+      <text x="${185+90*Math.cos(-1.0)}" y="${155+90*Math.sin(-1.0)}" font-family="system-ui,sans-serif" font-size="11" fill="#ea580c" font-weight="600">pos 2</text>
+      <!-- Position 3 vector -->
+      <line x1="180" y1="160" x2="${180+90*Math.cos(-1.5)}" y2="${160+90*Math.sin(-1.5)}" stroke="#7c3aed" stroke-width="2.5"/>
+      <circle cx="${180+90*Math.cos(-1.5)}" cy="${160+90*Math.sin(-1.5)}" r="5" fill="#7c3aed"/>
+      <text x="${185+90*Math.cos(-1.5)}" y="${155+90*Math.sin(-1.5)}" font-family="system-ui,sans-serif" font-size="11" fill="#7c3aed" font-weight="600">pos 3</text>
+      <!-- Angle arc -->
+      <path d="M 220 160 A 40 40 0 0 0 ${180+40*Math.cos(-0.5)} ${160+40*Math.sin(-0.5)}" fill="none" stroke="#2563eb" stroke-width="1" stroke-dasharray="3"/>
+      <text x="220" y="148" font-family="system-ui,sans-serif" font-size="10" fill="#2563eb">θ</text>
+      <!-- Formula side -->
+      <text x="520" y="60" font-family="system-ui,sans-serif" font-size="13" fill="var(--text)" text-anchor="middle" font-weight="600">RoPE Formula</text>
+      <text x="520" y="90" font-family="'SF Mono',monospace" font-size="12" fill="var(--text)" text-anchor="middle">q_rot = R(θ·m) · q</text>
+      <text x="520" y="115" font-family="'SF Mono',monospace" font-size="12" fill="var(--text)" text-anchor="middle">k_rot = R(θ·n) · k</text>
+      <text x="520" y="150" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">where R(α) is 2D rotation:</text>
+      <text x="520" y="175" font-family="'SF Mono',monospace" font-size="12" fill="var(--text)" text-anchor="middle">[ cos α  -sin α ]</text>
+      <text x="520" y="195" font-family="'SF Mono',monospace" font-size="12" fill="var(--text)" text-anchor="middle">[ sin α   cos α ]</text>
+      <text x="520" y="230" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">Dot product naturally encodes</text>
+      <text x="520" y="248" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">relative position (m - n)</text>
+    `;
+    exp.innerHTML = `<strong>RoPE</strong> encodes position by rotating query and key vectors in 2D sub-spaces. Each pair of dimensions gets rotated by an angle proportional to the position index. The key insight: when you compute the dot product q·k, the rotation angles <em>subtract</em>, so the attention score naturally depends on <em>relative</em> position (m-n), not absolute position. This gives better generalization to different sequence lengths and elegant distance-based decay. Unlike learned position embeddings, RoPE is deterministic and can extrapolate (to some extent) beyond the training context length.`;
+  }
+}
+
+// =========================================================
+// Section V: Training Data Pie Chart
+// =========================================================
+const dataSlices = [
+  { name: 'CommonCrawl', pct: 67, color: '#2563eb', tokens: '~940B', desc: 'Web pages filtered via CCNet pipeline. Deduplicated, language-filtered, quality-classified using Wikipedia references. The backbone of the training data.', epochs: '1.0' },
+  { name: 'C4', pct: 15, color: '#16a34a', tokens: '~210B', desc: 'Colossal Clean Crawled Corpus — aggressively filtered CommonCrawl, originally created for Google\'s T5. Complements Meta\'s own CCNet processing.', epochs: '1.0' },
+  { name: 'GitHub', pct: 4.5, color: '#7c3aed', tokens: '~63B', desc: 'Public code repositories filtered using heuristics (removing boilerplate, auto-generated code). Improves reasoning and code generation ability.', epochs: '0.6' },
+  { name: 'Wikipedia', pct: 4.5, color: '#ea580c', tokens: '~63B', desc: 'Wikipedia articles from 20 languages (June–August 2022). Removes boilerplate (headers, links, citations). High-quality factual content.', epochs: '2.0' },
+  { name: 'Books', pct: 4.5, color: '#d946ef', tokens: '~63B', desc: 'Project Gutenberg and Books3 subset of The Pile. Long-form text helps with extended reasoning and narrative understanding.', epochs: '2.0' },
+  { name: 'ArXiv', pct: 2.5, color: '#0891b2', tokens: '~35B', desc: 'Scientific papers from ArXiv — LaTeX source processed to remove preambles and bibliographies. Boosts scientific and mathematical understanding.', epochs: '1.0' },
+  { name: 'StackExchange', pct: 2, color: '#f59e0b', tokens: '~28B', desc: 'High-quality Q&A data from 28 largest StackExchange sites. Sorted by score, includes questions and answers. Teaches structured explanation.', epochs: '1.0' }
+];
+
+function drawPieChart() {
+  const svg = document.getElementById('pie-svg');
+  const cx = 160, cy = 160, r = 130;
+  let startAngle = -Math.PI / 2;
+  let html = '';
+  
+  dataSlices.forEach((slice, i) => {
+    const angle = (slice.pct / 100) * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const largeArc = angle > Math.PI ? 1 : 0;
+    
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    
+    const midAngle = startAngle + angle / 2;
+    
+    html += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z" 
+      fill="${slice.color}" opacity="0.85" stroke="#fff" stroke-width="2"
+      style="cursor:pointer; transition: opacity 0.2s, transform 0.2s; transform-origin: ${cx}px ${cy}px;"
+      onmouseenter="highlightSlice(${i}, this)" onmouseleave="unhighlightSlice(this)"
+      onclick="showDataDetail(${i})"/>`;
+    
+    // Label for larger slices
+    if (slice.pct > 4) {
+      const labelR = r * 0.65;
+      const lx = cx + labelR * Math.cos(midAngle);
+      const ly = cy + labelR * Math.sin(midAngle);
+      html += `<text x="${lx}" y="${ly}" fill="#fff" font-family="system-ui,sans-serif" font-size="11" font-weight="600" text-anchor="middle" pointer-events="none">${slice.pct}%</text>`;
+    }
+    
+    startAngle = endAngle;
+  });
+  
+  svg.innerHTML = html;
+  
+  // Legend
+  const legend = document.getElementById('pie-legend');
+  legend.innerHTML = dataSlices.map((s, i) => `
+    <div class="pie-legend-item" onclick="showDataDetail(${i})">
+      <div class="pie-legend-dot" style="background: ${s.color};"></div>
+      <span>${s.name} (${s.pct}%)</span>
+    </div>
+  `).join('');
+}
+
+function highlightSlice(idx, el) {
+  el.setAttribute('opacity', '1');
+  el.style.transform = 'scale(1.04)';
+}
+function unhighlightSlice(el) {
+  el.setAttribute('opacity', '0.85');
+  el.style.transform = 'scale(1)';
+}
+function showDataDetail(idx) {
+  const s = dataSlices[idx];
+  document.getElementById('data-detail').innerHTML = `
+    <div style="font-weight: 700; color: ${s.color}; font-size: 16px; margin-bottom: 6px;">${s.name} — ${s.pct}% of training mix</div>
+    <div style="color: var(--text); margin-bottom: 6px;">${s.desc}</div>
+    <div style="color: var(--muted); font-size: 13px;">~${s.tokens} tokens · Sampled ~${s.epochs}× during training</div>
+  `;
+}
+
+// =========================================================
+// Section VI: Tokenizer
+// =========================================================
+function tokenizeText() {
+  const text = document.getElementById('token-input').value;
+  if (!text) {
+    document.getElementById('token-output').innerHTML = '<span style="color: var(--muted); font-family: system-ui,sans-serif; font-size: 14px;">Type something to see tokens...</span>';
+    document.getElementById('token-count').textContent = '0';
+    document.getElementById('char-count').textContent = '0';
+    document.getElementById('token-ratio').textContent = '0';
+    return;
+  }
+  
+  // Simplified BPE-like tokenization
+  const colors = ['#dbeafe','#dcfce7','#fef3c7','#fce7f3','#e0e7ff','#f3e8ff','#ccfbf1','#fee2e2','#fef9c3','#d1fae5'];
+  const textColors = ['#1e40af','#166534','#92400e','#9d174d','#3730a3','#6b21a8','#0f766e','#991b1b','#854d0e','#065f46'];
+  
+  // Split into pseudo-tokens (simplified BPE simulation)
+  let tokens = [];
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    
+    // Numbers: split into individual digits (key LLaMA feature)
+    if (/\d/.test(ch)) {
+      tokens.push({ text: ch, type: 'digit' });
+      i++;
+      continue;
+    }
+    
+    // Emoji / non-ASCII: byte-level fallback
+    if (ch.charCodeAt(0) > 127) {
+      const bytes = new TextEncoder().encode(ch);
+      for (const b of bytes) {
+        tokens.push({ text: '<0x' + b.toString(16).toUpperCase().padStart(2,'0') + '>', type: 'byte' });
+      }
+      i++;
+      // Handle surrogate pairs
+      if (ch.charCodeAt(0) >= 0xD800 && ch.charCodeAt(0) <= 0xDBFF) i++;
+      continue;
+    }
+    
+    // Spaces: attach to next word
+    if (ch === ' ') {
+      // Look ahead for word
+      let word = '▁';
+      i++;
+      while (i < text.length && /[a-zA-Z]/.test(text[i])) {
+        word += text[i];
+        i++;
+        if (word.length > 7 && /[a-zA-Z]/.test(text[i] || '')) {
+          tokens.push({ text: word, type: 'word' });
+          word = '';
+        }
+      }
+      if (word && word !== '▁') tokens.push({ text: word, type: 'word' });
+      else if (word === '▁') tokens.push({ text: '▁', type: 'space' });
+      continue;
+    }
+    
+    // Punctuation
+    if (/[^a-zA-Z0-9]/.test(ch)) {
+      tokens.push({ text: ch, type: 'punct' });
+      i++;
+      continue;
+    }
+    
+    // Word at start of text
+    let word = '';
+    while (i < text.length && /[a-zA-Z]/.test(text[i])) {
+      word += text[i];
+      i++;
+      if (word.length > 6 && /[a-zA-Z]/.test(text[i] || '')) {
+        tokens.push({ text: word, type: 'word' });
+        word = '';
+      }
+    }
+    if (word) tokens.push({ text: word, type: 'word' });
+  }
+  
+  const output = document.getElementById('token-output');
+  output.innerHTML = tokens.map((t, idx) => {
+    const ci = idx % colors.length;
+    let bg = colors[ci];
+    let fg = textColors[ci];
+    if (t.type === 'digit') { bg = '#fef3c7'; fg = '#92400e'; }
+    if (t.type === 'byte') { bg = '#fee2e2'; fg = '#991b1b'; }
+    return `<span class="token" style="background: ${bg}; color: ${fg};" title="Token ${idx+1}: '${t.text.replace(/'/g,'&#39;')}' (${t.type})">${t.text}</span>`;
+  }).join('');
+  
+  document.getElementById('token-count').textContent = tokens.length;
+  document.getElementById('char-count').textContent = text.length;
+  document.getElementById('token-ratio').textContent = tokens.length > 0 ? (text.length / tokens.length).toFixed(1) : '0';
+}
+
+// =========================================================
+// Section VII: Benchmarks
+// =========================================================
+const benchmarkData = {
+  commonsense: {
+    title: 'Common Sense Reasoning',
+    benchmarks: ['HellaSwag', 'WinoGrande', 'ARC-e', 'PIQA'],
+    models: {
+      'GPT-3 175B': [78.9, 70.2, 68.8, 81.0],
+      'LLaMA-13B': [79.2, 73.0, 74.8, 80.1],
+      'LLaMA-65B': [84.2, 77.0, 78.9, 82.8],
+      'Chinchilla-70B': [80.8, 74.9, 77.7, 81.8],
+    },
+    insight: 'LLaMA-13B already matches GPT-3 175B on HellaSwag and exceeds it on WinoGrande and ARC. LLaMA-65B leads across the board.'
+  },
+  reading: {
+    title: 'Reading Comprehension & QA',
+    benchmarks: ['BoolQ', 'OBQA', 'TriviaQA', 'NQ'],
+    models: {
+      'GPT-3 175B': [60.5, 57.6, 71.2, 29.9],
+      'LLaMA-13B': [78.1, 57.0, 73.2, 31.9],
+      'LLaMA-65B': [85.3, 60.2, 79.6, 39.9],
+      'Chinchilla-70B': [83.7, 58.5, 72.3, 35.5],
+    },
+    insight: 'LLaMA-13B blows past GPT-3 on BoolQ (+17.6 points!) and edges it on TriviaQA. LLaMA-65B exceeds Chinchilla-70B overall.'
+  },
+  math: {
+    title: 'Mathematical Reasoning',
+    benchmarks: ['GSM8K', 'MATH'],
+    models: {
+      'GPT-3 175B': [35.4, 10.2],
+      'LLaMA-13B': [17.8, 6.1],
+      'LLaMA-65B': [50.9, 10.6],
+      'PaLM-540B': [56.5, 8.8],
+    },
+    insight: 'Math remains hard for open models. LLaMA-13B trails GPT-3 here, but LLaMA-65B is competitive with PaLM-540B (8× its size!).'
+  },
+  code: {
+    title: 'Code Generation',
+    benchmarks: ['HumanEval (pass@1)', 'MBPP (pass@1)'],
+    models: {
+      'GPT-3 175B': [0, 0],
+      'LLaMA-13B': [15.8, 22.0],
+      'LLaMA-65B': [23.7, 37.7],
+      'PaLM-540B': [26.2, 36.8],
+    },
+    insight: 'GPT-3 wasn\'t evaluated on code benchmarks. LLaMA-65B matches PaLM-540B despite code being only 4.5% of its training data.'
+  }
+};
+
+function showBenchmark(category) {
+  document.querySelectorAll('[id^="bench-btn-"]').forEach(b => {
+    b.classList.add('btn-outline');
+    b.style.background = '';
+    b.style.color = '';
+  });
+  const btn = document.getElementById('bench-btn-' + category);
+  btn.classList.remove('btn-outline');
+  btn.style.background = 'var(--accent)';
+  btn.style.color = '#fff';
+  
+  const data = benchmarkData[category];
+  const container = document.getElementById('benchmark-chart');
+  
+  const modelColors = {
+    'GPT-3 175B': '#dc2626',
+    'LLaMA-13B': '#2563eb',
+    'LLaMA-65B': '#16a34a',
+    'Chinchilla-70B': '#7c3aed',
+    'PaLM-540B': '#ea580c'
+  };
+  
+  let html = `<div style="font-family: system-ui, sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 16px;">${data.title}</div>`;
+  
+  data.benchmarks.forEach((bench, bi) => {
+    html += `<div style="font-family: system-ui, sans-serif; font-size: 13px; color: var(--muted); margin-top: 14px; margin-bottom: 6px; font-weight: 600;">${bench}</div>`;
+    
+    Object.entries(data.models).forEach(([model, scores]) => {
+      const score = scores[bi];
+      const maxScore = 100;
+      const width = Math.max(2, (score / maxScore) * 100);
+      const color = modelColors[model] || '#999';
+      const display = score === 0 ? 'N/A' : score.toFixed(1);
+      
+      html += `<div class="bar-row">
+        <span class="bar-label" style="font-size: 12px; width: 130px;">${model}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: ${score === 0 ? 0 : width}%; background: ${color};">${score > 20 ? display : ''}</div>
+        </div>
+        <span class="bar-value" style="font-size: 13px;">${display}</span>
+      </div>`;
+    });
+  });
+  
+  container.innerHTML = html;
+  document.getElementById('benchmark-insight').textContent = data.insight;
+}
+
+// =========================================================
+// Section VIII: Training Cost Calculator
+// =========================================================
+function updateTrainingCalc() {
+  const size = parseInt(document.getElementById('train-size').value);
+  const tokens = parseInt(document.getElementById('train-tokens').value);
+  
+  document.getElementById('train-size-val').textContent = size + 'B';
+  document.getElementById('train-tokens-val').textContent = (tokens/1000).toFixed(1) + 'T';
+  
+  // Rough approximation: GPU-hours ≈ 6 * params * tokens / (GPU_FLOPS * utilization)
+  // Simplified: GPU-hours roughly proportional to params × tokens
+  const gpuHours = Math.round(size * tokens * 0.01);
+  const cost = gpuHours * 2; // $2/hr for A100
+  const days = Math.max(1, Math.round(gpuHours / (2048 * 24)));
+  const co2 = Math.round(gpuHours * 0.00023 * 1000) / 1000; // rough tons
+  
+  document.getElementById('calc-gpuhours').textContent = gpuHours >= 1000 ? Math.round(gpuHours/1000) + 'K' : gpuHours;
+  document.getElementById('calc-cost').textContent = cost >= 1000000 ? '$' + (cost/1000000).toFixed(1) + 'M' : '$' + Math.round(cost/1000) + 'K';
+  document.getElementById('calc-days').textContent = days;
+  document.getElementById('calc-co2').textContent = co2 >= 1 ? Math.round(co2) : co2.toFixed(1);
+  
+  // Color coding
+  const costEl = document.getElementById('calc-cost');
+  const memColor = cost > 5000000 ? 'var(--red)' : cost > 500000 ? 'var(--orange)' : 'var(--green)';
+  costEl.style.color = memColor;
+  
+  // Comparison text
+  const comp = document.getElementById('training-comparison');
+  if (size <= 13 && tokens >= 1000) {
+    comp.textContent = '🟢 LLaMA sweet spot: small model, lots of data. Excellent inference economics.';
+  } else if (size > 65) {
+    comp.textContent = '🔴 Very large model — expensive to both train and run.';
+  } else {
+    comp.textContent = '🟡 A reasonable trade-off between model size and data.';
+  }
+}
+
+// =========================================================
+// Section IX: Timeline
+// =========================================================
+let timelineRevealed = 0;
+
+function revealNextTimeline() {
+  const items = document.querySelectorAll('.timeline-item');
+  if (timelineRevealed < items.length) {
+    items[timelineRevealed].classList.add('revealed');
+    items[timelineRevealed].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    timelineRevealed++;
+    document.getElementById('timeline-counter').textContent = `${timelineRevealed} of ${items.length} events revealed`;
+    if (timelineRevealed >= items.length) {
+      document.getElementById('timeline-btn').textContent = 'All Revealed! 🎉';
+      document.getElementById('timeline-btn').disabled = true;
+    }
+  }
+}
+
+function resetTimeline() {
+  document.querySelectorAll('.timeline-item').forEach(item => item.classList.remove('revealed'));
+  timelineRevealed = 0;
+  document.getElementById('timeline-counter').textContent = '0 of 9 events revealed';
+  document.getElementById('timeline-btn').textContent = 'Reveal Next Event';
+  document.getElementById('timeline-btn').disabled = false;
+}
+
+// =========================================================
+// Section X: Ecosystem Tree
+// =========================================================
+function drawEcosystemTree() {
+  const svg = document.getElementById('tree-svg');
+  
+  const nodes = [
+    { id: 'llama', x: 360, y: 40, label: 'LLaMA', color: '#2563eb', r: 28, desc: 'The foundation model by Meta AI. 7B–65B parameters, trained on 1–1.4T tokens of public data.' },
+    { id: 'alpaca', x: 120, y: 140, label: 'Alpaca', color: '#16a34a', r: 22, desc: 'Stanford\'s instruction-tuned LLaMA-7B. Fine-tuned on 52K instruction-response pairs generated by GPT-3.5. Cost: ~$600.' },
+    { id: 'vicuna', x: 260, y: 150, label: 'Vicuna', color: '#ea580c', r: 22, desc: 'LMSYS fine-tuned LLaMA-13B on 70K ShareGPT conversations. Reportedly 90% of ChatGPT quality. Cost: ~$300.' },
+    { id: 'llamacpp', x: 480, y: 130, label: 'llama.cpp', color: '#7c3aed', r: 22, desc: 'C++ port by Georgi Gerganov enabling CPU inference. Runs LLaMA on MacBooks, Raspberry Pi, and phones. Pioneered GGML quantization.' },
+    { id: 'gpt4all', x: 600, y: 150, label: 'GPT4All', color: '#0891b2', r: 20, desc: 'Nomic AI\'s locally-running chatbot. Trained on curated assistant-style data. Focused on accessibility and privacy.' },
+    { id: 'koala', x: 60, y: 260, label: 'Koala', color: '#d946ef', r: 18, desc: 'UC Berkeley\'s model trained on dialogue data scraped from the web, including ChatGPT conversations and Alpaca data.' },
+    { id: 'wizardlm', x: 180, y: 270, label: 'WizardLM', color: '#f59e0b', r: 18, desc: 'Microsoft\'s model using "Evol-Instruct" — iteratively evolving instructions with ChatGPT to generate complex training data.' },
+    { id: 'guanaco', x: 320, y: 260, label: 'Guanaco', color: '#ef4444', r: 18, desc: '4-bit QLoRA fine-tuned model by UW. Demonstrated that 4-bit quantized fine-tuning could match 16-bit performance. Ran on a single 48GB GPU.' },
+    { id: 'openassistant', x: 460, y: 270, label: 'Open Asst.', color: '#16a34a', r: 18, desc: 'LAION\'s community project to build a full open-source ChatGPT alternative with crowd-sourced RLHF data.' },
+    { id: 'llava', x: 580, y: 260, label: 'LLaVA', color: '#2563eb', r: 18, desc: 'Large Language and Vision Assistant — added visual understanding to LLaMA by connecting a CLIP vision encoder. Open-source GPT-4V alternative.' },
+    { id: 'codellama', x: 360, y: 350, label: 'Code Llama', color: '#6b21a8', r: 20, desc: 'Meta\'s official code-specialized LLaMA derivative. Further trained on code data with infilling objectives. Released with LLaMA 2.' },
+  ];
+  
+  const edges = [
+    ['llama','alpaca'], ['llama','vicuna'], ['llama','llamacpp'], ['llama','gpt4all'],
+    ['alpaca','koala'], ['alpaca','wizardlm'],
+    ['vicuna','guanaco'], ['llama','openassistant'], ['llama','llava'],
+    ['llamacpp','guanaco'],
+    ['llama','codellama']
+  ];
+  
+  let html = '';
+  
+  // Draw edges
+  edges.forEach(([from, to]) => {
+    const a = nodes.find(n => n.id === from);
+    const b = nodes.find(n => n.id === to);
+    html += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#e5e5e5" stroke-width="2"/>`;
+  });
+  
+  // Draw nodes
+  nodes.forEach(n => {
+    html += `<g style="cursor:pointer;" onclick="showTreeDetail('${n.id}')">
+      <circle cx="${n.x}" cy="${n.y}" r="${n.r}" fill="${n.color}" opacity="0.9" stroke="#fff" stroke-width="2"/>
+      <text x="${n.x}" y="${n.y + 4}" fill="#fff" font-family="system-ui,sans-serif" font-size="${n.r > 22 ? 11 : 9}" text-anchor="middle" font-weight="600">${n.label}</text>
+    </g>`;
+  });
+  
+  svg.innerHTML = html;
+  
+  // Store nodes for detail view
+  window._treeNodes = nodes;
+}
+
+function showTreeDetail(id) {
+  const node = window._treeNodes.find(n => n.id === id);
+  if (!node) return;
+  document.getElementById('tree-detail').innerHTML = `
+    <div style="font-weight: 700; color: ${node.color}; font-size: 16px; margin-bottom: 6px;">${node.label}</div>
+    <div style="color: var(--text);">${node.desc}</div>
+  `;
+}
+
+// =========================================================
+// Section XI: Accessibility Demo
+// =========================================================
+const accessStages = [
+  { mem: '350 GB', cost: '$150K+', hw: '8× A100 80GB', who: 'Big Tech Labs', label: 'GPT-3 175B at FP16 — requires a server rack', memColor: 'var(--red)', costColor: 'var(--red)' },
+  { mem: '130 GB', cost: '$40K+', hw: '2× A100 80GB', who: 'Research Labs', label: 'LLaMA-65B at FP16 — same quality, 63% less memory', memColor: 'var(--orange)', costColor: 'var(--orange)' },
+  { mem: '26 GB', cost: '$3K+', hw: '1× RTX 4090', who: 'AI Enthusiasts', label: 'LLaMA-13B at FP16 — GPT-3 quality, single consumer GPU', memColor: 'var(--orange)', costColor: 'var(--green)' },
+  { mem: '8 GB', cost: '$1K+', hw: '1× RTX 3060 12GB', who: 'Hobbyists', label: 'LLaMA-13B 4-bit quantized (GPTQ/GGML) — a gaming laptop!', memColor: 'var(--green)', costColor: 'var(--green)' },
+  { mem: '4 GB', cost: '$500', hw: 'M1 MacBook Air', who: 'Everyone 🌍', label: 'LLaMA-7B 4-bit via llama.cpp — runs on a laptop CPU', memColor: 'var(--green)', costColor: 'var(--green)' },
+];
+
+function updateAccessDemo() {
+  const idx = parseInt(document.getElementById('access-slider').value);
+  const stage = accessStages[idx];
+  const labels = ['Original', 'LLaMA-65B', 'LLaMA-13B', '4-bit Quant', 'llama.cpp'];
+  
+  document.getElementById('access-val').textContent = labels[idx];
+  document.getElementById('access-mem').textContent = stage.mem;
+  document.getElementById('access-mem').style.color = stage.memColor;
+  document.getElementById('access-cost').textContent = stage.cost;
+  document.getElementById('access-cost').style.color = stage.costColor;
+  document.getElementById('access-hw').textContent = stage.hw;
+  document.getElementById('access-who').textContent = stage.who;
+  document.getElementById('access-stage').innerHTML = `<strong>Stage:</strong> ${stage.label}`;
+}
+
+// =========================================================
+// Section XII: Summary Quiz
+// =========================================================
+const summaryAnswers = [1, 1, 2];
+const summaryExplanations = [
+  'LLaMA\'s key insight was training smaller models on much more data than the Chinchilla-optimal amount, optimizing for inference cost rather than training cost.',
+  'LLaMA uses Pre-normalization with RMSNorm, SwiGLU activation function, and Rotary Position Embeddings (RoPE) — three well-tested improvements over the standard Transformer.',
+  'LLaMA was trained entirely on publicly available data — CommonCrawl, C4, GitHub, Wikipedia, Books, ArXiv, and StackExchange. No proprietary data was used.'
+];
+let summaryScore = 0;
+let summaryAnswered = 0;
+
+function checkSummaryQuiz(qIdx, btn, ansIdx) {
+  const question = btn.parentElement;
+  const options = question.querySelectorAll('.quiz-option');
+  options.forEach(o => { o.disabled = true; o.style.pointerEvents = 'none'; });
+  
+  const fb = document.getElementById('sq-fb-' + qIdx);
+  const correct = ansIdx === summaryAnswers[qIdx];
+  
+  if (correct) {
+    btn.classList.add('correct');
+    summaryScore++;
+    fb.style.display = 'block';
+    fb.style.background = '#dcfce7';
+    fb.style.color = '#166534';
+    fb.textContent = '✅ ' + summaryExplanations[qIdx];
+  } else {
+    btn.classList.add('wrong');
+    options[summaryAnswers[qIdx]].classList.add('correct');
+    fb.style.display = 'block';
+    fb.style.background = '#fef2f2';
+    fb.style.color = '#991b1b';
+    fb.textContent = '❌ ' + summaryExplanations[qIdx];
+  }
+  
+  summaryAnswered++;
+  if (summaryAnswered === 3) {
+    const scoreEl = document.getElementById('quiz-score');
+    scoreEl.style.display = 'block';
+    if (summaryScore === 3) {
+      scoreEl.textContent = '🎉 Perfect score! 3/3 — You\'ve mastered the LLaMA paper!';
+    } else if (summaryScore === 2) {
+      scoreEl.textContent = `👍 Great job! ${summaryScore}/3 — Solid understanding of LLaMA.`;
+    } else {
+      scoreEl.textContent = `📚 ${summaryScore}/3 — Consider re-reading some sections above!`;
+      scoreEl.style.background = '#fef3c7';
+      scoreEl.style.color = '#92400e';
+    }
+  }
+}
+
+// =========================================================
+// Initialize all demos on load
+// =========================================================
+window.addEventListener('DOMContentLoaded', () => {
+  updateScalingDemo();
+  selectModel(0);
+  drawPieChart();
+  tokenizeText();
+  showBenchmark('commonsense');
+  updateTrainingCalc();
+  drawEcosystemTree();
+  updateAccessDemo();
+});
+</script>
+
+</body>
+</html>

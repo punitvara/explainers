@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BERT: The Bidirectional Revolution — An Interactive Explainer</title>
+<style>
+:root {
+  --bg: #fafaf8;
+  --text: #1a1a1a;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --muted: #6b7280;
+  --callout-bg: #f8f5f0;
+  --callout-border: #d4a574;
+  --demo-bg: #ffffff;
+  --demo-border: #e5e7eb;
+  --success: #059669;
+  --error: #dc2626;
+  --highlight: #fbbf24;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 19px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout ── */
+.container { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+.wide { max-width: 780px; margin-left: auto; margin-right: auto; padding: 0 24px; }
+
+/* ── Hero ── */
+.hero {
+  text-align: center;
+  padding: 80px 24px 60px;
+  background: linear-gradient(180deg, var(--accent-light) 0%, var(--bg) 100%);
+}
+.hero-label {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.hero h1 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.15;
+  margin-bottom: 16px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.hero h1 .accent { color: var(--accent); }
+.hero .subtitle {
+  font-size: 1.15rem;
+  color: var(--muted);
+  max-width: 540px;
+  margin: 0 auto 24px;
+  line-height: 1.6;
+}
+.hero .meta {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ── TOC ── */
+.toc {
+  background: var(--callout-bg);
+  border: 1px solid var(--callout-border);
+  border-radius: 12px;
+  padding: 32px 36px;
+  margin: 48px auto;
+  max-width: 680px;
+}
+.toc h2 {
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+.toc ol {
+  list-style: upper-roman;
+  padding-left: 28px;
+}
+.toc li {
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.toc a {
+  color: var(--text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.toc a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+
+/* ── Sections ── */
+section { margin-bottom: 64px; }
+section h2 {
+  font-size: 1.7rem;
+  margin-bottom: 8px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  padding-top: 24px;
+}
+section h2 .section-num {
+  color: var(--accent);
+  font-size: 0.85em;
+}
+section h3 {
+  font-size: 1.2rem;
+  margin: 28px 0 8px;
+  font-weight: 700;
+}
+p { margin-bottom: 18px; }
+strong { font-weight: 700; }
+
+a { color: var(--accent); }
+
+/* ── Callouts ── */
+.callout {
+  background: var(--callout-bg);
+  border-left: 4px solid var(--callout-border);
+  padding: 20px 24px;
+  border-radius: 0 8px 8px 0;
+  margin: 28px 0;
+  font-size: 0.95rem;
+}
+.callout strong { color: var(--accent); }
+
+/* ── Demo containers ── */
+.demo {
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: 14px;
+  padding: 28px 24px;
+  margin: 32px auto;
+  max-width: 780px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.demo-title {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.demo-caption {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 16px;
+  line-height: 1.5;
+}
+.demo button, .demo .btn {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+  transition: all 0.2s;
+}
+.demo button:hover, .demo .btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+.demo button:active { transform: translateY(0); }
+.demo button.secondary {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+.demo button.secondary:hover { background: #bfdbfe; }
+
+.demo input[type="text"], .demo textarea {
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  padding: 10px 14px;
+  border: 2px solid var(--demo-border);
+  border-radius: 8px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.demo input[type="text"]:focus, .demo textarea:focus { border-color: var(--accent); }
+
+.demo input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--accent-light);
+  outline: none;
+}
+.demo input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+/* ── Token / word boxes ── */
+.token-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 16px 0;
+}
+.token {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
+  cursor: default;
+  transition: all 0.25s;
+  user-select: none;
+}
+.token.special {
+  background: #fef3c7;
+  color: #92400e;
+}
+.token.masked {
+  background: #fecaca;
+  color: var(--error);
+}
+.token.highlight {
+  background: var(--accent);
+  color: #fff;
+  transform: scale(1.08);
+}
+.token.correct {
+  background: #d1fae5;
+  color: var(--success);
+}
+.token.clickable { cursor: pointer; }
+.token.clickable:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(37,99,235,0.2); }
+
+/* ── Arrow / flow helpers ── */
+.flow-arrow {
+  text-align: center;
+  font-size: 28px;
+  color: var(--accent);
+  margin: 10px 0;
+}
+
+/* ── Comparison grid ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+.compare-card {
+  background: var(--callout-bg);
+  border-radius: 10px;
+  padding: 20px;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.compare-card:hover, .compare-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(37,99,235,0.12);
+}
+.compare-card h4 {
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.compare-card p {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 0;
+}
+
+/* ── SVG containers ── */
+.svg-container { text-align: center; margin: 16px 0; overflow-x: auto; }
+.svg-container svg { max-width: 100%; height: auto; }
+
+/* ── Animated bar chart ── */
+.bar-chart { margin: 16px 0; }
+.bar-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}
+.bar-label { width: 120px; flex-shrink: 0; font-weight: 600; text-align: right; padding-right: 12px; }
+.bar-track { flex: 1; height: 28px; background: #f3f4f6; border-radius: 6px; overflow: hidden; position: relative; }
+.bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: var(--accent);
+  transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-weight: 700;
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.bar-fill.bert { background: var(--accent); }
+.bar-fill.prev { background: var(--muted); }
+
+/* ── Pill tabs ── */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.tab {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 2px solid var(--demo-border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab.active, .tab:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+/* ── Step indicator ── */
+.steps {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 16px 0;
+}
+.step-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--demo-border);
+  transition: all 0.3s;
+}
+.step-dot.active { background: var(--accent); transform: scale(1.3); }
+
+/* ── Reveal answer ── */
+.reveal-area {
+  text-align: center;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.answer-box {
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: #d1fae5;
+  color: var(--success);
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.4s;
+}
+.answer-box.visible { opacity: 1; transform: translateY(0); }
+
+/* ── Attention heatmap ── */
+.heatmap-grid {
+  display: inline-grid;
+  gap: 3px;
+  margin: 16px auto;
+}
+.heatmap-cell {
+  width: 46px; height: 46px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.heatmap-label {
+  font-family: 'SF Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Footer ── */
+footer {
+  text-align: center;
+  padding: 48px 24px 64px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+footer a { color: var(--accent); text-decoration: none; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  body { font-size: 17px; }
+  .hero h1 { font-size: 1.8rem; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .demo { padding: 20px 16px; }
+  .token { font-size: 12px; padding: 5px 10px; }
+  .heatmap-cell { width: 36px; height: 36px; font-size: 9px; }
+}
+
+/* ── Smooth scroll ── */
+html { scroll-behavior: smooth; }
+
+/* ── Fade-in animation ── */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s, transform 0.6s;
+}
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+
+/* ── Quiz styling ── */
+.quiz-option {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  padding: 10px 18px;
+  border: 2px solid var(--demo-border);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-bottom: 8px;
+}
+.quiz-option:hover { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.correct { border-color: var(--success); background: #d1fae5; }
+.quiz-option.wrong { border-color: var(--error); background: #fecaca; }
+
+/* ── Inline code ── */
+code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background: #f3f4f6;
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+/* ── Progress bar ── */
+.progress-top {
+  position: fixed;
+  top: 0; left: 0;
+  height: 3px;
+  background: var(--accent);
+  z-index: 999;
+  transition: width 0.15s;
+}
+</style>
+</head>
+<body>
+
+<div class="progress-top" id="progressBar"></div>
+
+<!-- ═══════ HERO ═══════ -->
+<header class="hero">
+  <div class="hero-label">Interactive Explainer</div>
+  <h1>BERT: The <span class="accent">Bidirectional</span> Revolution</h1>
+  <p class="subtitle">How a masked-word guessing game changed natural language processing forever — and why reading in both directions beats reading left-to-right.</p>
+  <p class="meta">Devlin, Chang, Lee &amp; Toutanova (Google AI, 2018) · ~20 min read</p>
+</header>
+
+<!-- ═══════ TOC ═══════ -->
+<nav class="toc container fade-in">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#sec-context">The Problem: One-Way Reading</a></li>
+    <li><a href="#sec-bidirectional">Bidirectional Context — Why It Matters</a></li>
+    <li><a href="#sec-mlm">Masked Language Modeling (MLM)</a></li>
+    <li><a href="#sec-nsp">Next Sentence Prediction (NSP)</a></li>
+    <li><a href="#sec-anatomy">Anatomy of BERT: [CLS], [SEP], and Embeddings</a></li>
+    <li><a href="#sec-architecture">BERT-Base vs. BERT-Large</a></li>
+    <li><a href="#sec-finetuning">Fine-Tuning for Downstream Tasks</a></li>
+    <li><a href="#sec-representations">BERT vs. Word2Vec vs. ELMo</a></li>
+    <li><a href="#sec-benchmarks">Impact on NLP Benchmarks</a></li>
+    <li><a href="#sec-attention">Peering Inside: Attention Patterns</a></li>
+    <li><a href="#sec-legacy">Why BERT Changed NLP Forever</a></li>
+    <li><a href="#sec-summary">Summary &amp; Further Resources</a></li>
+  </ol>
+</nav>
+
+<!-- ═══════ OPENING HOOK ═══════ -->
+<article class="container">
+
+<section class="fade-in">
+  <p style="font-size:1.15rem;">Imagine reading a mystery novel — but someone has taped over every other chapter. You can follow the plot forward, but you never know what came <em>before</em> a clue was dropped. That's roughly how language models worked before October 2018.</p>
+
+  <p>Then <strong>BERT</strong> walked in, ripped off the tape, and said: <em>"What if we read the whole book at once?"</em></p>
+
+  <p>In a single paper, Jacob Devlin and colleagues at Google introduced a model that could look <strong>left AND right</strong> simultaneously — and it didn't just beat the previous state-of-the-art. It <em>obliterated</em> it across eleven benchmarks. Let's break down exactly how, one interactive demo at a time.</p>
+</section>
+
+<!-- ═══════ I. THE PROBLEM ═══════ -->
+<section id="sec-context" class="fade-in">
+  <h2><span class="section-num">I.</span> The Problem: One-Way Reading</h2>
+
+  <p>Before BERT, the dominant paradigm for pre-training language models was <strong>left-to-right</strong>. Models like OpenAI's <strong>GPT</strong> (June 2018) would read a sentence one token at a time, always predicting the <em>next</em> word based only on what came before it.</p>
+
+  <p>This is called an <strong>autoregressive</strong> approach. It's powerful for generation — great for finishing your sentences — but it has a blind spot. When GPT encodes the word "bank" in <em>"I went to the bank to deposit my check,"</em> it only sees "I went to the" at the time it processes "bank." It doesn't know about the deposit or the check.</p>
+
+  <p><strong>ELMo</strong> (Peters et al., 2018) tried to fix this by training two separate LSTMs — one left-to-right, one right-to-left — and <em>concatenating</em> their representations. Better, but those two directions never truly interacted during encoding. It was like two people reading the same book from opposite ends and comparing notes afterward.</p>
+
+  <p>BERT's insight was devastatingly simple: <strong>let every token attend to every other token, in both directions, at every layer.</strong></p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 1: Left-to-Right vs Bidirectional ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-direction">
+  <div class="demo-title">Demo 1 — Left-to-Right vs. Bidirectional Context</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:16px;">Click a word to see what context each model uses to encode it.</p>
+  <div class="token-row" id="dir-tokens"></div>
+  <div class="compare-grid" style="margin-top:20px;">
+    <div class="compare-card" id="dir-gpt-card">
+      <h4>🔵 GPT (Left-to-Right)</h4>
+      <p id="dir-gpt-ctx" style="min-height:40px;">Click a word above…</p>
+    </div>
+    <div class="compare-card" id="dir-bert-card">
+      <h4>🟢 BERT (Bidirectional)</h4>
+      <p id="dir-bert-ctx" style="min-height:40px;">Click a word above…</p>
+    </div>
+  </div>
+  <div class="demo-caption">Notice how BERT always sees the full sentence. GPT only sees tokens to the left.</div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ II. BIDIRECTIONAL CONTEXT ═══════ -->
+<section id="sec-bidirectional" class="fade-in">
+  <h2><span class="section-num">II.</span> Bidirectional Context — Why It Matters</h2>
+
+  <p>Language is full of <strong>ambiguity</strong>. The word "light" means something completely different in "light beer" versus "speed of light" versus "light a candle." To disambiguate, you need context from <em>both</em> sides.</p>
+
+  <p>Here's a linguistic classic: <em>"The trophy doesn't fit in the suitcase because <strong>it</strong> is too big."</em> What does "it" refer to? The trophy (it's too big to fit) or the suitcase? Humans instantly know — the trophy. But a left-to-right model processes "it" before seeing "too big," forcing it to guess without crucial evidence.</p>
+
+  <p>BERT's <strong>Transformer encoder</strong> uses <strong>self-attention</strong> over the entire input at once. When encoding any token, the model computes attention weights over <em>all</em> other tokens — past, present, and future. It's not just bidirectional; it's <strong>omnidirectional</strong>.</p>
+
+  <div class="callout">
+    <strong>Key insight:</strong> BERT uses only the <em>encoder</em> half of the original Transformer architecture (Vaswani et al., 2017). No decoder, no causal masking. Every token can attend to every other token freely.
+  </div>
+</section>
+</article>
+
+<!-- ═══════ DEMO 2: Ambiguity resolver ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-ambiguity">
+  <div class="demo-title">Demo 2 — Resolve the Ambiguity</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:16px;">Each sentence has an ambiguous word in <strong style="color:var(--accent)">blue</strong>. Toggle between left-only and full context to see how meaning changes.</p>
+  <div id="ambiguity-sentences"></div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ III. MASKED LANGUAGE MODELING ═══════ -->
+<section id="sec-mlm" class="fade-in">
+  <h2><span class="section-num">III.</span> Masked Language Modeling (MLM)</h2>
+
+  <p>Here's the big question: if BERT can see every token at once, how do you train it? You can't use next-word prediction — that would be cheating, since the answer is right there in the input.</p>
+
+  <p>Devlin et al. borrowed a trick from the 1950s called a <strong>cloze task</strong> (Taylor, 1953). The idea? Randomly <strong>mask</strong> some input tokens and ask the model to predict what's behind the mask. It's like a fill-in-the-blank test for neural networks.</p>
+
+  <p>Specifically, BERT randomly selects <strong>15% of tokens</strong> in each input sequence for prediction. But here's the clever bit — of those selected tokens:</p>
+
+  <ul style="margin-bottom:18px;padding-left:24px;">
+    <li><strong>80%</strong> are replaced with the special <code>[MASK]</code> token</li>
+    <li><strong>10%</strong> are replaced with a random word</li>
+    <li><strong>10%</strong> are kept unchanged</li>
+  </ul>
+
+  <p>Why not mask 100%? Because <code>[MASK]</code> never appears during fine-tuning or inference. If the model <em>only</em> learned to predict masks, there'd be a mismatch. The 10% random replacement and 10% unchanged tokens force the model to build good representations for <em>every</em> token position — it never knows which ones it'll be quizzed on.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 3: MLM Interactive ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-mlm">
+  <div class="demo-title">Demo 3 — Play the Masked Language Model</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:12px;">Some tokens are masked. Can you guess the original word? Click a [MASK] to reveal options.</p>
+  <div id="mlm-sentence" class="token-row" style="margin-bottom:16px;"></div>
+  <div id="mlm-options" style="text-align:center;min-height:50px;"></div>
+  <div id="mlm-score" style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-top:12px;color:var(--muted);"></div>
+  <div style="text-align:center;margin-top:14px;">
+    <button onclick="resetMLM()">New Sentence</button>
+  </div>
+  <div class="demo-caption">BERT is trained on millions of these fill-in-the-blank puzzles. Each masked token forces the model to use bidirectional context.</div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ IV. NEXT SENTENCE PREDICTION ═══════ -->
+<section id="sec-nsp" class="fade-in">
+  <h2><span class="section-num">IV.</span> Next Sentence Prediction (NSP)</h2>
+
+  <p>MLM teaches BERT about <strong>word-level</strong> relationships. But many NLP tasks — question answering, natural language inference — require understanding relationships between <strong>pairs of sentences</strong>.</p>
+
+  <p>To capture this, BERT adds a second pre-training objective: <strong>Next Sentence Prediction</strong>. During training, BERT receives pairs of sentences. 50% of the time, sentence B actually follows sentence A in the original corpus. The other 50%, sentence B is a random sentence. BERT must classify: <em>IsNext</em> or <em>NotNext</em>.</p>
+
+  <p>For example:</p>
+
+  <div class="callout">
+    <strong>✅ IsNext:</strong> "The man went to the store." → "He bought a gallon of milk."<br><br>
+    <strong>❌ NotNext:</strong> "The man went to the store." → "Penguins are flightless birds."
+  </div>
+
+  <p>This task was later debated — follow-up papers like <strong>RoBERTa</strong> (Liu et al., 2019) showed that removing NSP and using longer sequences could actually improve performance. But it was part of the original recipe.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 4: NSP Game ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-nsp">
+  <div class="demo-title">Demo 4 — Next Sentence Prediction Challenge</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:16px;">Does Sentence B logically follow Sentence A? You be the judge.</p>
+  <div id="nsp-content"></div>
+  <div id="nsp-result" style="text-align:center;min-height:30px;margin-top:12px;font-family:system-ui,sans-serif;font-size:14px;font-weight:600;"></div>
+  <div style="text-align:center;margin-top:12px;">
+    <button onclick="nextNSP()">Next Pair</button>
+  </div>
+  <div id="nsp-score" style="text-align:center;font-family:system-ui,sans-serif;font-size:13px;margin-top:8px;color:var(--muted);"></div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ V. ANATOMY ═══════ -->
+<section id="sec-anatomy" class="fade-in">
+  <h2><span class="section-num">V.</span> Anatomy of BERT: [CLS], [SEP], and Embeddings</h2>
+
+  <p>BERT's input isn't raw text — it's a carefully constructed sequence with special tokens and three types of embeddings layered together.</p>
+
+  <h3>Special Tokens</h3>
+  <p><strong>[CLS]</strong> (classification) is always the first token. Its final hidden state serves as the "aggregate sequence representation" — think of it as a summary vector of the entire input. This is what gets fed into a classifier during fine-tuning.</p>
+
+  <p><strong>[SEP]</strong> (separator) goes between two sentences and at the very end. It tells BERT where one sentence ends and another begins.</p>
+
+  <p>So a typical input looks like: <code>[CLS] sentence A [SEP] sentence B [SEP]</code></p>
+
+  <h3>Three Embedding Layers</h3>
+  <p>BERT sums three embeddings for each token:</p>
+  <ol style="margin-bottom:18px;padding-left:24px;">
+    <li><strong>Token embeddings</strong> — the identity of the word (using WordPiece tokenization with a 30,000-token vocabulary)</li>
+    <li><strong>Segment embeddings</strong> — whether this token belongs to Sentence A or Sentence B</li>
+    <li><strong>Position embeddings</strong> — learned embeddings for each position (up to 512 tokens)</li>
+  </ol>
+
+  <p>These three are summed element-wise and then layer-normalized. The result is the input to the first Transformer layer.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 5: Input Construction ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-anatomy">
+  <div class="demo-title">Demo 5 — Build a BERT Input</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:12px;">Type two sentences and watch how BERT constructs its input with special tokens and embeddings.</p>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+    <div style="flex:1;min-width:200px;">
+      <label style="font-family:system-ui,sans-serif;font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Sentence A</label>
+      <input type="text" id="anatomy-a" value="The cat sat on the mat" oninput="buildBERTInput()">
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <label style="font-family:system-ui,sans-serif;font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Sentence B</label>
+      <input type="text" id="anatomy-b" value="It was very comfortable" oninput="buildBERTInput()">
+    </div>
+  </div>
+  <div style="margin-bottom:8px;font-family:system-ui,sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Token Sequence</div>
+  <div id="anatomy-tokens" class="token-row" style="margin-bottom:16px;"></div>
+  <div style="margin-bottom:8px;font-family:system-ui,sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Segment IDs</div>
+  <div id="anatomy-segments" class="token-row" style="margin-bottom:16px;"></div>
+  <div style="margin-bottom:8px;font-family:system-ui,sans-serif;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Position IDs</div>
+  <div id="anatomy-positions" class="token-row"></div>
+  <div class="demo-caption">Token + Segment + Position embeddings are summed element-wise to form the input to BERT's first Transformer layer.</div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ VI. ARCHITECTURE ═══════ -->
+<section id="sec-architecture" class="fade-in">
+  <h2><span class="section-num">VI.</span> BERT-Base vs. BERT-Large</h2>
+
+  <p>The paper introduced two model sizes:</p>
+
+  <div class="callout">
+    <strong>BERT-Base:</strong> 12 layers, 768 hidden size, 12 attention heads, 110M parameters<br><br>
+    <strong>BERT-Large:</strong> 24 layers, 1024 hidden size, 16 attention heads, 340M parameters
+  </div>
+
+  <p>BERT-Base was designed to match GPT's size for a fair comparison. The message was clear: with the same parameter budget, bidirectional pre-training crushes left-to-right pre-training.</p>
+
+  <p>BERT-Large, meanwhile, pushed the limits. It was trained on <strong>BooksCorpus</strong> (800M words) and <strong>English Wikipedia</strong> (2,500M words) — about 3.3 billion words total. Training took <strong>4 days on 64 TPU chips</strong>. (That's roughly $10,000–50,000 in 2018 cloud compute, a cost that seems quaint today.)</p>
+
+  <p>Each Transformer layer applies multi-head self-attention followed by a feed-forward network. The hidden representations get richer and more abstract as they flow through the layers — early layers capture syntax, middle layers capture semantics, and later layers capture task-specific features.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 6: Architecture Explorer ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-arch">
+  <div class="demo-title">Demo 6 — Architecture Explorer</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:12px;">Use the slider to explore BERT's layers. Watch how representations transform from surface features to deep semantics.</p>
+  <div style="text-align:center;margin-bottom:16px;">
+    <div class="tabs" style="justify-content:center;">
+      <button class="tab active" onclick="setArchModel('base',this)">BERT-Base (12L)</button>
+      <button class="tab" onclick="setArchModel('large',this)">BERT-Large (24L)</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px;">
+    <span style="font-family:system-ui,sans-serif;font-size:13px;font-weight:600;white-space:nowrap;">Layer: <span id="arch-layer-num">1</span></span>
+    <input type="range" id="arch-slider" min="1" max="12" value="1" oninput="updateArchLayer(this.value)">
+  </div>
+  <div class="svg-container" id="arch-svg"></div>
+  <div id="arch-description" style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;color:var(--muted);min-height:40px;"></div>
+  <div style="display:flex;justify-content:space-around;margin-top:16px;font-family:system-ui,sans-serif;font-size:13px;">
+    <div><strong>Layers:</strong> <span id="arch-layers">12</span></div>
+    <div><strong>Hidden:</strong> <span id="arch-hidden">768</span></div>
+    <div><strong>Heads:</strong> <span id="arch-heads">12</span></div>
+    <div><strong>Params:</strong> <span id="arch-params">110M</span></div>
+  </div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ VII. FINE-TUNING ═══════ -->
+<section id="sec-finetuning" class="fade-in">
+  <h2><span class="section-num">VII.</span> Fine-Tuning for Downstream Tasks</h2>
+
+  <p>This is where BERT's design really shines. After pre-training on massive text corpora with MLM and NSP, you can <strong>fine-tune</strong> the same model on specific tasks by simply swapping the output layer.</p>
+
+  <p>The beauty is in the simplicity:</p>
+
+  <p><strong>Text Classification</strong> (sentiment analysis, topic labeling): Take the <code>[CLS]</code> token's final representation, add a single linear layer + softmax. Done. The <code>[CLS]</code> token has attended to the entire input and aggregated a sentence-level representation.</p>
+
+  <p><strong>Named Entity Recognition (NER)</strong>: Each token's final representation gets its own classification head. Is this token a Person, Organization, Location, or Other? BERT outputs one label per token.</p>
+
+  <p><strong>Question Answering (SQuAD-style)</strong>: Given a question and a passage, BERT learns two pointers — a <em>start</em> index and an <em>end</em> index into the passage. The answer is the span between them. Two new vectors (start and end) are learned during fine-tuning.</p>
+
+  <p><strong>Sentence-Pair Tasks</strong> (NLI, paraphrase detection): Feed both sentences with [SEP] between them, use the <code>[CLS]</code> vector for classification.</p>
+
+  <p>Fine-tuning typically takes only <strong>2–4 epochs</strong> and a few hours on a single GPU — a dramatic contrast to the days of pre-training. This "pre-train once, fine-tune everywhere" paradigm is BERT's lasting contribution to NLP engineering.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 7: Fine-tuning Simulator ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-finetune">
+  <div class="demo-title">Demo 7 — Fine-Tuning Task Simulator</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:16px;">Select a downstream task to see how BERT's output is adapted.</p>
+  <div class="tabs" style="justify-content:center;" id="ft-tabs">
+    <button class="tab active" onclick="setFTTask('cls',this)">Classification</button>
+    <button class="tab" onclick="setFTTask('ner',this)">NER</button>
+    <button class="tab" onclick="setFTTask('qa',this)">Question Answering</button>
+    <button class="tab" onclick="setFTTask('nli',this)">NLI</button>
+  </div>
+  <div id="ft-input-row" class="token-row" style="margin-bottom:8px;"></div>
+  <div class="flow-arrow">⬇</div>
+  <div style="text-align:center;font-family:system-ui,sans-serif;font-size:13px;color:var(--accent);font-weight:700;margin-bottom:8px;">BERT Encoder (12 Layers)</div>
+  <div class="flow-arrow">⬇</div>
+  <div id="ft-output-row" class="token-row" style="margin-bottom:8px;"></div>
+  <div class="flow-arrow">⬇</div>
+  <div id="ft-result" style="text-align:center;font-family:system-ui,sans-serif;font-size:15px;font-weight:600;padding:12px;border-radius:10px;background:var(--accent-light);color:var(--accent);min-height:44px;display:flex;align-items:center;justify-content:center;"></div>
+  <div class="demo-caption" id="ft-caption">For classification, only the [CLS] token's representation is used.</div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ VIII. REPRESENTATIONS ═══════ -->
+<section id="sec-representations" class="fade-in">
+  <h2><span class="section-num">VIII.</span> BERT vs. Word2Vec vs. ELMo</h2>
+
+  <p>Let's be precise about what changed.</p>
+
+  <p><strong>Word2Vec</strong> (Mikolov et al., 2013) maps each word to a single, fixed vector. The word "bank" gets <em>one</em> embedding, regardless of whether it appears in "river bank" or "bank account." It's static, context-free, and can't handle polysemy.</p>
+
+  <p><strong>ELMo</strong> (Peters et al., 2018) was the first major step toward <strong>contextualized</strong> embeddings. It runs a bidirectional LSTM (actually two unidirectional LSTMs) and concatenates the forward and backward hidden states. So "bank" gets different vectors in different contexts. But the two directions are trained independently — they never directly interact.</p>
+
+  <p><strong>BERT</strong> takes this to the extreme. Thanks to the Transformer's self-attention, every token can attend to every other token simultaneously at every layer. The representation of "bank" is <strong>deeply contextualized</strong> — shaped by every other word in the sentence through 12 (or 24) layers of bidirectional interaction.</p>
+
+  <p>Another key difference: ELMo produces <strong>feature-based</strong> representations — you extract its vectors and feed them as input to your task-specific model. BERT encourages <strong>fine-tuning</strong> — you adjust the entire model end-to-end for each task.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 8: Representation Comparison ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-repr">
+  <div class="demo-title">Demo 8 — Contextual vs. Static Embeddings</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:16px;">See how the word "<strong>bank</strong>" is represented differently across models and contexts.</p>
+  <div id="repr-scenarios"></div>
+  <div class="demo-caption">Word2Vec gives the same vector regardless of context. ELMo differentiates somewhat. BERT produces deeply distinct representations.</div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ IX. BENCHMARKS ═══════ -->
+<section id="sec-benchmarks" class="fade-in">
+  <h2><span class="section-num">IX.</span> Impact on NLP Benchmarks</h2>
+
+  <p>When BERT was released, the results were <em>staggering</em>. It didn't just set new state-of-the-art scores — it set them by <strong>absurd margins</strong>.</p>
+
+  <p>On the <strong>GLUE benchmark</strong> (General Language Understanding Evaluation), BERT-Large achieved 80.5, a <strong>7.7 point</strong> absolute improvement over the previous best. On <strong>SQuAD 1.1</strong> (question answering), BERT pushed the F1 score to 93.2 — surpassing <em>human performance</em> (91.2 F1). On <strong>SQuAD 2.0</strong>, which includes unanswerable questions, BERT improved the F1 by 5.1 points.</p>
+
+  <p>And on <strong>MultiNLI</strong> (natural language inference), BERT improved accuracy by <strong>4.6%</strong> over the previous best.</p>
+
+  <p>These weren't incremental improvements. In the world of NLP benchmarks, where progress typically happens in fractions of a percentage point, BERT's gains felt like a generational leap. Researchers called October 2018 NLP's <strong>"ImageNet moment"</strong> — the point where pre-trained models became the default starting point for virtually every NLP task.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 9: Benchmark Bars ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-bench">
+  <div class="demo-title">Demo 9 — Benchmark Showdown</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:16px;">Click "Animate" to see how BERT compares to previous state-of-the-art. <span style="color:var(--muted)">Gray</span> = previous best, <span style="color:var(--accent)">Blue</span> = BERT.</p>
+  <div class="bar-chart" id="bench-bars"></div>
+  <div style="text-align:center;margin-top:16px;">
+    <button onclick="animateBenchmarks()">Animate</button>
+    <button class="secondary" onclick="resetBenchmarks()" style="margin-left:8px;">Reset</button>
+  </div>
+  <div class="demo-caption">BERT's improvements were not incremental — they were seismic shifts across every benchmark.</div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ X. ATTENTION ═══════ -->
+<section id="sec-attention" class="fade-in">
+  <h2><span class="section-num">X.</span> Peering Inside: Attention Patterns</h2>
+
+  <p>One of the most fascinating aspects of BERT is what happens inside its attention heads. Researchers (Clark et al., 2019) discovered that different heads learn to capture different <strong>linguistic phenomena</strong>.</p>
+
+  <p>Some heads specialize in <strong>syntactic relations</strong> — they consistently attend from a verb to its direct object, or from a pronoun to its antecedent. Other heads capture <strong>positional patterns</strong>, attending to the next or previous token. Some heads learn a broad, uniform attention that acts like a <em>bag-of-words</em> averaging.</p>
+
+  <p>The <code>[SEP]</code> token, interestingly, tends to absorb a lot of attention — it seems to act as a "no-op" or "default" when a head has nothing linguistically meaningful to attend to.</p>
+
+  <p>Perhaps most remarkably, BERT's attention patterns correlate with <strong>dependency parse trees</strong> — without ever being explicitly trained on syntactic labels. The model discovers grammar on its own, purely from the masked-word prediction task.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 10: Attention Heatmap ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-attention">
+  <div class="demo-title">Demo 10 — Attention Heatmap Explorer</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:12px;">Hover over cells to see attention weights. Switch between layers and heads to see different patterns.</p>
+  <div style="display:flex;gap:16px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+    <div style="font-family:system-ui,sans-serif;font-size:13px;">
+      <label style="font-weight:600;">Layer: <span id="attn-layer-label">1</span></label>
+      <input type="range" id="attn-layer" min="1" max="12" value="1" oninput="updateAttention()" style="width:120px;">
+    </div>
+    <div style="font-family:system-ui,sans-serif;font-size:13px;">
+      <label style="font-weight:600;">Head: <span id="attn-head-label">1</span></label>
+      <input type="range" id="attn-head" min="1" max="12" value="1" oninput="updateAttention()" style="width:120px;">
+    </div>
+  </div>
+  <div style="text-align:center;overflow-x:auto;">
+    <div id="attn-heatmap" style="display:inline-block;"></div>
+  </div>
+  <div id="attn-info" style="text-align:center;font-family:system-ui,sans-serif;font-size:13px;color:var(--muted);margin-top:12px;min-height:20px;"></div>
+  <div class="demo-caption">Different heads learn different linguistic patterns: syntax, coreference, positional, and more.</div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ XI. LEGACY ═══════ -->
+<section id="sec-legacy" class="fade-in">
+  <h2><span class="section-num">XI.</span> Why BERT Changed NLP Forever</h2>
+
+  <p>BERT didn't just set new benchmarks — it <strong>reset the paradigm</strong> of how NLP research and engineering is done.</p>
+
+  <p><strong>Before BERT:</strong> Each NLP task had its own architecture, its own training pipeline, its own embeddings. Want to do sentiment analysis? Train a CNN on labeled reviews. Question answering? Build a specialized architecture with bidirectional attention flow. There was little transfer between tasks.</p>
+
+  <p><strong>After BERT:</strong> One pre-trained model, fine-tuned for everything. The "pre-train, then fine-tune" recipe became the standard playbook. This dramatically lowered the barrier to entry — a graduate student with one GPU could now achieve state-of-the-art on most NLP tasks by fine-tuning a publicly released checkpoint.</p>
+
+  <p>BERT also spawned an <strong>explosion of variants</strong>:</p>
+  <ul style="margin-bottom:18px;padding-left:24px;">
+    <li><strong>RoBERTa</strong> — Better training recipe (no NSP, more data, longer training)</li>
+    <li><strong>ALBERT</strong> — Parameter-efficient with factorized embeddings</li>
+    <li><strong>DistilBERT</strong> — 60% the size, 97% the performance</li>
+    <li><strong>SpanBERT</strong> — Masking contiguous spans instead of random tokens</li>
+    <li><strong>XLNet</strong> — Permutation-based training to capture bidirectional context autoregressively</li>
+    <li><strong>mBERT / XLM-R</strong> — Multilingual versions covering 100+ languages</li>
+  </ul>
+
+  <p>More broadly, BERT proved that <strong>self-supervised pre-training on raw text</strong> could produce representations powerful enough for virtually any language task. This insight led directly to T5, GPT-3, and the entire era of large language models we're in now.</p>
+
+  <p>In a very real sense, BERT was the <strong>bridge</strong> between the old world of task-specific NLP and the new world of foundation models.</p>
+</section>
+</article>
+
+<!-- ═══════ DEMO 11: BERT Family Timeline ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-timeline">
+  <div class="demo-title">Demo 11 — The BERT Family Tree</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:16px;">Click on each model to learn how it improved on BERT.</p>
+  <div id="timeline-models" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px;"></div>
+  <div id="timeline-info" style="background:var(--callout-bg);border-radius:10px;padding:20px;min-height:80px;font-family:system-ui,sans-serif;font-size:14px;line-height:1.6;transition:all 0.3s;"></div>
+</div>
+</div>
+
+<article class="container">
+
+<!-- ═══════ DEMO 12: Quiz ═══════ -->
+<div class="wide fade-in">
+<div class="demo" id="demo-quiz">
+  <div class="demo-title">Demo 12 — Test Your Understanding</div>
+  <p style="text-align:center;font-family:system-ui,sans-serif;font-size:14px;margin-bottom:16px;">Five questions to check if BERT has clicked for you.</p>
+  <div id="quiz-content"></div>
+  <div id="quiz-final" style="text-align:center;font-family:system-ui,sans-serif;font-size:16px;font-weight:600;margin-top:16px;"></div>
+</div>
+</div>
+
+<!-- ═══════ XII. SUMMARY ═══════ -->
+<section id="sec-summary" class="fade-in">
+  <h2><span class="section-num">XII.</span> Summary &amp; Further Resources</h2>
+
+  <p>Let's recap the key ideas:</p>
+
+  <div class="callout">
+    <strong>1. Bidirectional:</strong> BERT reads the entire input at once — no left-to-right or right-to-left restriction.<br><br>
+    <strong>2. Masked LM:</strong> Pre-trained by randomly masking 15% of tokens and predicting them — a clever cloze task.<br><br>
+    <strong>3. NSP:</strong> Second objective predicting whether two sentences are consecutive.<br><br>
+    <strong>4. Special tokens:</strong> [CLS] for classification, [SEP] for sentence boundaries.<br><br>
+    <strong>5. Fine-tuning:</strong> One pre-trained model adapts to any downstream task with minimal architectural changes.<br><br>
+    <strong>6. Impact:</strong> Shattered benchmarks (GLUE, SQuAD), proved self-supervised pre-training could scale, and launched the era of foundation models.
+  </div>
+
+  <h3>Further Resources</h3>
+  <ul style="padding-left:24px;margin-bottom:18px;">
+    <li><a href="https://arxiv.org/abs/1810.04805" target="_blank">Original BERT paper</a> (Devlin et al., 2018)</li>
+    <li><a href="https://jalammar.github.io/illustrated-bert/" target="_blank">The Illustrated BERT</a> by Jay Alammar</li>
+    <li><a href="https://huggingface.co/docs/transformers/model_doc/bert" target="_blank">Hugging Face BERT documentation</a></li>
+    <li><a href="https://arxiv.org/abs/1906.04341" target="_blank">What Does BERT Look At?</a> (Clark et al., 2019)</li>
+    <li><a href="https://arxiv.org/abs/1907.11692" target="_blank">RoBERTa paper</a> (Liu et al., 2019)</li>
+    <li><a href="https://gluebenchmark.com/" target="_blank">GLUE Benchmark</a></li>
+  </ul>
+
+  <p>BERT wasn't the end of the story — it was the beginning of a new chapter. But every GPT, T5, and LLaMA that followed owes a debt to the simple, powerful idea that a model which reads in all directions simultaneously understands language better than one that reads in just one.</p>
+
+  <p><em>Sometimes, looking both ways before crossing the street isn't just safe — it's revolutionary.</em></p>
+</section>
+
+</article>
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer>
+  <p>Built with care. Inspired by <a href="#">explainers.blog</a>.</p>
+  <p style="margin-top:8px;">BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding (2018)</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══════ JAVASCRIPT ═══════ -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+// ─── Fade-in observer ───
+const fadeEls = document.querySelectorAll('.fade-in');
+const fadeObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); fadeObs.unobserve(e.target); } });
+}, { threshold: 0.1 });
+fadeEls.forEach(el => fadeObs.observe(el));
+
+// ─── Progress bar ───
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progressBar').style.width = pct + '%';
+});
+
+// ══════════════════════════════════════
+// DEMO 1: Left-to-Right vs Bidirectional
+// ══════════════════════════════════════
+(function() {
+  const sentence = ["I", "went", "to", "the", "bank", "to", "deposit", "my", "check"];
+  const container = document.getElementById('dir-tokens');
+  sentence.forEach((w, i) => {
+    const t = document.createElement('span');
+    t.className = 'token clickable';
+    t.textContent = w;
+    t.addEventListener('click', () => selectDirWord(i));
+    container.appendChild(t);
+  });
+  function selectDirWord(idx) {
+    const tokens = container.querySelectorAll('.token');
+    tokens.forEach((t, i) => {
+      t.classList.remove('highlight', 'correct');
+      if (i === idx) t.classList.add('highlight');
+    });
+    // GPT: only left context
+    const leftCtx = sentence.slice(0, idx);
+    const gptText = leftCtx.length > 0 ? `Context: "${leftCtx.join(' ')}" → encodes "<strong>${sentence[idx]}</strong>"` : `No left context — encoding "<strong>${sentence[idx]}</strong>" blind!`;
+    document.getElementById('dir-gpt-ctx').innerHTML = gptText;
+    document.getElementById('dir-gpt-card').classList.add('active');
+    setTimeout(() => document.getElementById('dir-gpt-card').classList.remove('active'), 600);
+    // BERT: full context
+    const fullCtx = sentence.filter((_, i) => i !== idx);
+    document.getElementById('dir-bert-ctx').innerHTML = `Context: "${fullCtx.join(' ')}" → encodes "<strong>${sentence[idx]}</strong>"`;
+    document.getElementById('dir-bert-card').classList.add('active');
+    setTimeout(() => document.getElementById('dir-bert-card').classList.remove('active'), 600);
+  }
+})();
+
+// ══════════════════════════════════════
+// DEMO 2: Ambiguity Resolver
+// ══════════════════════════════════════
+(function() {
+  const examples = [
+    { sentence: "She saw the bat fly out of the cave at dusk", word: "bat", leftOnly: "bat → could be sports equipment or animal (unclear)", full: "bat → definitely the animal (cave + fly + dusk)" },
+    { sentence: "The bank was eroded by the flooding river", word: "bank", leftOnly: "bank → financial institution? river bank? (unclear)", full: "bank → river bank (eroded + flooding + river)" },
+    { sentence: "He decided to book a flight after the meeting", word: "book", leftOnly: "book → a physical book? or to reserve? (ambiguous)", full: "book → to reserve/schedule (a flight + after meeting)" },
+    { sentence: "The crane lifted the steel beam onto the roof", word: "crane", leftOnly: "crane → the bird or the machine? (ambiguous)", full: "crane → construction machine (lifted + steel beam + roof)" },
+  ];
+  const container = document.getElementById('ambiguity-sentences');
+  examples.forEach((ex, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'margin-bottom:16px;padding:16px;background:var(--callout-bg);border-radius:10px;';
+    const words = ex.sentence.split(' ').map(w => {
+      if (w.toLowerCase() === ex.word) return `<strong style="color:var(--accent)">${w}</strong>`;
+      return w;
+    }).join(' ');
+    div.innerHTML = `
+      <p style="margin-bottom:10px;font-size:16px;">"${words}"</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="tab" onclick="this.parentElement.querySelector('.amb-result').innerHTML='🔵 Left-only: ${ex.leftOnly}';this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active');">Left-Only Context</button>
+        <button class="tab" onclick="this.parentElement.querySelector('.amb-result').innerHTML='🟢 Full context: ${ex.full}';this.parentElement.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));this.classList.add('active');">Full (BERT) Context</button>
+      </div>
+      <div class="amb-result" style="margin-top:10px;font-family:system-ui,sans-serif;font-size:13px;color:var(--muted);min-height:20px;"></div>
+    `;
+    container.appendChild(div);
+  });
+})();
+
+// ══════════════════════════════════════
+// DEMO 3: MLM Game
+// ══════════════════════════════════════
+const mlmData = [
+  { tokens: ["The", "cat", "sat", "on", "the", "warm", "mat", "and", "purred", "softly"], masks: [1, 5, 8], options: {1: ["cat","dog","bird","car"], 5: ["warm","cold","old","red"], 8: ["purred","barked","slept","ran"]} },
+  { tokens: ["She", "opened", "the", "book", "and", "began", "to", "read", "the", "first", "chapter"], masks: [1, 3, 7], options: {1: ["opened","closed","wrote","lost"], 3: ["book","door","box","bag"], 7: ["read","write","sing","eat"]} },
+  { tokens: ["The", "sun", "set", "behind", "the", "mountains", "painting", "the", "sky", "orange"], masks: [1, 5, 9], options: {1: ["sun","moon","star","cloud"], 5: ["mountains","trees","ocean","city"], 9: ["orange","blue","green","black"]} },
+  { tokens: ["Birds", "sang", "in", "the", "tall", "trees", "as", "morning", "light", "filtered", "through"], masks: [0, 5, 7], options: {0: ["Birds","Dogs","Cars","Rocks"], 5: ["trees","houses","clouds","chairs"], 7: ["morning","evening","cold","dark"]} },
+];
+let mlmIdx = 0, mlmCorrect = 0, mlmTotal = 0, mlmRevealed = new Set();
+
+function renderMLM() {
+  const data = mlmData[mlmIdx];
+  const container = document.getElementById('mlm-sentence');
+  container.innerHTML = '';
+  mlmRevealed = new Set();
+  data.tokens.forEach((t, i) => {
+    const span = document.createElement('span');
+    if (data.masks.includes(i)) {
+      span.className = 'token masked clickable';
+      span.textContent = '[MASK]';
+      span.dataset.idx = i;
+      span.addEventListener('click', () => showMLMOptions(i));
+    } else {
+      span.className = 'token';
+      span.textContent = t;
+    }
+    container.appendChild(span);
+  });
+  document.getElementById('mlm-options').innerHTML = '';
+  document.getElementById('mlm-score').textContent = `Score: ${mlmCorrect}/${mlmTotal}`;
+}
+
+function showMLMOptions(idx) {
+  if (mlmRevealed.has(idx)) return;
+  const data = mlmData[mlmIdx];
+  const opts = data.options[idx];
+  const container = document.getElementById('mlm-options');
+  container.innerHTML = `<p style="font-family:system-ui,sans-serif;font-size:13px;color:var(--muted);margin-bottom:8px;">What word is behind this mask?</p>`;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;justify-content:center;flex-wrap:wrap;';
+  opts.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'secondary';
+    btn.textContent = o;
+    btn.addEventListener('click', () => {
+      mlmTotal++;
+      const correct = o === data.tokens[idx];
+      if (correct) mlmCorrect++;
+      mlmRevealed.add(idx);
+      // Update the token
+      const tokens = document.getElementById('mlm-sentence').querySelectorAll('.token');
+      tokens.forEach(t => {
+        if (parseInt(t.dataset.idx) === idx) {
+          t.textContent = data.tokens[idx];
+          t.className = correct ? 'token correct' : 'token masked';
+          t.style.cursor = 'default';
+        }
+      });
+      container.innerHTML = correct
+        ? `<span style="color:var(--success);font-family:system-ui,sans-serif;font-weight:600;">✅ Correct!</span>`
+        : `<span style="color:var(--error);font-family:system-ui,sans-serif;font-weight:600;">❌ The answer was "${data.tokens[idx]}"</span>`;
+      document.getElementById('mlm-score').textContent = `Score: ${mlmCorrect}/${mlmTotal}`;
+    });
+    row.appendChild(btn);
+  });
+  container.appendChild(row);
+}
+
+function resetMLM() {
+  mlmIdx = (mlmIdx + 1) % mlmData.length;
+  renderMLM();
+}
+renderMLM();
+
+// ══════════════════════════════════════
+// DEMO 4: NSP Game
+// ══════════════════════════════════════
+const nspPairs = [
+  { a: "The dog chased the ball across the yard.", b: "It wagged its tail excitedly when it caught it.", isNext: true },
+  { a: "She studied hard for the final exam.", b: "The volcano erupted with tremendous force.", isNext: false },
+  { a: "The restaurant was packed on Friday evening.", b: "We had to wait forty-five minutes for a table.", isNext: true },
+  { a: "He put on his raincoat before leaving.", b: "The forecast predicted heavy showers all afternoon.", isNext: true },
+  { a: "The library was quiet as usual.", b: "Dolphins can swim up to 20 miles per hour.", isNext: false },
+  { a: "The stock market crashed on Monday.", b: "Investors panicked and started selling everything.", isNext: true },
+  { a: "She planted roses in the garden.", b: "The spacecraft orbited Mars for three months.", isNext: false },
+  { a: "The meeting started at nine o'clock sharp.", b: "Everyone presented their quarterly results.", isNext: true },
+  { a: "He opened the refrigerator to grab some juice.", b: "Ancient Egyptians built pyramids as tombs.", isNext: false },
+  { a: "The children played in the snow all morning.", b: "They came inside with red cheeks and wet gloves.", isNext: true },
+];
+let nspIdx = 0, nspCorrect = 0, nspTotal = 0;
+
+function renderNSP() {
+  const pair = nspPairs[nspIdx % nspPairs.length];
+  const container = document.getElementById('nsp-content');
+  container.innerHTML = `
+    <div style="background:var(--accent-light);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="font-family:system-ui,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:4px;">Sentence A</div>
+      <div style="font-size:16px;">"${pair.a}"</div>
+    </div>
+    <div style="background:#fef3c7;border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div style="font-family:system-ui,sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#92400e;margin-bottom:4px;">Sentence B</div>
+      <div style="font-size:16px;">"${pair.b}"</div>
+    </div>
+    <div style="text-align:center;display:flex;gap:12px;justify-content:center;">
+      <button onclick="checkNSP(true)" style="background:var(--success);">✓ IsNext</button>
+      <button onclick="checkNSP(false)" style="background:var(--error);">✗ NotNext</button>
+    </div>
+  `;
+  document.getElementById('nsp-result').textContent = '';
+}
+
+function checkNSP(guess) {
+  const pair = nspPairs[nspIdx % nspPairs.length];
+  nspTotal++;
+  const correct = guess === pair.isNext;
+  if (correct) nspCorrect++;
+  document.getElementById('nsp-result').innerHTML = correct
+    ? `<span style="color:var(--success);">✅ Correct! The sentences ${pair.isNext ? "are" : "are NOT"} consecutive.</span>`
+    : `<span style="color:var(--error);">❌ Wrong — they ${pair.isNext ? "ARE actually consecutive" : "are NOT consecutive"}.</span>`;
+  document.getElementById('nsp-score').textContent = `Score: ${nspCorrect}/${nspTotal}`;
+}
+
+function nextNSP() {
+  nspIdx++;
+  renderNSP();
+}
+renderNSP();
+
+// ══════════════════════════════════════
+// DEMO 5: Build BERT Input
+// ══════════════════════════════════════
+function buildBERTInput() {
+  const a = document.getElementById('anatomy-a').value.trim().split(/\s+/).filter(Boolean);
+  const b = document.getElementById('anatomy-b').value.trim().split(/\s+/).filter(Boolean);
+  const tokens = ['[CLS]', ...a, '[SEP]', ...b, '[SEP]'];
+  const segments = [];
+  const positions = [];
+  let seg = 0;
+  tokens.forEach((t, i) => {
+    positions.push(i);
+    if (t === '[SEP]') { segments.push(seg); seg = 1; }
+    else if (t === '[CLS]') { segments.push(0); }
+    else { segments.push(seg); }
+  });
+  // Render tokens
+  const tc = document.getElementById('anatomy-tokens');
+  tc.innerHTML = '';
+  tokens.forEach(t => {
+    const span = document.createElement('span');
+    span.className = (t === '[CLS]' || t === '[SEP]') ? 'token special' : 'token';
+    span.textContent = t;
+    tc.appendChild(span);
+  });
+  // Render segments
+  const sc = document.getElementById('anatomy-segments');
+  sc.innerHTML = '';
+  segments.forEach(s => {
+    const span = document.createElement('span');
+    span.className = 'token';
+    span.style.background = s === 0 ? '#dbeafe' : '#fef3c7';
+    span.style.color = s === 0 ? '#2563eb' : '#92400e';
+    span.textContent = `S${s}`;
+    sc.appendChild(span);
+  });
+  // Render positions
+  const pc = document.getElementById('anatomy-positions');
+  pc.innerHTML = '';
+  positions.forEach(p => {
+    const span = document.createElement('span');
+    span.className = 'token';
+    span.style.background = '#f3f4f6';
+    span.style.color = '#6b7280';
+    span.textContent = p;
+    pc.appendChild(span);
+  });
+}
+buildBERTInput();
+
+// ══════════════════════════════════════
+// DEMO 6: Architecture Explorer
+// ══════════════════════════════════════
+let archModel = 'base';
+const archConfigs = {
+  base: { layers: 12, hidden: 768, heads: 12, params: '110M' },
+  large: { layers: 24, hidden: 1024, heads: 16, params: '340M' }
+};
+const layerDescriptions = [
+  "Layer {n}: Captures basic token identity, word boundaries, and simple positional patterns.",
+  "Layer {n}: Begins learning part-of-speech-like features — nouns vs verbs vs adjectives.",
+  "Layer {n}: Syntactic patterns emerge — subject-verb agreement, noun phrases.",
+  "Layer {n}: Dependency relations sharpen — verbs attend to their objects.",
+  "Layer {n}: Semantic similarity begins — synonyms cluster, antonyms separate.",
+  "Layer {n}: Coreference patterns appear — pronouns attend to their antecedents.",
+  "Layer {n}: Compositional meaning — phrase-level semantics begin forming.",
+  "Layer {n}: Long-range dependencies — connecting distant but related concepts.",
+  "Layer {n}: Abstract semantic features — sentiment, topic, intent signals.",
+  "Layer {n}: Task-relevant features sharpen — representations become more specialized.",
+  "Layer {n}: High-level reasoning — complex relations, entailment-like patterns.",
+  "Layer {n}: Final representations — optimized for downstream task predictions.",
+];
+
+function setArchModel(model, btn) {
+  archModel = model;
+  const cfg = archConfigs[model];
+  document.getElementById('arch-slider').max = cfg.layers;
+  document.getElementById('arch-slider').value = 1;
+  document.getElementById('arch-layers').textContent = cfg.layers;
+  document.getElementById('arch-hidden').textContent = cfg.hidden;
+  document.getElementById('arch-heads').textContent = cfg.heads;
+  document.getElementById('arch-params').textContent = cfg.params;
+  document.querySelectorAll('#demo-arch .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  updateArchLayer(1);
+}
+
+function updateArchLayer(val) {
+  const cfg = archConfigs[archModel];
+  const layer = parseInt(val);
+  document.getElementById('arch-layer-num').textContent = layer;
+  // Description
+  const descIdx = Math.min(Math.floor((layer - 1) / (cfg.layers / 12)) , 11);
+  document.getElementById('arch-description').textContent = layerDescriptions[descIdx].replace('{n}', layer);
+  // SVG
+  const svgW = 700, svgH = 200;
+  const numRects = Math.min(cfg.heads, 16);
+  const rectW = Math.floor((svgW - 40) / numRects) - 4;
+  const intensity = layer / cfg.layers;
+  let svg = `<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">`;
+  // Background
+  svg += `<rect x="0" y="0" width="${svgW}" height="${svgH}" rx="10" fill="#f8fafc"/>`;
+  // Layer label
+  svg += `<text x="${svgW/2}" y="26" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="${'#2563eb'}">Layer ${layer} / ${cfg.layers} — ${cfg.heads} Attention Heads</text>`;
+  // Draw attention heads as colored rectangles
+  for (let i = 0; i < numRects; i++) {
+    const x = 20 + i * (rectW + 4);
+    const hue = (i / numRects) * 240;
+    const sat = 50 + intensity * 40;
+    const light = 70 - intensity * 25;
+    svg += `<rect x="${x}" y="44" width="${rectW}" height="100" rx="6" fill="hsl(${hue},${sat}%,${light}%)" opacity="${0.5 + intensity * 0.5}">`;
+    svg += `<animate attributeName="height" from="0" to="100" dur="0.4s" fill="freeze"/>`;
+    svg += `</rect>`;
+    svg += `<text x="${x + rectW/2}" y="160" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" fill="#6b7280">H${i+1}</text>`;
+  }
+  // Input/output arrows
+  svg += `<text x="${svgW/2}" y="186" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280">Hidden dim: ${cfg.hidden} → ${cfg.heads} heads × ${cfg.hidden/cfg.heads} dim/head</text>`;
+  svg += `</svg>`;
+  document.getElementById('arch-svg').innerHTML = svg;
+}
+updateArchLayer(1);
+
+// ══════════════════════════════════════
+// DEMO 7: Fine-Tuning Simulator
+// ══════════════════════════════════════
+const ftTasks = {
+  cls: {
+    input: [{ t: '[CLS]', s: true }, { t: 'This' }, { t: 'movie' }, { t: 'was' }, { t: 'absolutely' }, { t: 'fantastic' }, { t: '!' }, { t: '[SEP]', s: true }],
+    output: [{ t: 'h_CLS', hl: true }, { t: 'h₁' }, { t: 'h₂' }, { t: 'h₃' }, { t: 'h₄' }, { t: 'h₅' }, { t: 'h₆' }, { t: 'h_SEP' }],
+    result: '😊 Positive (94.2% confidence)',
+    caption: 'For classification, only the [CLS] token\'s representation is used — it summarizes the full input.'
+  },
+  ner: {
+    input: [{ t: '[CLS]', s: true }, { t: 'Barack' }, { t: 'Obama' }, { t: 'visited' }, { t: 'Paris' }, { t: 'last' }, { t: 'Friday' }, { t: '[SEP]', s: true }],
+    output: [{ t: 'O' }, { t: 'B-PER', hl: true }, { t: 'I-PER', hl: true }, { t: 'O' }, { t: 'B-LOC', hl: true }, { t: 'O' }, { t: 'B-DATE', hl: true }, { t: 'O' }],
+    result: '🏷️ Barack Obama → PERSON | Paris → LOCATION | Friday → DATE',
+    caption: 'For NER, every token gets its own entity label. Each output vector feeds into a per-token classifier.'
+  },
+  qa: {
+    input: [{ t: '[CLS]', s: true }, { t: 'Where' }, { t: 'is' }, { t: 'BERT' }, { t: 'from' }, { t: '?' }, { t: '[SEP]', s: true }, { t: 'BERT' }, { t: 'was' }, { t: 'developed' }, { t: 'at' }, { t: 'Google' }, { t: 'AI' }, { t: '[SEP]', s: true }],
+    output: [{ t: '·' }, { t: '·' }, { t: '·' }, { t: '·' }, { t: '·' }, { t: '·' }, { t: '·' }, { t: '·' }, { t: '·' }, { t: '·' }, { t: '·' }, { t: 'START', hl: true }, { t: 'END', hl: true }, { t: '·' }],
+    result: '📖 Answer span: "Google AI" (positions 11–12)',
+    caption: 'For QA, BERT learns start and end pointers into the passage. The answer is the span between them.'
+  },
+  nli: {
+    input: [{ t: '[CLS]', s: true }, { t: 'A' }, { t: 'man' }, { t: 'sleeps' }, { t: '[SEP]', s: true }, { t: 'A' }, { t: 'person' }, { t: 'is' }, { t: 'resting' }, { t: '[SEP]', s: true }],
+    output: [{ t: 'h_CLS', hl: true }, { t: 'h₁' }, { t: 'h₂' }, { t: 'h₃' }, { t: '·' }, { t: 'h₅' }, { t: 'h₆' }, { t: 'h₇' }, { t: 'h₈' }, { t: '·' }],
+    result: '🤝 Entailment (87.6% confidence)',
+    caption: 'For NLI, the [CLS] token captures the relationship between premise and hypothesis.'
+  }
+};
+
+function setFTTask(task, btn) {
+  document.querySelectorAll('#ft-tabs .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const cfg = ftTasks[task];
+  // Input row
+  const ir = document.getElementById('ft-input-row');
+  ir.innerHTML = '';
+  cfg.input.forEach(tok => {
+    const span = document.createElement('span');
+    span.className = tok.s ? 'token special' : 'token';
+    span.textContent = tok.t;
+    ir.appendChild(span);
+  });
+  // Output row
+  const or_ = document.getElementById('ft-output-row');
+  or_.innerHTML = '';
+  cfg.output.forEach(tok => {
+    const span = document.createElement('span');
+    span.className = tok.hl ? 'token highlight' : 'token';
+    span.style.fontSize = '13px';
+    span.textContent = tok.t;
+    or_.appendChild(span);
+  });
+  // Result
+  document.getElementById('ft-result').textContent = cfg.result;
+  document.getElementById('ft-caption').textContent = cfg.caption;
+}
+setFTTask('cls', document.querySelector('#ft-tabs .tab'));
+
+// ══════════════════════════════════════
+// DEMO 8: Representation Comparison
+// ══════════════════════════════════════
+(function() {
+  const scenarios = [
+    { sentence: "I deposited money at the bank", context: "financial" },
+    { sentence: "We sat on the river bank", context: "nature" },
+    { sentence: "The blood bank needs donors", context: "medical" },
+  ];
+  const container = document.getElementById('repr-scenarios');
+  // Create a visual comparison
+  const header = document.createElement('div');
+  header.style.cssText = 'display:grid;grid-template-columns:1fr 100px 100px 100px;gap:8px;margin-bottom:8px;font-family:system-ui,sans-serif;font-size:12px;font-weight:700;text-align:center;';
+  header.innerHTML = '<div style="text-align:left;">Sentence</div><div>Word2Vec</div><div>ELMo</div><div>BERT</div>';
+  container.appendChild(header);
+
+  scenarios.forEach((sc, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 100px 100px 100px;gap:8px;align-items:center;padding:12px 0;border-top:1px solid var(--demo-border);';
+
+    const sentDiv = document.createElement('div');
+    sentDiv.style.cssText = 'font-size:14px;';
+    sentDiv.innerHTML = sc.sentence.replace('bank', '<strong style="color:var(--accent)">bank</strong>');
+
+    // Word2Vec - same color for all (static)
+    const w2vDiv = document.createElement('div');
+    w2vDiv.style.cssText = 'text-align:center;';
+    w2vDiv.innerHTML = `<div style="width:60px;height:60px;border-radius:50%;background:#94a3b8;margin:0 auto;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;font-size:10px;color:#fff;font-weight:700;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Same vector regardless of context">Same</div>`;
+
+    // ELMo - slightly different shades
+    const elmoColors = ['#6366f1', '#7c3aed', '#8b5cf6'];
+    const elmoDiv = document.createElement('div');
+    elmoDiv.style.cssText = 'text-align:center;';
+    elmoDiv.innerHTML = `<div style="width:60px;height:60px;border-radius:50%;background:${elmoColors[i]};margin:0 auto;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;font-size:10px;color:#fff;font-weight:700;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Somewhat different (concatenated L-R contexts)">~Diff</div>`;
+
+    // BERT - very different colors
+    const bertColors = ['#2563eb', '#059669', '#dc2626'];
+    const bertDiv = document.createElement('div');
+    bertDiv.style.cssText = 'text-align:center;';
+    bertDiv.innerHTML = `<div style="width:60px;height:60px;border-radius:50%;background:${bertColors[i]};margin:0 auto;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;font-size:10px;color:#fff;font-weight:700;cursor:pointer;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="Deeply distinct representation">${sc.context}</div>`;
+
+    row.appendChild(sentDiv);
+    row.appendChild(w2vDiv);
+    row.appendChild(elmoDiv);
+    row.appendChild(bertDiv);
+    container.appendChild(row);
+  });
+
+  const legend = document.createElement('div');
+  legend.style.cssText = 'margin-top:16px;font-family:system-ui,sans-serif;font-size:12px;color:var(--muted);text-align:center;';
+  legend.innerHTML = 'Circle color = embedding vector direction. <strong>Same color</strong> = same embedding. <strong>Different colors</strong> = distinct representations. Hover to inspect.';
+  container.appendChild(legend);
+})();
+
+// ══════════════════════════════════════
+// DEMO 9: Benchmark Bars
+// ══════════════════════════════════════
+const benchmarks = [
+  { name: 'GLUE', prev: 72.8, bert: 80.5, max: 100 },
+  { name: 'SQuAD 1.1 F1', prev: 87.4, bert: 93.2, max: 100 },
+  { name: 'SQuAD 2.0 F1', prev: 66.3, bert: 83.1, max: 100 },
+  { name: 'MultiNLI', prev: 75.6, bert: 86.7, max: 100 },
+  { name: 'QNLI', prev: 82.3, bert: 92.7, max: 100 },
+  { name: 'MRPC F1', prev: 84.4, bert: 89.3, max: 100 },
+];
+
+function renderBenchmarks(animate) {
+  const container = document.getElementById('bench-bars');
+  container.innerHTML = '';
+  benchmarks.forEach(b => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label">${b.name}</div>
+      <div style="flex:1;">
+        <div class="bar-track" style="margin-bottom:4px;">
+          <div class="bar-fill prev" style="width:${animate ? 0 : b.prev}%;">${b.prev}</div>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill bert" style="width:${animate ? 0 : b.bert}%;">${b.bert}</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function animateBenchmarks() {
+  renderBenchmarks(true);
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const bars = document.querySelectorAll('#bench-bars .bar-fill');
+      let i = 0;
+      benchmarks.forEach(b => {
+        bars[i].style.width = b.prev + '%';
+        bars[i + 1].style.width = b.bert + '%';
+        i += 2;
+      });
+    }, 50);
+  });
+}
+
+function resetBenchmarks() { renderBenchmarks(true); }
+renderBenchmarks(false);
+
+// ══════════════════════════════════════
+// DEMO 10: Attention Heatmap
+// ══════════════════════════════════════
+const attnTokens = ['[CLS]', 'The', 'cat', 'sat', 'on', 'the', 'mat', '[SEP]'];
+function generateAttentionWeights(layer, head) {
+  // Pseudo-random but deterministic based on layer/head
+  const seed = layer * 100 + head;
+  const n = attnTokens.length;
+  const weights = [];
+  for (let i = 0; i < n; i++) {
+    const row = [];
+    let sum = 0;
+    for (let j = 0; j < n; j++) {
+      // Create interesting patterns based on layer/head
+      let w;
+      if (head <= 3) {
+        // Positional pattern — attend to adjacent tokens
+        w = Math.exp(-Math.abs(i - j) * (0.5 + layer * 0.1));
+      } else if (head <= 6) {
+        // Syntactic pattern — verbs attend to subjects/objects
+        if ((i === 3 && (j === 2 || j === 6)) || (j === 3 && (i === 2 || i === 6))) {
+          w = 0.4 + layer * 0.03;
+        } else {
+          w = 0.05 + Math.random() * 0.1;
+        }
+      } else if (head <= 9) {
+        // SEP absorption pattern
+        if (j === n - 1) w = 0.3 + layer * 0.02;
+        else w = 0.1 + Math.random() * 0.15;
+      } else {
+        // Broad attention
+        w = 0.12 + Math.sin(seed + i * j) * 0.08;
+      }
+      row.push(Math.max(0.02, w));
+      sum += row[row.length - 1];
+    }
+    // Normalize
+    weights.push(row.map(v => v / sum));
+  }
+  return weights;
+}
+
+function updateAttention() {
+  const layer = parseInt(document.getElementById('attn-layer').value);
+  const head = parseInt(document.getElementById('attn-head').value);
+  document.getElementById('attn-layer-label').textContent = layer;
+  document.getElementById('attn-head-label').textContent = head;
+
+  const weights = generateAttentionWeights(layer, head);
+  const n = attnTokens.length;
+  const container = document.getElementById('attn-heatmap');
+  container.innerHTML = '';
+
+  // Create grid
+  const grid = document.createElement('div');
+  grid.style.cssText = `display:grid;grid-template-columns:60px repeat(${n}, 46px);gap:3px;`;
+
+  // Header row
+  grid.innerHTML += '<div></div>';
+  attnTokens.forEach(t => {
+    grid.innerHTML += `<div class="heatmap-label" style="font-size:10px;color:var(--muted);">${t}</div>`;
+  });
+
+  // Data rows
+  for (let i = 0; i < n; i++) {
+    grid.innerHTML += `<div class="heatmap-label" style="font-size:10px;color:var(--muted);justify-content:flex-end;padding-right:4px;">${attnTokens[i]}</div>`;
+    for (let j = 0; j < n; j++) {
+      const w = weights[i][j];
+      const intensity = Math.floor(w * 255);
+      const r = 37, g = 99, b_ = 235; // accent color
+      const alpha = Math.min(w * 2.5, 1);
+      const textColor = alpha > 0.4 ? '#fff' : '#374151';
+      grid.innerHTML += `<div class="heatmap-cell" style="background:rgba(${r},${g},${b_},${alpha});" data-from="${attnTokens[i]}" data-to="${attnTokens[j]}" data-weight="${(w*100).toFixed(1)}" onmouseover="showAttnInfo(this)" onmouseout="clearAttnInfo()"><span style="color:${textColor}">${(w*100).toFixed(0)}</span></div>`;
+    }
+  }
+  container.appendChild(grid);
+
+  // Info about pattern type
+  let patternDesc = '';
+  if (head <= 3) patternDesc = 'This head shows a positional pattern — tokens attend strongly to nearby tokens.';
+  else if (head <= 6) patternDesc = 'This head shows a syntactic pattern — verbs attend to their subjects and objects.';
+  else if (head <= 9) patternDesc = 'This head shows [SEP] absorption — many tokens route attention to the separator.';
+  else patternDesc = 'This head shows broad attention — roughly uniform across all tokens.';
+  document.getElementById('attn-info').textContent = `Layer ${layer}, Head ${head}: ${patternDesc}`;
+}
+
+function showAttnInfo(el) {
+  const from = el.dataset.from, to = el.dataset.to, w = el.dataset.weight;
+  document.getElementById('attn-info').textContent = `"${from}" → "${to}": ${w}% attention weight`;
+  el.style.transform = 'scale(1.15)';
+  el.style.zIndex = '10';
+}
+function clearAttnInfo() {
+  updateAttention(); // Reset info text
+  document.querySelectorAll('.heatmap-cell').forEach(c => { c.style.transform = ''; c.style.zIndex = ''; });
+}
+updateAttention();
+
+// ══════════════════════════════════════
+// DEMO 11: BERT Family Timeline
+// ══════════════════════════════════════
+(function() {
+  const models = [
+    { name: 'BERT', year: '2018', color: '#2563eb', desc: '<strong>BERT (Oct 2018)</strong> — The original. Bidirectional Transformer encoder pre-trained with Masked LM + Next Sentence Prediction. 110M (Base) / 340M (Large) parameters. Trained on BooksCorpus + Wikipedia. Shattered 11 NLP benchmarks overnight.' },
+    { name: 'GPT-2', year: '2019', color: '#6b7280', desc: '<strong>GPT-2 (Feb 2019)</strong> — OpenAI\'s response: a 1.5B parameter autoregressive (left-to-right) model. Showed that scaling up unidirectional models also works phenomenally for generation, though BERT still dominated understanding tasks.' },
+    { name: 'RoBERTa', year: '2019', color: '#059669', desc: '<strong>RoBERTa (Jul 2019)</strong> — "Robustly optimized BERT." Facebook AI removed NSP, used dynamic masking, trained much longer with 10× more data. Proved the original BERT was significantly undertrained. Beat BERT-Large on all benchmarks.' },
+    { name: 'DistilBERT', year: '2019', color: '#f59e0b', desc: '<strong>DistilBERT (Oct 2019)</strong> — 60% the size, 60% faster, retaining 97% of BERT\'s performance. Used knowledge distillation during pre-training. Made BERT practical for mobile and edge deployment.' },
+    { name: 'ALBERT', year: '2019', color: '#8b5cf6', desc: '<strong>ALBERT (Sep 2019)</strong> — "A Lite BERT." Used factorized embedding parameters and cross-layer parameter sharing. Achieved better results than BERT-Large with far fewer parameters (18× fewer!).' },
+    { name: 'XLNet', year: '2019', color: '#ec4899', desc: '<strong>XLNet (Jun 2019)</strong> — Combined the best of autoregressive and autoencoding. Used permutation-based training to capture bidirectional context while avoiding the [MASK] token mismatch. Beat BERT on 20 tasks.' },
+    { name: 'T5', year: '2019', color: '#14b8a6', desc: '<strong>T5 (Oct 2019)</strong> — "Text-to-Text Transfer Transformer." Google reframed every NLP task as text-to-text. Showed that encoder-decoder models with the right framing and scale could unify all of NLP.' },
+    { name: 'ELECTRA', year: '2020', color: '#dc2626', desc: '<strong>ELECTRA (Mar 2020)</strong> — Instead of masking, used a generator to replace tokens and a discriminator to detect replacements (inspired by GANs). More sample-efficient — matched BERT performance with 1/4 the compute.' },
+  ];
+
+  const container = document.getElementById('timeline-models');
+  models.forEach((m, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab';
+    btn.style.borderColor = m.color;
+    btn.style.color = m.color;
+    btn.textContent = `${m.name} (${m.year})`;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#timeline-models .tab').forEach(t => { t.classList.remove('active'); t.style.background = 'transparent'; });
+      btn.classList.add('active');
+      btn.style.background = m.color + '15';
+      document.getElementById('timeline-info').innerHTML = m.desc;
+    });
+    container.appendChild(btn);
+  });
+  // Select BERT by default
+  container.querySelector('.tab').click();
+})();
+
+// ══════════════════════════════════════
+// DEMO 12: Quiz
+// ══════════════════════════════════════
+(function() {
+  const questions = [
+    {
+      q: "What percentage of tokens does BERT mask during pre-training?",
+      options: ["5%", "10%", "15%", "25%"],
+      correct: 2,
+      explanation: "BERT randomly selects 15% of tokens for prediction: 80% get [MASK], 10% get a random token, 10% stay unchanged."
+    },
+    {
+      q: "What special token does BERT use for classification tasks?",
+      options: ["[SEP]", "[PAD]", "[CLS]", "[MASK]"],
+      correct: 2,
+      explanation: "The [CLS] token's final hidden state serves as the aggregate sequence representation for classification."
+    },
+    {
+      q: "How many Transformer layers does BERT-Large have?",
+      options: ["6", "12", "24", "48"],
+      correct: 2,
+      explanation: "BERT-Large has 24 layers, 1024 hidden size, and 16 attention heads (340M parameters total)."
+    },
+    {
+      q: "What makes BERT different from ELMo?",
+      options: [
+        "BERT uses LSTMs instead of Transformers",
+        "BERT is unidirectional while ELMo is bidirectional",
+        "BERT's bidirectional context is deeply fused via self-attention at every layer",
+        "ELMo has more parameters than BERT"
+      ],
+      correct: 2,
+      explanation: "ELMo concatenates separate left-to-right and right-to-left LSTM outputs. BERT uses self-attention where every token attends to every other token at every layer — the two directions are deeply fused."
+    },
+    {
+      q: "What was BERT's second pre-training objective (besides MLM)?",
+      options: ["Named Entity Recognition", "Next Sentence Prediction", "Text Generation", "Dependency Parsing"],
+      correct: 1,
+      explanation: "Next Sentence Prediction (NSP) trains BERT to understand sentence-pair relationships. (Later work like RoBERTa found this objective could be removed without hurting performance.)"
+    },
+  ];
+
+  const container = document.getElementById('quiz-content');
+  let quizScore = 0;
+  let answered = 0;
+
+  questions.forEach((q, qi) => {
+    const qDiv = document.createElement('div');
+    qDiv.style.cssText = 'margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid var(--demo-border);';
+    qDiv.innerHTML = `<p style="font-family:system-ui,sans-serif;font-size:15px;font-weight:700;margin-bottom:12px;">${qi + 1}. ${q.q}</p>`;
+
+    const optDiv = document.createElement('div');
+    q.options.forEach((opt, oi) => {
+      const btn = document.createElement('button');
+      btn.className = 'quiz-option';
+      btn.textContent = opt;
+      btn.addEventListener('click', () => {
+        if (qDiv.dataset.answered) return;
+        qDiv.dataset.answered = 'true';
+        answered++;
+        const isCorrect = oi === q.correct;
+        if (isCorrect) { quizScore++; btn.classList.add('correct'); }
+        else {
+          btn.classList.add('wrong');
+          optDiv.querySelectorAll('.quiz-option')[q.correct].classList.add('correct');
+        }
+        const exp = document.createElement('p');
+        exp.style.cssText = 'font-family:system-ui,sans-serif;font-size:13px;color:var(--muted);margin-top:10px;margin-bottom:0;padding:10px;background:var(--callout-bg);border-radius:8px;';
+        exp.textContent = q.explanation;
+        qDiv.appendChild(exp);
+
+        if (answered === questions.length) {
+          const pct = Math.round((quizScore / questions.length) * 100);
+          let msg = '';
+          if (pct === 100) msg = '🎉 Perfect score! You truly understand BERT!';
+          else if (pct >= 60) msg = `👏 ${quizScore}/${questions.length} — Solid understanding!`;
+          else msg = `${quizScore}/${questions.length} — Consider re-reading the sections above!`;
+          document.getElementById('quiz-final').textContent = msg;
+        }
+      });
+      optDiv.appendChild(btn);
+    });
+    qDiv.appendChild(optDiv);
+    container.appendChild(qDiv);
+  });
+})();
+
+</script>
+</body>
+</html>
